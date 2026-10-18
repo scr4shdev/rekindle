@@ -28,3 +28,15 @@ test.describe("small phones (360px)", () => {
     }
   });
 });
+
+test.describe("first impression on a laptop (1440x900)", () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+  test("all three persona cards and their buttons are above the fold", async ({ page }) => {
+    await page.goto("/");
+    for (const slug of ["maria", "seamus", "fatima"]) {
+      const box = await page.getByTestId(`persona-${slug}`).boundingBox();
+      expect(box).not.toBeNull();
+      expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(900);
+    }
+  });
+});

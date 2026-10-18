@@ -9,10 +9,8 @@ export const en = {
     theme: { toggle: "Switch light or dark theme", light: "Light", dark: "Dark" },
   },
   landing: {
-    eyebrow: "A reminiscence activity planner for family and caregivers",
     title: "Bring back the songs, films and faces of their youth.",
-    lead: "Write a few lines about someone you care for. Rekindle's agent rebuilds the cultural world of their teens and twenties, checks every idea against Qloo's taste graph, and hands you a gentle, timed activity in their own language.",
-    leadShort: "A few lines of notes become a gentle activity from their own era, checked against Qloo.",
+    leadShort: "A reminiscence activity planner for families and caregivers. A few lines of notes become a gentle session from their own era, checked against Qloo.",
     promises: {
       stored: "Nothing you type is stored",
       activity: "A shared activity, not therapy",

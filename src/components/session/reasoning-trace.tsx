@@ -36,7 +36,7 @@ export function ReasoningTrace({ view, className }: { view: SessionView; classNa
 
   useEffect(() => {
     const el = scroller.current;
-    // Follow the stream only when the panel scrolls internally (large screens).
+    // Follow the stream inside the capped panel (never scrolls the page itself).
     if (!el || !streaming || el.scrollHeight <= el.clientHeight + 4) return;
     el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [itemCount, streaming]);
@@ -78,7 +78,7 @@ export function ReasoningTrace({ view, className }: { view: SessionView; classNa
       <p className="sr-only" aria-live="polite">
         {latest?.message}
       </p>
-      <div ref={scroller} className="flex-1 overflow-y-auto overscroll-contain px-5 py-5">
+      <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5" tabIndex={0} aria-label={tr.title}>
         <ol className="relative flex flex-col">
           {view.phases.map((phase, i) => (
             <PhaseRow key={phase.key} phase={phase} last={i === view.phases.length - 1} entities={view.entities} />

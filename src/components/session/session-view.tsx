@@ -186,9 +186,8 @@ export function SessionView() {
       </header>
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] print:block">
-        <ReasoningTrace view={view} className="print:hidden lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)]" />
+        <ReasoningTrace view={view} className="max-h-[60dvh] print:hidden lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)]" />
         <PlanTimeline
-          className={cn(plan && "order-first lg:order-none")}
           view={view}
           language={resolved.request.person.sessionLanguage ?? "en"}
           caregiverLanguage={resolved.request.person.caregiverLanguage ?? "en"}

@@ -36,7 +36,7 @@ Add `BLOCKED: contract change needed: <file> <what and why> (<worker>, <date>)` 
   AC: cache-through via `buildCacheKey({provider, model, promptVersion: version, input})` (with `sensitive` passed on); timeout via
   AbortSignal; retries from config; errors mapped to `PortError("llm", ...)`; returns latency/usage; logs promptId, version,
   latency and cache hit only; tests use the AI SDK mock model (`ai/test`).
-- [todo] C2.2 `MockLlm`: deterministic fixture responses per `promptId` for the 3 personas
+- [done] C2.2 `MockLlm`: deterministic fixture responses per `promptId` for the 3 personas
   AC: persona fixtures in `src/lib/adapters/llm/fixtures/`, consistent with `sample-events.ts` (Maria) and authentic for Seamus/Fatima;
   for custom input, a generic deterministic response built from the structured fields (birthYear, birthPlace, languages), with no
   regex over notes; output always validates against `request.schema`.

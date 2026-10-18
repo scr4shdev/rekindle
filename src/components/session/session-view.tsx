@@ -3,7 +3,8 @@
 import { ArrowLeftIcon, PlayIcon, PrinterIcon, RotateCcwIcon, ScaleIcon, SquareIcon, TriangleAlertIcon } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { LiveSession } from "@/components/session/live-session";
 import { PlanTimeline } from "@/components/session/plan-timeline";
 import { ReasoningTrace } from "@/components/session/reasoning-trace";
@@ -14,7 +15,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAgentStream } from "@/hooks/use-agent-stream";
 import { getMessages } from "@/i18n";
-import type { Anchors, Reaction, SessionMode } from "@/lib/domain/types";
+import type { Anchors, Reaction, ReactionRecord, SessionMode } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
 
 function languageNames(anchors: Anchors): string {
@@ -33,15 +34,39 @@ export function SessionView() {
   const resolved = useMemo(() => resolveRequest(personaParam, modeParam), [personaParam, modeParam]);
   const hasRecording = resolved.ok && resolved.hasRecording;
   const source = useMemo(() => resolveSource(sourceParam, { speed, hasRecording }), [sourceParam, speed, hasRecording]);
-  const { view, servedBy, start, cancel } = useAgentStream(source);
+  const { view, servedBy, start, replan, cancel } = useAgentStream(source);
   const [runId, setRunId] = useState(0);
   const [liveOpen, setLiveOpen] = useState(false);
   const [liveIndex, setLiveIndex] = useState(0);
   const [reactions, setReactions] = useState<Record<string, Reaction>>({});
 
+  const [history, setHistory] = useState<ReactionRecord[]>([]);
+
   function react(stepId: string, reaction: Reaction) {
+    if (reactions[stepId] === reaction || view.replanning) return;
     setReactions((r) => ({ ...r, [stepId]: reaction }));
+    setHistory((h) => [...h, { stepId, reaction }]);
+    const plan = view.plan;
+    const isLast = plan?.steps.at(-1)?.id === stepId;
+    if (!plan || !view.anchors || isLast) return;
+    replan({ plan, anchors: view.anchors, stepId, reaction, history });
   }
+
+  // Tell the caregiver what changed when a replan finishes.
+  const wasReplanning = useRef(false);
+  const revisionBefore = useRef(0);
+  useEffect(() => {
+    const tl = getMessages().live;
+    if (view.replanning && !wasReplanning.current) revisionBefore.current = view.plan?.meta.revision ?? 0;
+    if (!view.replanning && wasReplanning.current) {
+      const revision = view.plan?.meta.revision ?? 0;
+      const next = view.plan?.steps[liveIndex + 1];
+      if (revision > revisionBefore.current && view.changedStepIds.length > 0 && next) toast.success(tl.adapted(next.title));
+      else if (revision > revisionBefore.current) toast(tl.unchanged);
+      else toast.error(tl.adaptFailed);
+    }
+    wasReplanning.current = view.replanning;
+  }, [view.replanning, view.plan, view.changedStepIds, liveIndex]);
 
   useEffect(() => {
     if (resolved.ok) start(resolved.request);

@@ -256,7 +256,11 @@ export function LiveSession({
               </div>
               {timer.left === 0 && <p className="text-center text-sage" role="status">{t.timeUp}</p>}
               {next && (
-                <p className="truncate text-center text-[0.95rem] text-muted-foreground" data-testid="live-up-next">
+                <p
+                  key={`${next.id}:${plan.meta.revision}`}
+                  className="animate-rise truncate text-center text-[0.95rem] text-muted-foreground"
+                  data-testid="live-up-next"
+                >
                   {t.upNext}: <span className="font-semibold text-foreground">{next.title}</span>
                   {view.changedStepIds.includes(next.id) && <Badge variant="ochre" className="ml-2">{ts.changed}</Badge>}
                 </p>

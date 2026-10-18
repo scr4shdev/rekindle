@@ -86,9 +86,9 @@ Add `BLOCKED: contract change needed: <file> <what and why> (<worker>, <date>)` 
 
 ### Epic C6: Composition and API routes
 - [done] C6.1 `src/lib/composition.ts` (`getAgentDeps()` singleton from config) and `GET /api/health`
-- [todo] C6.2 `POST /api/session` (zod validation with a 400 JSON before streaming, 64 KB limit, `x-trace-id`, NDJSON stream, `maxDuration = 60`)
-- [todo] C6.3 `POST /api/session/replan`
-- [todo] C6.4 Route tests (call the handlers with `Request` objects in mock mode; assert the event order rules from docs/api.md)
+- [done] C6.2 `POST /api/session` (zod validation with a 400 JSON before streaming, 64 KB limit, `x-trace-id`, NDJSON stream, `maxDuration = 60`)
+- [done] C6.3 `POST /api/session/replan`
+- [done] C6.4 Route tests (call the handlers with `Request` objects in mock mode; assert the event order rules from docs/api.md)
 
 ### Epic C7: Quality
 - [todo] C7.1 Golden tests: mock run for each persona; no anachronism or sensitivity leaks; plan validates; stable output (determinism)

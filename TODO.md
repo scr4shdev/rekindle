@@ -132,14 +132,14 @@ with two implementations: `fetch` + `readEventStream`, and a sample replay (`?so
 - [done] U3.4 Error and degraded states (recoverable vs fatal), cancel and retry
 
 ### Epic U4: Comparison mode
-- [in-progress] U4.1 Side-by-side grounded vs LLM-only (two parallel streams) with a summary: verified count, anachronisms caught, images, affinity
+- [done] U4.1 Side-by-side grounded vs LLM-only (two parallel streams) with a summary: verified count, anachronisms caught, images, affinity
 
 ### Epic U5: Caregiver session mode
 - [done] U5.1 One prompt at a time, huge text, step timer, next/prev, translation toggle, keyboard and touch friendly
 - [done] U5.2 Lit up / no reaction / upset buttons call `POST /api/session/replan` (sample replan when on the sample source); animated plan update
 
 ### Epic U6: Print, i18n, responsive
-- [todo] U6.1 Print stylesheet (session sheet the caregiver can print)
+- [in-progress] U6.1 Print stylesheet (session sheet the caregiver can print)
 - [todo] U6.2 UI strings in `src/i18n/` (en first, structure ready for it/fr), `lang` attributes on prompts
 - [todo] U6.3 Responsive pass (phone first: caregivers use phones)
 

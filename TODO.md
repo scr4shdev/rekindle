@@ -59,6 +59,9 @@ Add `BLOCKED: contract change needed: <file> <what and why> (<worker>, <date>)` 
   parity check: runs persona anchors through `qloo exec describe|recommend|find_tags` (official harness, needs
   `QLOO_TRUSTED_BASE_URL`) and through `QlooHttp`, and reports id overlap; writes raw responses only to the git-ignored
   `.qloo-recordings/` (never commit live data); hand-authors any committed fixtures; integrator updates the docs.
+  W-CORE note: script written and dry-run (no key: exits cleanly) at `scripts/qloo-probe.probe.ts`, run with
+  `QLOO_API_KEY=... npx vitest run --config scripts/vitest.probe.config.mts` (vitest runner so `@/` aliases resolve without new deps).
+  BLOCKED: waiting for the Qloo key to run it live.
 
 ### Epic C4: Versioned prompts (`src/lib/prompts/`)
 - [done] C4.1 `parse-anchors` (notes to `Anchors`; formative window from config ages; sensitivities; languages)

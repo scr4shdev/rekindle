@@ -6,7 +6,8 @@
  */
 import type { AgentEventPayload, Anchors, Candidate, QlooInsightsType, VerifiedEntity } from "@/lib/domain/types";
 import { QLOO_INSIGHTS_TYPES } from "@/lib/domain/types";
-import type { PortError, TasteEntity } from "@/lib/ports";
+import type { TasteEntity } from "@/lib/ports";
+import { PortError } from "@/lib/ports";
 import { matchEntityPrompt } from "@/lib/prompts";
 
 import type { Material, Run } from "@/lib/agent/run";
@@ -51,6 +52,8 @@ async function verifyOne(run: Run, candidate: Candidate): Promise<VerifyOutcome>
   try {
     response = await callTaste(run, (taste, ctx) => taste.search({ query: candidate.name, types: [type], take: run.deps.config.qloo.defaultTake }, ctx));
   } catch (error) {
+    // Bugs are not "not found": only port errors are handled here.
+    if (!(error instanceof PortError)) throw error;
     if (isTasteOutage(error)) return { kind: "outage", error };
     // bad_request: the guard or the API refused this one query. Nothing personal is ever sent.
     return { kind: "not_found", events: [], reason: "Not checked: the query was refused, so it is not used." };
@@ -100,6 +103,8 @@ export async function* verifyPhase(run: Run, candidates: Candidate[]): AsyncGene
   const groundable = candidates.filter((c) => c.qlooType);
   const ungroundable = candidates.filter((c) => !c.qlooType);
   const outcomes = mapLimit(groundable, VERIFY_CONCURRENCY, (c) => verifyOne(run, c));
+  // If one outcome throws, the rest are never awaited: keep their rejections handled.
+  for (const outcome of outcomes) outcome.catch(() => undefined);
   const materials: Material[] = [];
   let verified = 0;
   let notFound = 0;

@@ -165,6 +165,23 @@ describe("degraded paths", () => {
     expect(ofType(events, "verified").every((e) => e.entity.provenance === "llm-proposed-qloo-verified")).toBe(true);
   });
 
+  it("a programming error inside a Qloo call is fatal, not a silent 'not found'", async () => {
+    const inner = new MockQloo({ defaultTake: 10 });
+    const taste: TastePort = {
+      mode: "mock",
+      search: async () => {
+        throw new TypeError("bug");
+      },
+      getEntities: (q, c) => inner.getEntities(q, c),
+      searchTags: (q, c) => inner.searchTags(q, c),
+      insights: (q, c) => inner.insights(q, c),
+    };
+    const events = await collect(runSession(mockDeps({ taste }), SessionRequest.parse({ person: maria.input }), testCtx()));
+    expect(ofType(events, "rejected")).toHaveLength(0);
+    expect(ofType(events, "error")[0]).toMatchObject({ code: "internal", recoverable: false, phase: "verify" });
+    expect(events.at(-1)!.type).toBe("done");
+  });
+
   it("expansion turned off by config is reported as skipped", async () => {
     const events = await collect(runSession(mockDeps({}, { MAX_EXPANSIONS_PER_DOMAIN: "0" }), SessionRequest.parse({ person: maria.input }), testCtx()));
     assertStreamRules(events, "session");

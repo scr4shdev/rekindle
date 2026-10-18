@@ -81,7 +81,7 @@ describe("structured output mapping", () => {
     const anchors = toAnchors(
       {
         birthYear: 3000,
-        birthYearSource: "inferred",
+        birthYearSource: "stated",
         places: [{ name: "  ", countryCode: "ITA", role: "other", fromYear: 0, toYear: 0 }],
         languages: [{ tag: "not a tag!", name: "x" }],
         loves: [{ label: "", domain: "music", source: "stated" }],
@@ -96,6 +96,7 @@ describe("structured output mapping", () => {
       run,
     );
     expect(anchors.birthYear).toBe(1946);
+    expect(anchors.birthYearSource).toBe("inferred");
     expect(anchors.formativeWindow).toEqual({ startYear: 1956, endYear: 1976 });
     expect(anchors.places).toEqual([{ name: "Bari", role: "birthplace", fromYear: 1946 }]);
     expect(anchors.languages).toEqual([{ tag: "it", name: "it" }]);

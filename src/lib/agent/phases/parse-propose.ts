@@ -20,7 +20,10 @@ const year = (v: number | undefined) => {
 export function toAnchors(out: ParseAnchorsOutput, person: PersonInput, run: Run): Anchors {
   const { formativeAgeMin, formativeAgeMax } = run.deps.config.agent;
   const currentYear = run.deps.now().getUTCFullYear();
-  const birthYear = person.birthYear ?? year(out.birthYear) ?? currentYear - 80;
+  const modelYear = year(out.birthYear);
+  const birthYear = person.birthYear ?? modelYear ?? currentYear - 80;
+  // Stated only when the caregiver gave it, or the model says the notes state it; a fallback is always inferred.
+  const birthYearSource = person.birthYear ? "stated" : modelYear !== undefined ? out.birthYearSource : "inferred";
   const startYear = Math.min(birthYear + formativeAgeMin, currentYear);
   const endYear = Math.min(birthYear + formativeAgeMax, currentYear);
 
@@ -44,7 +47,7 @@ export function toAnchors(out: ParseAnchorsOutput, person: PersonInput, run: Run
 
   return AnchorsSchema.parse({
     birthYear,
-    birthYearSource: person.birthYear ? "stated" : out.birthYearSource,
+    birthYearSource,
     formativeWindow: { startYear, endYear },
     places,
     languages,

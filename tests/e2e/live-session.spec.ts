@@ -12,12 +12,15 @@ test.describe("caregiver session mode", () => {
     await expect(live).toBeVisible();
     await expect(page.getByTestId("live-prompt")).toContainText("Buongiorno Maria");
     await expect(page.getByTestId("live-prompt")).toHaveAttribute("lang", "it");
+    await expect(page.getByTestId("live-timer")).toHaveText("2:00");
+    // Focus starts on the session itself: Space toggles the timer and does not close the dialog.
+    await page.keyboard.press(" ");
+    await expect(live).toBeVisible();
+    await expect(page.getByTestId("live-timer")).toHaveText("1:59", { timeout: 3000 });
+    await expect(page.getByRole("button", { name: "Pause timer" })).toBeVisible();
     await expect(page.getByTestId("live-translation")).toBeVisible();
     await page.getByRole("button", { name: "Hide meaning" }).click();
     await expect(page.getByTestId("live-translation")).toBeHidden();
-    await expect(page.getByTestId("live-timer")).toHaveText("2:00");
-    await page.getByRole("button", { name: "Start timer" }).click();
-    await expect(page.getByTestId("live-timer")).toHaveText("1:59", { timeout: 3000 });
     await page.getByRole("button", { name: "Pause timer" }).click();
     await page.getByTestId("live-prompt").click();
     await page.keyboard.press("ArrowRight");

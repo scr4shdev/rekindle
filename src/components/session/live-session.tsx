@@ -16,7 +16,7 @@ import {
   XIcon,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { STEP_ICON } from "@/components/session/icons";
 import { ProvenanceBadge, StepMedia } from "@/components/session/step-card";
 import type { SessionView } from "@/components/session/view-state";
@@ -108,6 +108,8 @@ export function LiveSession({
   const t = getMessages().live;
   const ts = getMessages().step;
   const [showTranslation, setShowTranslation] = useState(true);
+  // Focus the session itself on open, so Space starts the timer instead of pressing Close.
+  const popupRef = useRef<HTMLDivElement>(null);
   const steps = plan.steps;
   const i = Math.min(index, steps.length - 1);
   const step = steps[i];
@@ -137,6 +139,9 @@ export function LiveSession({
       <DialogPrimitive.Portal>
         <DialogPrimitive.Popup
           className="fixed inset-0 z-50 flex flex-col bg-background outline-none data-closed:animate-out data-closed:fade-out-0 data-open:animate-in data-open:fade-in-0"
+          ref={popupRef}
+          initialFocus={popupRef}
+          tabIndex={-1}
           onKeyDown={onKeyDown}
           data-testid="live-session"
         >

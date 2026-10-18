@@ -182,7 +182,8 @@ const DISCLAIMERS: Record<string, string> = {
 function composeSession(input: ComposeSessionInput): ComposeSessionOutput {
   const persona = personaByAnchors(input.anchors);
   const who = input.displayName ? ` ${input.displayName}` : "";
-  const slots = Math.max(1, input.maxSteps - 2);
+  // Persona plans are hand-curated: fill only the gaps left by missing materials.
+  const slots = Math.min(Math.max(1, input.maxSteps - 2), persona ? persona.planOrder.length : Infinity);
   const chosen: ComposeMaterial[] = [];
   for (const label of persona?.planOrder ?? []) {
     const m = input.materials.find((x) => looseKey(x.label) === looseKey(label));
@@ -198,6 +199,8 @@ function composeSession(input: ComposeSessionInput): ComposeSessionOutput {
     const t = persona ? lookup(persona.steps, m.label) : undefined;
     return t ? fromTemplate(t, t.kind, t.minutes, m.ref) : genericStep(m, input.sessionLanguage, input.caregiverLanguage, who);
   });
+  // The schema needs at least one middle step: talk about the old days when nothing survived critique.
+  if (body.length === 0) body.push(genericStep({ label: input.anchors.loves[0]?.label ?? "the old days", domain: "sport", ref: "" }, input.sessionLanguage, input.caregiverLanguage, who));
   const lang = genericLang(input.sessionLanguage);
   return {
     title: persona?.title ?? { en: "A gentle trip back in time", it: "Un dolce viaggio nel tempo", fr: "Un doux voyage dans le temps" }[lang],

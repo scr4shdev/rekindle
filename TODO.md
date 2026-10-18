@@ -71,18 +71,18 @@ Add `BLOCKED: contract change needed: <file> <what and why> (<worker>, <date>)` 
   (no quizzing, no "do you remember?" pressure, follow their lead); render snapshot tests.
 
 ### Epic C5: Agent loop (`src/lib/agent/`, ports only)
-- [todo] C5.1 `runSession(deps, request, ctx)` skeleton as an `AsyncGenerator<AgentEvent>`
+- [done] C5.1 `runSession(deps, request, ctx)` skeleton as an `AsyncGenerator<AgentEvent>`
   AC: wraps `deps.taste` with `withPersonalDataGuard` (HARD RULE 2); emits a `qloo_call` event per Qloo request; stamps events with `createEventStamper`; phase started/completed with durations and counts; deadline and abort handling;
   stats in `done`; `done` is always last; PortError mapped to an `error` event.
-- [todo] C5.2 PARSE and PROPOSE phases. AC: emits `anchors`, `note`s and `candidate`s; candidate counts capped by config.
-- [todo] C5.3 VERIFY phase. AC: bounded concurrency; exact normalized-name match, else the `match-entity` LLM call; `verified` or `rejected(not_found)` per candidate; non-groundable domains pass through as llm-only material.
-- [todo] C5.4 EXPAND phase. AC: insights per target type from verified seeds; era filters by `ERA_FILTER_SUPPORT`; `signal.location.query` from anchors;
+- [done] C5.2 PARSE and PROPOSE phases. AC: emits `anchors`, `note`s and `candidate`s; candidate counts capped by config.
+- [done] C5.3 VERIFY phase. AC: bounded concurrency; exact normalized-name match, else the `match-entity` LLM call; `verified` or `rejected(not_found)` per candidate; non-groundable domains pass through as llm-only material.
+- [done] C5.4 EXPAND phase. AC: insights per target type from verified seeds; era filters by `ERA_FILTER_SUPPORT`; `signal.location.query` from anchors;
   `55_and_older`; excludes the seeds; dedupe; `provenance: "qloo-affinity"` with `seedQlooIds`.
-- [todo] C5.5 CRITIQUE and COMPOSE phases. AC: rejected items never appear in the plan; step `provenance` is decided in code
+- [done] C5.5 CRITIQUE and COMPOSE phases. AC: rejected items never appear in the plan; step `provenance` is decided in code
   (has a verified entity: `qloo-grounded`); durations sum to `totalMinutes`; `meta` filled with prompt versions.
-- [todo] C5.6 LLM-only mode. AC: verify/expand emitted as `skipped`; all steps `llm-only`; `meta.qlooMode = "unused"`.
+- [done] C5.6 LLM-only mode. AC: verify/expand emitted as `skipped`; all steps `llm-only`; `meta.qlooMode = "unused"`.
 - [todo] C5.7 Replan loop `runReplan`. AC: semantics in docs/api.md; past steps unchanged; `meta.revision + 1`.
-- [todo] C5.8 Degradation. AC: Qloo failure gives a recoverable `error` and the session continues as llm-only steps; LLM failure gives a fatal `error` then `done`.
+- [done] C5.8 Degradation. AC: Qloo failure gives a recoverable `error` and the session continues as llm-only steps; LLM failure gives a fatal `error` then `done`.
 
 ### Epic C6: Composition and API routes
 - [todo] C6.1 `src/lib/composition.ts` (`getAgentDeps()` singleton from config) and `GET /api/health`

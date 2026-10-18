@@ -37,23 +37,52 @@ function formatTime(seconds: number) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
-/** Countdown for the current step. Restarts (paused) whenever `resetKey` changes. */
+interface TimerState {
+  key: string;
+  /** Milliseconds counted before the current run started. */
+  banked: number;
+  /** Wall-clock start of the current run, or null when paused. */
+  startedAt: number | null;
+  /** Last wall-clock reading (updated by the tick). */
+  now: number;
+}
+
+/**
+ * Countdown for the current step, computed from elapsed wall-clock time (no
+ * drift from interval jitter). Restarts (paused) only when `resetKey` changes.
+ */
 function useStepTimer(totalSeconds: number, resetKey: string) {
-  const [state, setState] = useState({ key: resetKey, left: totalSeconds, running: false });
+  const totalMs = totalSeconds * 1000;
+  const [state, setState] = useState<TimerState>({ key: resetKey, banked: 0, startedAt: null, now: 0 });
   // Reset during render when the step changes (no effect needed).
-  if (state.key !== resetKey) setState({ key: resetKey, left: totalSeconds, running: false });
+  if (state.key !== resetKey) setState({ key: resetKey, banked: 0, startedAt: null, now: 0 });
+  const running = state.startedAt !== null;
+  const elapsed = state.banked + (state.startedAt !== null ? state.now - state.startedAt : 0);
+  const left = Math.max(0, Math.ceil((totalMs - elapsed) / 1000));
+
   useEffect(() => {
-    if (!state.running) return;
+    if (!running) return;
     const id = setInterval(() => {
-      setState((s) => (s.left <= 1 ? { ...s, left: 0, running: false } : { ...s, left: s.left - 1 }));
-    }, 1000);
+      const now = Date.now();
+      setState((s) => {
+        if (s.startedAt === null) return s;
+        const done = s.banked + (now - s.startedAt) >= totalMs;
+        return done ? { ...s, banked: totalMs, startedAt: null, now } : { ...s, now };
+      });
+    }, 250);
     return () => clearInterval(id);
-  }, [state.running]);
+  }, [running, totalMs]);
+
   return {
-    left: state.left,
-    running: state.running,
-    toggle: () => setState((s) => ({ ...s, running: s.left > 0 ? !s.running : false })),
-    reset: () => setState((s) => ({ ...s, left: totalSeconds, running: false })),
+    left,
+    running,
+    toggle: () =>
+      setState((s) => {
+        const now = Date.now();
+        if (s.startedAt !== null) return { ...s, banked: s.banked + (now - s.startedAt), startedAt: null, now };
+        return s.banked >= totalMs ? s : { ...s, startedAt: now, now };
+      }),
+    reset: () => setState((s) => ({ ...s, banked: 0, startedAt: null, now: 0 })),
   };
 }
 
@@ -84,7 +113,7 @@ export function LiveSession({
   const step = steps[i];
   const next = steps[i + 1];
   const total = step.durationMin * 60;
-  const timer = useStepTimer(total, `${step.id}:${plan.meta.revision}`);
+  const timer = useStepTimer(total, step.id);
   const Icon = STEP_ICON[step.kind];
   const reaction = reactions[step.id];
   const replanPhase = view.phases.at(-1)?.phase === "replan" ? view.phases.at(-1) : undefined;
@@ -147,7 +176,7 @@ export function LiveSession({
           {/* The prompt */}
           <div className="flex-1 overflow-y-auto">
             <div
-              key={`${step.id}:${plan.meta.revision}`}
+              key={step.id}
               className="mx-auto grid w-full max-w-5xl animate-rise gap-5 px-5 py-5 sm:px-8 sm:py-10 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:items-start"
             >
               <StepMedia step={step} large className="order-last h-36 rounded-3xl border border-border shadow-paper sm:h-56 md:order-first md:aspect-[4/5] md:h-auto" />

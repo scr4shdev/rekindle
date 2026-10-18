@@ -29,6 +29,21 @@ test.describe("caregiver session mode", () => {
     await expect(live).toBeHidden();
   });
 
+  test("the step timer keeps running through a reaction and its replan", async ({ page }) => {
+    await page.goto("/session?persona=maria&source=sample&speed=40");
+    await expect(page.getByTestId("session-view")).toHaveAttribute("data-status", "done");
+    await page.getByTestId("start-live").click();
+    for (let i = 0; i < 3; i++) await page.getByTestId("live-next").click();
+    await expect(page.getByTestId("live-timer")).toHaveText("3:00");
+    await page.getByRole("button", { name: "Start timer" }).click();
+    await expect(page.getByTestId("live-timer")).toHaveText("2:59", { timeout: 3000 });
+    // The recorded replan for this step changes the plan (new revision).
+    await page.getByTestId("react-upset").click();
+    await expect(page.getByTestId("live-up-next")).toContainText("Roberto Murolo");
+    await expect(page.getByTestId("live-timer")).toHaveText(/^2:5[0-7]$/, { timeout: 4000 });
+    await expect(page.getByRole("button", { name: "Pause timer" })).toBeVisible();
+  });
+
   test("upset on the film still replans with a calming song (sample source)", async ({ page }) => {
     await page.goto("/session?persona=maria&source=sample&speed=40");
     await expect(page.getByTestId("session-view")).toHaveAttribute("data-status", "done");

@@ -102,18 +102,29 @@ Build against `src/lib/domain/sample-events.ts` until the W-CORE API works (C6.2
 with two implementations: `fetch` + `readEventStream`, and a sample replay (`?source=sample`).
 
 ### Epic U1: Design system
-- [todo] U1.1 Tokens in `globals.css`: warm, calm, era-evocative palette (paper, ink, terracotta, sage), light and dark, WCAG AA contrast
-- [todo] U1.2 Typography: large readable type (base at least 18px), a display serif plus a highly legible sans (e.g. Atkinson Hyperlegible) via `next/font`
+- [done] U1.1 Tokens in `globals.css`: warm, calm, era-evocative palette (paper, ink, terracotta, sage), light and dark, WCAG AA contrast
+  AC: paper/ink/terracotta/sage/ochre/rose tokens for light and dark (`next-themes`, class strategy); every text pair >= 4.5:1
+  (checked with an oklch contrast script); paper grain background; `prefers-reduced-motion` disables animation.
+- [in-progress] U1.2 Typography: large readable type (base at least 18px), a display serif plus a highly legible sans (e.g. Atkinson Hyperlegible) via `next/font`
+  AC: Fraunces (display) + Atkinson Hyperlegible Next (body) + Atkinson Hyperlegible Mono (Qloo params); root font-size 18px.
 - [todo] U1.3 Restyle the shadcn primitives through the theme so it does not look like default shadcn; app shell (header, footer with
   the non-medical disclaimer and the "nothing is stored" promise), `TooltipProvider` and `Toaster` in the layout
+  AC: buttons/inputs at least 48px tall, pill buttons, paper cards with a soft shadow; header with theme toggle; footer with disclaimer
+  and privacy promise; strings from `src/i18n/en.ts`.
   AC (epic): axe has no serious violations; focus rings visible; `prefers-reduced-motion` respected.
 
 ### Epic U2: Landing
 - [todo] U2.1 Hero and value proposition (non-medical wording), 3 one-tap persona cards from `PERSONAS`
+  AC: first screen shows the promise ("nothing is stored"), three large persona cards linking to `/session?persona=<slug>`, form below.
 - [todo] U2.2 Custom form (notes, birth year, birthplace, session/caregiver language, minutes) validated with the `PersonInput` schema; grounded vs LLM-only toggle
+  AC: zod `PersonInput.safeParse` with inline accessible errors (`aria-invalid`, `aria-describedby`); input is kept only in client memory
+  (module store, never in the URL or storage) and handed to `/session?persona=custom`.
 
 ### Epic U3: Session page (streaming)
 - [todo] U3.1 `useAgentStream` hook plus an events-to-view-state reducer (unit-safe, pure); sample replay source
+  AC: `AgentEventSource` interface (`src/components/session/source.ts`) with `apiSource` (fetch + `readEventStream`, JSON 4xx mapped
+  to a safe message) and `sampleSource` (replays recorded events with their timing, `?speed=`); `?source=sample|api`, default `auto`
+  (API, falling back to the recording for Maria when the route is missing); reducer is pure and tested in `tests/e2e/view-state.spec.ts`.
 - [todo] U3.2 Live reasoning trace: phase timeline (started/completed/skipped), notes, candidate, verified and rejected chips with reasons,
   expandable `qloo_call` rows (endpoint plus params: the request-to-result evidence); copy frames Qloo results as aggregate
   ("people who enjoy X also tend to enjoy Y")

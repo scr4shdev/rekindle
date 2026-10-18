@@ -108,7 +108,9 @@ export function runReplan(deps: AgentDeps, request: ReplanRequest, ctx: CallCont
     const newMaterials = yield* affinityFrom(run, request, reacted);
     const titles = new Map(plan.steps.map((s) => [s.id, s.title]));
     const doneMinutes = done.reduce((n, s) => n + s.durationMin, 0);
-    const maxUpcoming = Math.max(1, Math.min(PLAN_MAX_STEPS - done.length, upcoming.length + 2));
+    // Room for upcoming steps, keeping one slot for the closing step that is re-appended below.
+    const room = PLAN_MAX_STEPS - done.length;
+    const maxUpcoming = Math.max(1, Math.min(room - 1, upcoming.length + 2));
     const out = await callLlm(
       run,
       replanSessionPrompt,
@@ -152,18 +154,42 @@ export function runReplan(deps: AgentDeps, request: ReplanRequest, ctx: CallCont
     }
     const closing = upcoming.find((s) => s.kind === "closing");
     if (closing && !next.some((s) => s.kind === "closing")) next.push(closing);
-    if (next.length === 0) next.push(...upcoming);
+    if (next.length === 0) next.push(...upcoming.slice(0, room));
+
+    // Never exceed the plan's step limit: drop the last non-closing steps that do not fit.
+    const trimmed: SessionStep[] = [];
+    while (next.length > Math.max(1, room)) {
+      const index = next.findLastIndex((s) => s.kind !== "closing");
+      const [dropped] = next.splice(index >= 0 ? index : next.length - 1, 1);
+      created.delete(dropped.id);
+      trimmed.push(dropped);
+    }
 
     const reasons = new Map(out.removed.map((r) => [r.stepId, r]));
-    for (const step of upcoming.filter((s) => !next.includes(s))) {
+    for (const step of upcoming.filter((s) => !next.includes(s) && !trimmed.includes(s))) {
       const r = reasons.get(step.id);
       run.stats.rejected++;
       yield {
         type: "rejected",
         item: {
           label: step.title,
-          reason: clip(r?.reason, 400) ?? "Removed to adapt to the reaction.",
-          kind: r?.kind ?? (request.reaction === "upset" ? "emotional_risk" : "low_relevance"),
+          // Steps the model dropped without saying why are treated as making room, not as risky.
+          reason: clip(r?.reason, 400) ?? "Removed to make room for what comes next.",
+          kind: r?.kind ?? "low_relevance",
+          phase: "replan",
+          domain: step.entity?.domain,
+          refId: step.id,
+        },
+      };
+    }
+    for (const step of trimmed) {
+      run.stats.rejected++;
+      yield {
+        type: "rejected",
+        item: {
+          label: step.title,
+          reason: "No room left in this session.",
+          kind: "low_relevance",
           phase: "replan",
           domain: step.entity?.domain,
           refId: step.id,
@@ -181,7 +207,7 @@ export function runReplan(deps: AgentDeps, request: ReplanRequest, ctx: CallCont
       status: "completed",
       message: clip(out.message, 400) ?? "The rest of the session is adapted.",
       durationMs: run.deps.now().getTime() - started,
-      counts: { added: created.size, removed: upcoming.filter((s) => !next.includes(s)).length },
+      counts: { added: created.size, removed: upcoming.filter((s) => !next.includes(s)).length + trimmed.filter((s) => !upcoming.includes(s)).length },
     };
   });
 }

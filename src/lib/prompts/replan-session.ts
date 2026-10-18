@@ -11,7 +11,7 @@ import { ModelStep } from "@/lib/prompts/compose-session";
 import { AGGREGATE_GUIDANCE, dataBlock, DATA_NOTICE, DEMENTIA_FRIENDLY_GUIDANCE, lines, ROLE } from "@/lib/prompts/shared";
 
 export const ID = "replan-session";
-export const VERSION = "1.0.0";
+export const VERSION = "1.1.0";
 
 export interface ReplanStepSummary {
   id: string;
@@ -50,7 +50,7 @@ export const schema = z.object({
         step: ModelStep.describe("The new step. Ignored when keepStepId is set (fill with minimal values)."),
       }),
     )
-    .max(15)
+    .max(20)
     .describe("The new list of upcoming steps, in order."),
   removed: z
     .array(
@@ -60,7 +60,7 @@ export const schema = z.object({
         reason: z.string().describe("Short reason in the caregiver language."),
       }),
     )
-    .max(15),
+    .max(20),
 });
 export type ReplanSessionOutput = z.infer<typeof schema>;
 

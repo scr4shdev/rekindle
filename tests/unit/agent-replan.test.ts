@@ -28,7 +28,7 @@ function assertPastUnchanged(before: SessionPlan, after: SessionPlan, stepId: st
   expect(after.steps.slice(0, past.length)).toEqual(past);
   expect(after.id).toBe(before.id);
   expect(after.meta.revision).toBe(before.meta.revision + 1);
-  expect(after.meta.promptVersions["replan-session"]).toBe("1.0.0");
+  expect(after.meta.promptVersions["replan-session"]).toBe("1.1.0");
   expect(after.steps.map((s) => s.order)).toEqual(after.steps.map((_, i) => i));
   expect(after.steps.at(-1)!.kind).toBe("closing");
 }
@@ -107,5 +107,32 @@ describe("runReplan", () => {
     const events = await replan(plan, anchors, "nope", "upset");
     assertStreamRules(events, "replan", false);
     expect(ofType(events, "error")[0]).toMatchObject({ code: "invalid_input", recoverable: false });
+  });
+
+  it.each(["lit_up", "upset"] as const)("%s on a 20-step plan never exceeds the step limit", async (reaction) => {
+    const { plan, anchors } = await session("maria");
+    const sinatra = plan.steps.find((s) => s.entity?.name === "Frank Sinatra")!;
+    const closing = plan.steps.at(-1)!;
+    const filler = Array.from({ length: 17 }, (_, i) => ({
+      ...closing,
+      id: `s_fill_${i}`,
+      kind: "listen" as const,
+      title: `Song ${i + 1}`,
+      entity: undefined,
+      provenance: "llm-only" as const,
+    }));
+    const steps = [plan.steps[0], sinatra, ...filler, closing].map((s, order) => ({ ...s, order, durationMin: 3 }));
+    const full: SessionPlan = { ...plan, steps, totalMinutes: 120 };
+    expect(full.steps).toHaveLength(20);
+    const events = await replan(full, anchors, sinatra.id, reaction);
+    expect(ofType(events, "error")).toEqual([]);
+    assertStreamRules(events, "replan");
+    const next = ofType(events, "plan")[0].plan;
+    expect(next.steps).toHaveLength(20);
+    expect(next.steps.at(-1)!.kind).toBe("closing");
+    assertPastUnchanged(full, next, sinatra.id);
+    const dropped = ofType(events, "rejected").map((e) => e.item);
+    expect(dropped).toEqual([expect.objectContaining({ kind: "low_relevance", phase: "replan", label: "Song 17" })]);
+    expect(ofType(events, "step")).toHaveLength(1);
   });
 });

@@ -114,9 +114,9 @@ with two implementations: `fetch` + `readEventStream`, and a sample replay (`?so
   AC (epic): axe has no serious violations; focus rings visible; `prefers-reduced-motion` respected.
 
 ### Epic U2: Landing
-- [in-progress] U2.1 Hero and value proposition (non-medical wording), 3 one-tap persona cards from `PERSONAS`
+- [done] U2.1 Hero and value proposition (non-medical wording), 3 one-tap persona cards from `PERSONAS`
   AC: first screen shows the promise ("nothing is stored"), three large persona cards linking to `/session?persona=<slug>`, form below.
-- [todo] U2.2 Custom form (notes, birth year, birthplace, session/caregiver language, minutes) validated with the `PersonInput` schema; grounded vs LLM-only toggle
+- [in-progress] U2.2 Custom form (notes, birth year, birthplace, session/caregiver language, minutes) validated with the `PersonInput` schema; grounded vs LLM-only toggle
   AC: zod `PersonInput.safeParse` with inline accessible errors (`aria-invalid`, `aria-describedby`); input is kept only in client memory
   (module store, never in the URL or storage) and handed to `/session?persona=custom`.
 

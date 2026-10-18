@@ -3,7 +3,7 @@
  * reaction and streams AgentEvents as NDJSON (docs/api.md). Stateless: the
  * client sends the plan, anchors and history. The note is never logged.
  */
-import { jsonError, ndjsonResponse, parseJsonBody } from "@/app/api/_lib/http";
+import { jsonError, ndjsonResponse, parseJsonBody, rateLimited, rateLimiters } from "@/app/api/_lib/http";
 import { runReplan } from "@/lib/agent";
 import { getAgentDeps } from "@/lib/composition";
 import { ReplanRequest } from "@/lib/domain/types";
@@ -15,6 +15,11 @@ export const maxDuration = 60;
 export async function POST(request: Request): Promise<Response> {
   const traceId = newTraceId();
   const logger = createRequestLogger(traceId, { route: "replan" });
+  const limited = rateLimited(rateLimiters.replan, request, traceId);
+  if (limited) {
+    logger.warn({ status: 429 }, "replan request rate limited");
+    return limited;
+  }
   const parsed = await parseJsonBody(request, ReplanRequest, traceId);
   if (!parsed.ok) {
     logger.info({ status: parsed.response.status }, "replan request rejected");

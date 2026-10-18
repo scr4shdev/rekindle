@@ -2,7 +2,7 @@
  * POST /api/session: builds a session plan and streams AgentEvents as NDJSON
  * (docs/api.md). Validation errors return JSON before streaming starts.
  */
-import { jsonError, ndjsonResponse, parseJsonBody } from "@/app/api/_lib/http";
+import { jsonError, ndjsonResponse, parseJsonBody, rateLimited, rateLimiters } from "@/app/api/_lib/http";
 import { runSession } from "@/lib/agent";
 import { getAgentDeps } from "@/lib/composition";
 import { SessionRequest } from "@/lib/domain/types";
@@ -14,6 +14,11 @@ export const maxDuration = 60;
 export async function POST(request: Request): Promise<Response> {
   const traceId = newTraceId();
   const logger = createRequestLogger(traceId, { route: "session" });
+  const limited = rateLimited(rateLimiters.session, request, traceId);
+  if (limited) {
+    logger.warn({ status: 429 }, "session request rate limited");
+    return limited;
+  }
   const parsed = await parseJsonBody(request, SessionRequest, traceId);
   if (!parsed.ok) {
     logger.info({ status: parsed.response.status }, "session request rejected");

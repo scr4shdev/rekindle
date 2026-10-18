@@ -10,7 +10,7 @@ import type { AgentEvent } from "@/lib/domain/types";
 /** Request body limit (docs/api.md). */
 export const MAX_BODY_BYTES = 64 * 1024;
 
-export type ApiErrorCode = "invalid_input" | "payload_too_large" | "unsupported_media_type" | "internal";
+export type ApiErrorCode = "invalid_input" | "payload_too_large" | "unsupported_media_type" | "rate_limited" | "internal";
 
 export function jsonError(
   status: number,
@@ -18,11 +18,78 @@ export function jsonError(
   message: string,
   traceId: string,
   issues?: Array<{ path: string; message: string }>,
+  headers: Record<string, string> = {},
 ): Response {
   return Response.json(
     { error: { code, message, ...(issues ? { issues } : {}) } },
-    { status, headers: { "x-trace-id": traceId, "cache-control": "no-store" } },
+    { status, headers: { "x-trace-id": traceId, "cache-control": "no-store", ...headers } },
   );
+}
+
+// ---------------------------------------------------------------------------
+// Rate limiting
+// ---------------------------------------------------------------------------
+
+/** Limits per client IP: a burst of `capacity` requests, refilled at `refillPerMinute`. */
+export const RATE_LIMITS = {
+  session: { capacity: 8, refillPerMinute: 4 },
+  replan: { capacity: 30, refillPerMinute: 15 },
+} as const;
+/** Clients tracked per instance; the least recently seen are forgotten first. */
+export const RATE_LIMIT_MAX_CLIENTS = 5_000;
+
+/**
+ * Best-effort in-memory token bucket per client IP. On serverless each warm
+ * instance has its own buckets, so this caps bursts per instance; it is not a
+ * global quota. IPs stay in process memory only and are never logged.
+ */
+export class RateLimiter {
+  private readonly buckets = new Map<string, { tokens: number; at: number }>();
+
+  constructor(
+    private readonly limit: { capacity: number; refillPerMinute: number },
+    private readonly now: () => number = Date.now,
+  ) {}
+
+  /** Take one token; returns 0 when allowed, else the seconds to wait. */
+  take(client: string): number {
+    const now = this.now();
+    const perMs = this.limit.refillPerMinute / 60_000;
+    const prev = this.buckets.get(client) ?? { tokens: this.limit.capacity, at: now };
+    const tokens = Math.min(this.limit.capacity, prev.tokens + (now - prev.at) * perMs);
+    this.buckets.delete(client);
+    if (tokens < 1) {
+      this.buckets.set(client, { tokens, at: now });
+      return Math.max(1, Math.ceil((1 - tokens) / perMs / 1000));
+    }
+    this.buckets.set(client, { tokens: tokens - 1, at: now });
+    while (this.buckets.size > RATE_LIMIT_MAX_CLIENTS) this.buckets.delete(this.buckets.keys().next().value!);
+    return 0;
+  }
+
+  reset(): void {
+    this.buckets.clear();
+  }
+}
+
+export const rateLimiters = {
+  session: new RateLimiter(RATE_LIMITS.session),
+  replan: new RateLimiter(RATE_LIMITS.replan),
+};
+
+/** Client key from the proxy headers (Vercel sets x-forwarded-for). */
+export function clientKey(request: Request): string {
+  const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  return forwarded || request.headers.get("x-real-ip")?.trim() || "unknown";
+}
+
+/** The documented 429 JSON (before streaming starts), or undefined when allowed. */
+export function rateLimited(limiter: RateLimiter, request: Request, traceId: string): Response | undefined {
+  const wait = limiter.take(clientKey(request));
+  if (wait === 0) return undefined;
+  return jsonError(429, "rate_limited", "Too many requests. Please wait a moment and try again.", traceId, undefined, {
+    "retry-after": String(wait),
+  });
 }
 
 class BodyTooLarge extends Error {}

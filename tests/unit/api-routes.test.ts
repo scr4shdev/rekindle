@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+
+import { rateLimiters } from "@/app/api/_lib/http";
 
 import { GET as health } from "@/app/api/health/route";
 import { POST as replan } from "@/app/api/session/replan/route";
@@ -10,6 +12,11 @@ import { PERSONAS } from "@/lib/personas";
 import { assertStreamRules } from "./stream-rules";
 
 const maria = PERSONAS.find((p) => p.slug === "maria")!;
+
+beforeEach(() => {
+  rateLimiters.session.reset();
+  rateLimiters.replan.reset();
+});
 
 const post = (url: string, body: unknown, headers: Record<string, string> = { "content-type": "application/json" }) =>
   new Request(`http://localhost${url}`, { method: "POST", headers, body: typeof body === "string" ? body : JSON.stringify(body) });

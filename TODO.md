@@ -107,14 +107,14 @@ with two implementations: `fetch` + `readEventStream`, and a sample replay (`?so
   (checked with an oklch contrast script); paper grain background; `prefers-reduced-motion` disables animation.
 - [done] U1.2 Typography: large readable type (base at least 18px), a display serif plus a highly legible sans (e.g. Atkinson Hyperlegible) via `next/font`
   AC: Fraunces (display) + Atkinson Hyperlegible Next (body) + Atkinson Hyperlegible Mono (Qloo params); root font-size 18px.
-- [in-progress] U1.3 Restyle the shadcn primitives through the theme so it does not look like default shadcn; app shell (header, footer with
+- [done] U1.3 Restyle the shadcn primitives through the theme so it does not look like default shadcn; app shell (header, footer with
   the non-medical disclaimer and the "nothing is stored" promise), `TooltipProvider` and `Toaster` in the layout
   AC: buttons/inputs at least 48px tall, pill buttons, paper cards with a soft shadow; header with theme toggle; footer with disclaimer
   and privacy promise; strings from `src/i18n/en.ts`.
   AC (epic): axe has no serious violations; focus rings visible; `prefers-reduced-motion` respected.
 
 ### Epic U2: Landing
-- [todo] U2.1 Hero and value proposition (non-medical wording), 3 one-tap persona cards from `PERSONAS`
+- [in-progress] U2.1 Hero and value proposition (non-medical wording), 3 one-tap persona cards from `PERSONAS`
   AC: first screen shows the promise ("nothing is stored"), three large persona cards linking to `/session?persona=<slug>`, form below.
 - [todo] U2.2 Custom form (notes, birth year, birthplace, session/caregiver language, minutes) validated with the `PersonInput` schema; grounded vs LLM-only toggle
   AC: zod `PersonInput.safeParse` with inline accessible errors (`aria-invalid`, `aria-describedby`); input is kept only in client memory

@@ -51,7 +51,7 @@ Add `BLOCKED: contract change needed: <file> <what and why> (<worker>, <date>)` 
   AC: defensive parsing per docs/qloo-api.md (`results[]` vs `results.entities[]`, `entity_id ?? id`, `subtype ?? types[]`,
   `properties.image.url`, `query.affinity`, `release_year`/`publication_year`/`date_of_birth`); unknown types dropped;
   zod-validated raw shapes with `.passthrough()`; tests against recorded JSON fixtures in `tests/unit/fixtures/qloo/`.
-- [todo] C3.3 `MockQloo`: fixture catalog for the 3 personas
+- [done] C3.3 `MockQloo`: fixture catalog for the 3 personas
   AC: search = exact match on normalized names within types; insights = seed-keyed fixture lists that respect type and era filters;
   includes the Maria entities from `sample-events.ts`; deterministic order.
 - [blocked] C3.4 Live probe and parity script `scripts/qloo-probe.ts` (waiting for the Qloo key)

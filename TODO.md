@@ -42,12 +42,12 @@ Add `BLOCKED: contract change needed: <file> <what and why> (<worker>, <date>)` 
   regex over notes; output always validates against `request.schema`.
 
 ### Epic C3: Qloo adapter (`src/lib/adapters/qloo/`)
-- [todo] C3.1 `QlooHttp`: query builder plus fetch
+- [done] C3.1 `QlooHttp`: query builder plus fetch
   AC: every query parsed with the strict port schemas first (unknown keys rejected); GET with `X-Api-Key`;
   returns `TasteResponse` with a `QlooCallRecord` (params as sent, never the key); comma-joined arrays; era filters only per `ERA_FILTER_SUPPORT`; `bias.trends` default `off`;
   `take` at most 50; retry on 429/5xx honouring Retry-After (max from config); timeout; on a 400 from an unknown `signal.location.query`,
   retry once without it; cached with `buildCacheKey({provider:"qloo", model:<endpoint>, promptVersion:"qloo-v2", input:query})`.
-- [todo] C3.2 Response mapping to `TasteEntity`
+- [done] C3.2 Response mapping to `TasteEntity`
   AC: defensive parsing per docs/qloo-api.md (`results[]` vs `results.entities[]`, `entity_id ?? id`, `subtype ?? types[]`,
   `properties.image.url`, `query.affinity`, `release_year`/`publication_year`/`date_of_birth`); unknown types dropped;
   zod-validated raw shapes with `.passthrough()`; tests against recorded JSON fixtures in `tests/unit/fixtures/qloo/`.

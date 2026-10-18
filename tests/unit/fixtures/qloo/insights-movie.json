@@ -1,0 +1,34 @@
+{
+  "success": true,
+  "results": {
+    "entities": [
+      {
+        "name": "Matrimonio all'italiana",
+        "entity_id": "00000000-0000-4000-8000-000000000020",
+        "type": "urn:entity",
+        "subtype": "urn:entity:movie",
+        "properties": {
+          "release_year": 1964,
+          "description": "A Naples love story.",
+          "image": { "url": "https://images.qloo.com/i/00000000-0000-4000-8000-000000000020-420x-auto.jpg" },
+          "akas": [{ "value": "Marriage Italian Style", "languages": ["en"] }]
+        },
+        "popularity": 0.66,
+        "tags": [{ "tag_id": "urn:tag:genre:media:comedy", "name": "Comedy", "subtype": "urn:tag:genre:media" }],
+        "query": { "affinity": 0.87, "measurements": { "audience_growth": -0.01 } },
+        "external": { "imdb": [{ "id": "tt0058335" }] }
+      },
+      {
+        "name": "Ieri, oggi, domani",
+        "entity_id": "00000000-0000-4000-8000-000000000021",
+        "type": "urn:entity",
+        "subtype": "urn:entity:movie",
+        "properties": { "release_year": 1963 },
+        "popularity": 1.7,
+        "query": { "affinity": 0.8 }
+      }
+    ]
+  },
+  "query": { "locality": { "signal": {} } },
+  "duration": 34
+}

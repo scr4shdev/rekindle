@@ -1,0 +1,11 @@
+{
+  "success": true,
+  "duration": 0.02,
+  "results": {
+    "tags": [
+      { "id": "urn:tag:genre:music:60s", "name": "60s", "type": "urn:tag:genre:music", "popularity": 0.7 },
+      { "tag_id": "urn:tag:genre:music:sixties_pop", "name": "Sixties Pop", "subtype": "urn:tag:genre:music" },
+      { "id": "not-a-tag", "name": "broken" }
+    ]
+  }
+}

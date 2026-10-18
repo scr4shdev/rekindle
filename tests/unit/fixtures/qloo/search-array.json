@@ -1,0 +1,27 @@
+{
+  "success": true,
+  "duration": 0.08,
+  "results": [
+    {
+      "entity_id": "00000000-0000-4000-8000-000000000001",
+      "name": "Frank Sinatra",
+      "types": ["urn:entity:artist"],
+      "popularity": 0.99,
+      "disambiguation": "American singer",
+      "properties": {
+        "date_of_birth": "1915-12-12",
+        "image": { "url": "https://images.qloo.com/i/00000000-0000-4000-8000-000000000001-420x-auto.jpg" },
+        "short_description": "American singer and actor"
+      },
+      "tags": [{ "id": "urn:tag:genre:music:jazz", "name": "Jazz", "type": "urn:tag:genre:music" }]
+    },
+    {
+      "entity_id": "00000000-0000-4000-8000-000000000002",
+      "name": "Frank Sinatra Jr.",
+      "types": ["urn:entity:artist"],
+      "popularity": 0.41
+    },
+    { "entity_id": "00000000-0000-4000-8000-000000000003", "name": "Unknown type thing", "types": ["urn:entity:sports_team"] },
+    { "name": "No id at all", "types": ["urn:entity:artist"] }
+  ]
+}

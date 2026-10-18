@@ -1,0 +1,26 @@
+{
+  "success": true,
+  "results": {
+    "entities": [
+      {
+        "id": "00000000-0000-4000-8000-000000000010",
+        "name": "La dolce vita",
+        "type": "urn:entity",
+        "subtype": "urn:entity:movie",
+        "popularity": "0.87",
+        "properties": {
+          "release_date": "1960-02-05",
+          "short_descriptions": [
+            { "value": "film di Federico Fellini", "languages": ["it"] },
+            { "value": "1960 film by Federico Fellini", "languages": ["en"] }
+          ]
+        }
+      },
+      {
+        "entity_id": "00000000-0000-4000-8000-000000000011",
+        "name": "Pong",
+        "subtype": "urn:entity:video_game"
+      }
+    ]
+  }
+}

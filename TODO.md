@@ -25,9 +25,9 @@ Add `BLOCKED: contract change needed: <file> <what and why> (<worker>, <date>)` 
 ## W-CORE: adapters, agent loop, API
 
 ### Epic C1: Cache adapters (`src/lib/adapters/cache/`)
-- [todo] C1.1 `MemoryCache` (TTL plus a bounded LRU, max entries as a documented module constant)
+- [done] C1.1 `MemoryCache` (TTL plus a bounded LRU, max entries as a documented module constant)
   AC: implements `CachePort`; expired entries are misses; unit tests with fake timers.
-- [todo] C1.2 `UpstashCache` and `LayeredCache` (memory in front of Upstash)
+- [done] C1.2 `UpstashCache` and `LayeredCache` (memory in front of Upstash)
   AC: `sensitive: true` values are never sent to Upstash; Upstash errors degrade to a miss plus a warn log (never throw);
   JSON round-trip; tests with a fake Redis client.
 

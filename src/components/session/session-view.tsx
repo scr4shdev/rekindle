@@ -151,7 +151,7 @@ export function SessionView() {
             {!streaming && (
               <Link
                 href={`/compare?persona=${comparePersona}`}
-                className={cn(buttonVariants({ variant: "ghost", size: plan ? "lg" : "default" }), "px-3 sm:px-6")}
+                className={cn(buttonVariants({ variant: "ghost", size: plan ? "lg" : "default" }), "h-auto min-h-12 shrink px-3 py-2 whitespace-normal sm:px-6")}
                 data-icon="inline-start"
               >
                 <ScaleIcon aria-hidden />
@@ -180,6 +180,7 @@ export function SessionView() {
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] print:block">
         <ReasoningTrace view={view} className="print:hidden lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)]" />
         <PlanTimeline
+          className={cn(plan && "order-first lg:order-none")}
           view={view}
           language={resolved.request.person.sessionLanguage ?? "en"}
           caregiverLanguage={resolved.request.person.caregiverLanguage ?? "en"}

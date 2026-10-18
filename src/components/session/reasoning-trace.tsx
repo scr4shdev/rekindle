@@ -48,7 +48,7 @@ export function ReasoningTrace({ view, className }: { view: SessionView; classNa
       data-testid="reasoning-trace"
     >
       <header className="flex flex-col gap-3 border-b border-border bg-paper-deep px-5 py-4">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
           <h2 id="trace-title" className="text-xl font-semibold">
             {tr.title}
           </h2>

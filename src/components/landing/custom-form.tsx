@@ -92,7 +92,7 @@ export function CustomForm() {
         e.preventDefault();
         submit(e.currentTarget, "session");
       }}
-      className="grid gap-6 rounded-3xl border border-border bg-card p-5 shadow-paper sm:p-8"
+      className="grid grid-cols-1 gap-6 rounded-3xl border border-border bg-card p-5 shadow-paper sm:p-8"
       aria-describedby={hasErrors ? `${id}-errors` : undefined}
       data-testid="custom-form"
     >
@@ -112,6 +112,7 @@ export function CustomForm() {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder={t.notesPlaceholder}
+              className="field-sizing-fixed"
               rows={5}
             />
             <span className="text-right text-sm text-muted-foreground" aria-live="polite">
@@ -224,7 +225,7 @@ function FormField({
 }) {
   const describedBy = [hint && `${id}-hint`, error && `${id}-error`].filter(Boolean).join(" ") || undefined;
   return (
-    <div className="grid content-start gap-2">
+    <div className="grid min-w-0 content-start gap-2">
       <Label htmlFor={id}>{label}</Label>
       {children({ id, "aria-invalid": error ? true : undefined, "aria-describedby": describedBy })}
       {hint && (

@@ -198,7 +198,7 @@ export const en = {
   compare: {
     eyebrow: "Comparison",
     title: (name: string) => `Same notes about ${name}, two planners`,
-    lead: "On the left, the language model alone. On the right, the same model with every idea checked against Qloo's taste graph, expanded by taste affinity, and filtered to their era.",
+    lead: "The language model alone, next to the same model with every idea checked against Qloo's taste graph, expanded by taste affinity, and filtered to their era.",
     llmOnly: "Language model alone",
     grounded: "Grounded in Qloo",
     scoreTitle: "What grounding adds",

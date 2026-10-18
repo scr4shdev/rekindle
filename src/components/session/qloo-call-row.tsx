@@ -22,13 +22,13 @@ export function QlooCallRow({ call }: { call: QlooCallRecord }) {
   const entries = Object.entries(call.params);
   return (
     <details className="group rounded-xl border border-border bg-paper-deep" data-testid="qloo-call">
-      <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-3 py-2 text-[0.9rem] [&::-webkit-details-marker]:hidden">
+      <summary className="flex min-h-11 cursor-pointer list-none flex-wrap items-center gap-x-2 gap-y-0.5 px-3 py-2 text-[0.9rem] [&::-webkit-details-marker]:hidden">
         <ChevronRightIcon className="size-4 shrink-0 transition-transform group-open:rotate-90" aria-hidden />
         <DatabaseZapIcon className="size-4 shrink-0 text-ochre" aria-hidden />
         <span className="sr-only">{tr.qlooRequest}:</span>
         <code className="font-mono font-bold">GET {call.endpoint}</code>
-        <span className="min-w-0 truncate text-muted-foreground">{headline(call)}</span>
-        <span className="ml-auto shrink-0 text-right text-muted-foreground tabular-nums">
+        <span className="min-w-0 flex-1 truncate text-muted-foreground">{headline(call)}</span>
+        <span className="ml-auto text-right text-muted-foreground tabular-nums">
           {tr.results(call.resultCount)} · {Math.round(call.durationMs)} ms
         </span>
       </summary>

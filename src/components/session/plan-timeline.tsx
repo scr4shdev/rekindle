@@ -5,8 +5,19 @@ import { StepCard } from "@/components/session/step-card";
 import type { SessionView } from "@/components/session/view-state";
 import { Badge } from "@/components/ui/badge";
 import { getMessages } from "@/i18n";
+import { cn } from "@/lib/utils";
 
-export function PlanTimeline({ view, language, caregiverLanguage }: { view: SessionView; language: string; caregiverLanguage: string }) {
+export function PlanTimeline({
+  view,
+  language,
+  caregiverLanguage,
+  className,
+}: {
+  view: SessionView;
+  language: string;
+  caregiverLanguage: string;
+  className?: string;
+}) {
   const t = getMessages().session;
   const ts = getMessages().step;
   const tp = getMessages().print;
@@ -14,7 +25,7 @@ export function PlanTimeline({ view, language, caregiverLanguage }: { view: Sess
   const composing = !plan && view.steps.length > 0;
   const minutes = plan?.totalMinutes ?? view.steps.reduce((n, s) => n + s.durationMin, 0);
   return (
-    <section aria-labelledby="plan-title" className="flex flex-col gap-4" data-testid="plan-timeline" aria-busy={view.status === "streaming"}>
+    <section aria-labelledby="plan-title" className={cn("flex flex-col gap-4", className)} data-testid="plan-timeline" aria-busy={view.status === "streaming"}>
       {plan && (
         <div className="hidden print:block">
           <p className="text-sm tracking-wide uppercase">{tp.sheet}</p>

@@ -84,7 +84,7 @@ export function CompareView() {
   const a = metrics(llm.view);
   const b = metrics(grounded.view);
   const rows: { label: string; llm: string; grounded: string; win: boolean }[] = [
-    { label: t.metrics.verified, llm: t.unchecked, grounded: String(b.verified), win: b.verified > 0 },
+    { label: t.metrics.verified, llm: "", grounded: String(b.verified), win: b.verified > 0 },
     { label: t.metrics.discoveries, llm: String(a.discoveries), grounded: String(b.discoveries), win: b.discoveries > a.discoveries },
     { label: t.metrics.caught, llm: String(a.caught), grounded: String(b.caught), win: b.caught > a.caught },
     { label: t.metrics.anchored, llm: t.of(a.anchored, a.steps), grounded: t.of(b.anchored, b.steps), win: b.anchored > a.anchored },
@@ -108,17 +108,17 @@ export function CompareView() {
         <h2 id="score-title" className="border-b border-border bg-paper-deep px-5 py-4 text-xl font-semibold sm:px-6">
           {t.scoreTitle}
         </h2>
-        <table className="w-full text-left" data-testid="compare-score">
+        <table className="w-full table-fixed text-left" data-testid="compare-score">
           <thead>
             <tr className="text-[0.95rem] text-muted-foreground">
-              <th scope="col" className="px-5 py-3 font-semibold sm:px-6">
+              <th scope="col" className="w-[44%] px-4 py-3 font-semibold sm:w-1/2 sm:px-6">
                 <span className="sr-only">{t.scoreTitle}</span>
               </th>
-              <th scope="col" className="px-3 py-3 text-center font-semibold">
+              <th scope="col" className="px-2 py-3 text-center text-sm leading-tight font-semibold sm:px-3 sm:text-base">
                 <BotIcon className="mx-auto mb-1 size-5" aria-hidden />
                 {t.llmOnly}
               </th>
-              <th scope="col" className="px-3 py-3 text-center font-semibold text-sage">
+              <th scope="col" className="px-2 py-3 text-center text-sm leading-tight font-semibold text-sage sm:px-3 sm:text-base">
                 <SearchCheckIcon className="mx-auto mb-1 size-5" aria-hidden />
                 {t.grounded}
               </th>
@@ -127,11 +127,13 @@ export function CompareView() {
           <tbody>
             {rows.map((row) => (
               <tr key={row.label} className="border-t border-border">
-                <th scope="row" className="px-5 py-3 font-semibold sm:px-6">
+                <th scope="row" className="px-4 py-3 text-[0.95rem] leading-snug font-semibold sm:px-6 sm:text-base">
                   {row.label}
                 </th>
-                <td className="px-3 py-3 text-center font-heading text-xl text-muted-foreground tabular-nums sm:text-2xl">{row.llm}</td>
-                <td className={cn("px-3 py-3 text-center font-heading text-xl tabular-nums sm:text-2xl", row.win && "bg-sage-soft/60 font-semibold text-sage-ink")}>
+                <td className="px-2 py-3 text-center font-heading text-lg text-muted-foreground tabular-nums sm:px-3 sm:text-2xl">
+                  {row.llm || <span className="font-sans text-sm font-semibold sm:text-base">{t.unchecked}</span>}
+                </td>
+                <td className={cn("px-2 py-3 text-center font-heading text-lg tabular-nums sm:px-3 sm:text-2xl", row.win && "bg-sage-soft/60 font-semibold text-sage-ink")}>
                   {row.grounded}
                 </td>
               </tr>
@@ -145,7 +147,7 @@ export function CompareView() {
         <ComparePlan title={t.grounded} icon="grounded" view={grounded.view} />
       </div>
 
-      <Link href={`/session?persona=${resolved.persona}`} className={cn(buttonVariants({ size: "lg" }), "w-fit")} data-icon="inline-end">
+      <Link href={`/session?persona=${resolved.persona}`} className={cn(buttonVariants({ size: "lg" }), "h-auto min-h-14 w-fit shrink py-3 whitespace-normal")} data-icon="inline-end">
         {t.openGrounded}
         <ArrowRightIcon aria-hidden />
       </Link>

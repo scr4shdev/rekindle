@@ -41,6 +41,8 @@ export function insightsParams(query: TasteInsightsQuery, defaultTake: number): 
   const params: QlooParams = { "filter.type": query.type };
   put(params, "signal.interests.entities", query.seedEntityIds);
   put(params, "signal.interests.tags", query.seedTagIds);
+  // Several tags (e.g. 50s, 60s, 70s) mean "any of these", not Qloo's default intersection.
+  if ((query.seedTagIds?.length ?? 0) > 1) params["operator.signal.interests.tags"] = "union";
   put(params, "signal.location.query", query.locationQuery);
   put(params, "signal.demographics.age", query.ageBucket);
 

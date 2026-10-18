@@ -75,6 +75,8 @@ describe("runSession (grounded, mock mode)", () => {
       expect(a.seedQlooIds?.length).toBeGreaterThan(0);
       expect(verified.filter((v) => v.qlooId === a.qlooId)).toHaveLength(1);
     }
+    const artistCall = ofType(events, "qloo_call").find((e) => e.call.params["filter.type"] === "urn:entity:artist")!;
+    expect(artistCall.call.params["operator.signal.interests.tags"]).toBe("union");
     const movieCall = ofType(events, "qloo_call").find((e) => e.call.params["filter.type"] === "urn:entity:movie")!;
     expect(movieCall.call.params).toMatchObject({
       "filter.release_year.min": 1948,

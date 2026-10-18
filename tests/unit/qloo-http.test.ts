@@ -107,6 +107,11 @@ describe("insights params", () => {
     const book = insightsParams({ type: "urn:entity:book", era: { publicationYear: { max: 1970 } } }, 10);
     expect(book["filter.publication_year.max"]).toBe(1970);
     expect(toUrlSearchParams(movie).get("signal.interests.entities")).toBe("a,b");
+    const decades = insightsParams({ type: "urn:entity:artist", seedTagIds: ["urn:tag:genre:music:50s", "urn:tag:genre:music:60s"] }, 10);
+    expect(decades["operator.signal.interests.tags"]).toBe("union");
+    expect(toUrlSearchParams(decades).get("signal.interests.tags")).toBe("urn:tag:genre:music:50s,urn:tag:genre:music:60s");
+    const single = insightsParams({ type: "urn:entity:artist", seedTagIds: ["urn:tag:genre:music:60s"] }, 10);
+    expect(single).not.toHaveProperty("operator.signal.interests.tags");
   });
 });
 

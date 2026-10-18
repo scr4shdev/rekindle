@@ -70,6 +70,11 @@ describe("MockQloo", () => {
     expect(res.items.map((e) => e.name)).toEqual(["The Beatles", "The Rolling Stones"]);
   });
 
+  it("records the same params as the HTTP adapter, including the tag union operator", async () => {
+    const res = await qloo.insights({ type: "urn:entity:artist", seedEntityIds: ["SAMPLE-ARTIST-SINATRA"], seedTagIds: ["urn:tag:genre:music:50s", "urn:tag:genre:music:60s"] }, ctx);
+    expect(res.request.params["operator.signal.interests.tags"]).toBe("union");
+  });
+
   it("tags, lookup and strict query parsing", async () => {
     const tags = await qloo.searchTags({ query: "60s", tagTypes: ["urn:tag:genre:music"] }, ctx);
     expect(tags.items).toEqual([{ id: "urn:tag:genre:music:60s", name: "60s", type: "urn:tag:genre:music" }]);

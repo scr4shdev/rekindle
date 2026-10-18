@@ -85,7 +85,7 @@ Add `BLOCKED: contract change needed: <file> <what and why> (<worker>, <date>)` 
 - [done] C5.8 Degradation. AC: Qloo failure gives a recoverable `error` and the session continues as llm-only steps; LLM failure gives a fatal `error` then `done`.
 
 ### Epic C6: Composition and API routes
-- [todo] C6.1 `src/lib/composition.ts` (`getAgentDeps()` singleton from config) and `GET /api/health`
+- [done] C6.1 `src/lib/composition.ts` (`getAgentDeps()` singleton from config) and `GET /api/health`
 - [todo] C6.2 `POST /api/session` (zod validation with a 400 JSON before streaming, 64 KB limit, `x-trace-id`, NDJSON stream, `maxDuration = 60`)
 - [todo] C6.3 `POST /api/session/replan`
 - [todo] C6.4 Route tests (call the handlers with `Request` objects in mock mode; assert the event order rules from docs/api.md)

@@ -116,12 +116,12 @@ with two implementations: `fetch` + `readEventStream`, and a sample replay (`?so
 ### Epic U2: Landing
 - [done] U2.1 Hero and value proposition (non-medical wording), 3 one-tap persona cards from `PERSONAS`
   AC: first screen shows the promise ("nothing is stored"), three large persona cards linking to `/session?persona=<slug>`, form below.
-- [in-progress] U2.2 Custom form (notes, birth year, birthplace, session/caregiver language, minutes) validated with the `PersonInput` schema; grounded vs LLM-only toggle
+- [done] U2.2 Custom form (notes, birth year, birthplace, session/caregiver language, minutes) validated with the `PersonInput` schema; grounded vs LLM-only toggle
   AC: zod `PersonInput.safeParse` with inline accessible errors (`aria-invalid`, `aria-describedby`); input is kept only in client memory
   (module store, never in the URL or storage) and handed to `/session?persona=custom`.
 
 ### Epic U3: Session page (streaming)
-- [todo] U3.1 `useAgentStream` hook plus an events-to-view-state reducer (unit-safe, pure); sample replay source
+- [in-progress] U3.1 `useAgentStream` hook plus an events-to-view-state reducer (unit-safe, pure); sample replay source
   AC: `AgentEventSource` interface (`src/components/session/source.ts`) with `apiSource` (fetch + `readEventStream`, JSON 4xx mapped
   to a safe message) and `sampleSource` (replays recorded events with their timing, `?speed=`); `?source=sample|api`, default `auto`
   (API, falling back to the recording for Maria when the route is missing); reducer is pure and tested in `tests/e2e/view-state.spec.ts`.

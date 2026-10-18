@@ -1,4 +1,5 @@
 import { HeartHandshakeIcon, LockKeyholeIcon, SearchCheckIcon } from "lucide-react";
+import { CustomForm } from "@/components/landing/custom-form";
 import { PersonaCards } from "@/components/landing/persona-cards";
 import { getMessages } from "@/i18n";
 
@@ -38,6 +39,16 @@ export default function Home() {
           <p className="text-muted-foreground">{t.personasLead}</p>
         </div>
         <PersonaCards />
+      </section>
+
+      <section className="flex flex-col gap-4" aria-labelledby="custom-title" id="custom">
+        <div className="flex flex-col gap-1">
+          <h2 id="custom-title" className="text-2xl font-semibold sm:text-3xl">
+            {t.customTitle}
+          </h2>
+          <p className="text-muted-foreground">{t.customLead}</p>
+        </div>
+        <CustomForm />
       </section>
 
       <section aria-labelledby="how-title" className="rounded-3xl border border-border bg-paper-deep p-6 sm:p-8">

@@ -59,7 +59,7 @@ test.describe("view-state reducer", () => {
     let view = viewFromEvents(SAMPLE_GROUNDED_EVENTS);
     view = reduceView(view, { type: "replan-start" });
     expect(view.replanning).toBe(true);
-    for (const event of SAMPLE_REPLAN_EVENTS) view = reduceView(view, { type: "event", event });
+    for (const event of SAMPLE_REPLAN_EVENTS) view = reduceView(view, { type: "event", event, stream: "replan" });
     expect(view.replanning).toBe(false);
     expect(view.plan?.meta.revision).toBe(1);
     expect(view.adaptations).toBe(1);
@@ -70,6 +70,19 @@ test.describe("view-state reducer", () => {
     expect(replan?.status).toBe("completed");
     // The session summary is untouched by the replan stream.
     expect(view.done?.traceId).toBe("sample-trace-maria");
+  });
+
+  test("a replan that overlaps the end of the session stream keeps both outcomes", async () => {
+    const planIndex = SAMPLE_GROUNDED_EVENTS.findIndex((e) => e.type === "plan");
+    let view = viewFromEvents(SAMPLE_GROUNDED_EVENTS.slice(0, planIndex + 1));
+    expect(view.status).toBe("streaming");
+    view = reduceView(view, { type: "replan-start" });
+    for (const event of SAMPLE_REPLAN_EVENTS) view = reduceView(view, { type: "event", event, stream: "replan" });
+    for (const event of SAMPLE_GROUNDED_EVENTS.slice(planIndex + 1)) view = reduceView(view, { type: "event", event, stream: "session" });
+    expect(view.status).toBe("done");
+    expect(view.replanning).toBe(false);
+    expect(view.plan?.meta.revision).toBe(1);
+    expect(view.adaptations).toBe(1);
   });
 
   test("a fatal error event ends in the error state, a recoverable one only warns", () => {

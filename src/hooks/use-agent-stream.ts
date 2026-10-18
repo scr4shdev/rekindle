@@ -27,33 +27,42 @@ function toFailure(error: unknown, signal: AbortSignal): StreamFailure {
 export function useAgentStream(source: AgentEventSource) {
   const [view, dispatch] = useReducer(reduceView, undefined, initialView);
   const [servedBy, setServedBy] = useState<SourceKind | undefined>();
-  const controller = useRef<AbortController | null>(null);
+  // Separate controllers: a replan may start while the session stream is still closing.
+  const sessionCtrl = useRef<AbortController | null>(null);
+  const replanCtrl = useRef<AbortController | null>(null);
 
-  const consume = useCallback(async (events: AsyncIterable<AgentEvent>, ctrl: AbortController, kind: "session" | "replan") => {
+  const consume = useCallback(async (events: AsyncIterable<AgentEvent>, ctrl: AbortController, stream: "session" | "replan") => {
     // A stream superseded by a newer one (restart, or React re-running effects) goes quiet.
-    const current = () => controller.current === ctrl;
+    const slot = stream === "session" ? sessionCtrl : replanCtrl;
+    const current = () => slot.current === ctrl;
     const { signal } = ctrl;
     let sawDone = false;
     try {
       for await (const event of events) {
         if (signal.aborted || !current()) break;
         if (event.type === "done") sawDone = true;
-        dispatch({ type: "event", event });
+        dispatch({ type: "event", event, stream });
       }
       if (signal.aborted) throw new DOMException("Aborted", "AbortError");
       if (!sawDone && current()) throw new Error("Stream ended early");
     } catch (error) {
       if (!current()) return;
       const failure = toFailure(error, signal);
-      dispatch(kind === "session" ? { type: "failed", failure } : { type: "replan-failed", failure });
+      dispatch(stream === "session" ? { type: "failed", failure } : { type: "replan-failed", failure });
+    } finally {
+      if (current()) slot.current = null;
     }
   }, []);
 
   const start = useCallback(
     (request: SessionRequestDraft) => {
-      controller.current?.abort();
+      for (const slot of [sessionCtrl, replanCtrl]) {
+        const old = slot.current;
+        slot.current = null;
+        old?.abort();
+      }
       const ctrl = new AbortController();
-      controller.current = ctrl;
+      sessionCtrl.current = ctrl;
       setServedBy(undefined);
       dispatch({ type: "start" });
       void consume(source.session(request, { signal: ctrl.signal, onResolved: setServedBy }), ctrl, "session");
@@ -63,22 +72,25 @@ export function useAgentStream(source: AgentEventSource) {
 
   const replan = useCallback(
     (request: ReplanRequestDraft) => {
-      controller.current?.abort();
+      replanCtrl.current?.abort();
       const ctrl = new AbortController();
-      controller.current = ctrl;
+      replanCtrl.current = ctrl;
       dispatch({ type: "replan-start" });
       void consume(source.replan(request, { signal: ctrl.signal }), ctrl, "replan");
     },
     [consume, source],
   );
 
-  const cancel = useCallback(() => controller.current?.abort(), []);
+  /** Stop whatever is streaming (the replan if one is running, else the session). */
+  const cancel = useCallback(() => (replanCtrl.current ?? sessionCtrl.current)?.abort(), []);
 
   useEffect(
     () => () => {
-      const ctrl = controller.current;
-      controller.current = null;
-      ctrl?.abort();
+      for (const slot of [sessionCtrl, replanCtrl]) {
+        const ctrl = slot.current;
+        slot.current = null;
+        ctrl?.abort();
+      }
     },
     [],
   );

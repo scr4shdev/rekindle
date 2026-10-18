@@ -78,7 +78,8 @@ export interface SessionView {
 
 export type ViewAction =
   | { type: "start" }
-  | { type: "event"; event: AgentEvent }
+  /** `stream` says which stream produced the event (they can overlap: a replan may start before the session stream closes). */
+  | { type: "event"; event: AgentEvent; stream?: "session" | "replan" }
   | { type: "failed"; failure: StreamFailure }
   | { type: "replan-start" }
   | { type: "replan-failed"; failure: StreamFailure };
@@ -130,7 +131,7 @@ function sameStep(a: SessionStep, b: SessionStep): boolean {
   return JSON.stringify({ ...a, order: 0 }) === JSON.stringify({ ...b, order: 0 });
 }
 
-function applyEvent(view: SessionView, event: AgentEvent): SessionView {
+function applyEvent(view: SessionView, event: AgentEvent, fromReplan: boolean): SessionView {
   switch (event.type) {
     case "phase": {
       const key = keyFor(view, event.phase);
@@ -175,7 +176,7 @@ function applyEvent(view: SessionView, event: AgentEvent): SessionView {
         phases: addItem(view, keyFor(view, event.phase), { kind: "qloo_call", seq: event.seq, call: event.call }),
       };
     case "step":
-      if (view.replanning) return { ...view, changedStepIds: [...new Set([...view.changedStepIds, event.step.id])] };
+      if (fromReplan) return { ...view, changedStepIds: [...new Set([...view.changedStepIds, event.step.id])] };
       return { ...view, steps: upsertStep(view.steps, event.step) };
     case "plan": {
       const previous = view.plan;
@@ -209,11 +210,13 @@ function applyEvent(view: SessionView, event: AgentEvent): SessionView {
       });
       return event.recoverable
         ? { ...view, phases, warnings: [...view.warnings, failure] }
-        : { ...view, phases, failure: view.replanning ? view.failure : failure, warnings: view.replanning ? [...view.warnings, failure] : view.warnings };
+        : fromReplan
+          ? { ...view, phases, warnings: [...view.warnings, failure] }
+          : { ...view, phases, failure };
     }
     case "done": {
       const { traceId, durationMs, stats } = event;
-      if (view.replanning) return { ...view, replanning: false };
+      if (fromReplan) return { ...view, replanning: false };
       return { ...view, done: { traceId, durationMs, stats }, status: view.failure ? "error" : "done" };
     }
   }
@@ -224,13 +227,12 @@ export function reduceView(view: SessionView, action: ViewAction): SessionView {
     case "start":
       return { ...initialView(), status: "streaming" };
     case "event":
-      return applyEvent(view, action.event);
+      return applyEvent(view, action.event, action.stream === "replan");
     case "failed":
       return {
         ...view,
         status: action.failure.code === "cancelled" ? "cancelled" : "error",
         failure: action.failure.code === "cancelled" ? view.failure : action.failure,
-        replanning: false,
       };
     case "replan-start": {
       const replans = view.replans + 1;

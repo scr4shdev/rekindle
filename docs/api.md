@@ -33,6 +33,7 @@ Content-Type: application/json
 |---|---|
 | Stamping | `seq` starts at 0 and increments by 1; `t` is ms since the stream started (`createEventStamper`). |
 | Phases | Each phase emits `phase{status:"started"}` then `phase{status:"completed"}` (with `durationMs`, `counts`), or a single `phase{status:"skipped"}`. Phase order: `parse, propose, verify, expand, critique, compose` (session) or `replan` (replan). |
+| Provenance | Every Qloo request emits one `qloo_call` event before the `verified`/`rejected` events it produced. Its params contain only cultural anchors, never personal data or the key. |
 | Narration | `phase.message` and `note.text` are short, human-readable, in the caregiver language, and contain no secrets. They are the "reasoning trace". |
 | Anchors | Session stream: exactly one `anchors` event, right after parse. The client keeps it for replans. |
 | Plan | Exactly one `plan` event per successful stream. It is authoritative: `step` events are previews for progressive rendering, and the client replaces its steps with `plan.steps` when `plan` arrives. |
@@ -51,6 +52,7 @@ Event types (`AgentEvent`, discriminated on `type`):
 | `rejected` | `item: RejectedItem` (`kind`, `reason`, `phase`) | verify, critique, replan |
 | `step` | `step: SessionStep` | compose, replan |
 | `plan` | `plan: SessionPlan` | compose, replan |
+| `qloo_call` | `phase, call: QlooCallRecord` (endpoint, params as sent, resultCount, durationMs, cached, source) for every Qloo request: request-to-result provenance | verify, expand, replan |
 | `error` | `code, message, recoverable, phase?` | any |
 | `done` | `traceId, durationMs, stats` | last |
 

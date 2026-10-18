@@ -48,3 +48,4 @@ next-env.d.ts
 
 # allow the documented env template
 !.env.example
+/.qloo-recordings/

@@ -31,10 +31,12 @@ Sources (all fetched 2026-10-18; ReadMe pages read via the `.md` suffix, e.g. `h
 | Array params | Comma-separated in one query value (`style: form, explode: false`) | CONFIRMED (harness joins arrays with `,`) |
 | Image host | `https://images.qloo.com/i/<UUID>-420x-auto.jpg` (staging examples use `staging.images.qloo.com`, `-420x-outside.jpg`) | CONFIRMED as examples. The size suffix may vary |
 
-**Base-URL conflict (UNCERTAIN):** the current hackathon kit's harness (`@qloo/qloo-harness@0.1.26`) defaults to
-`https://api.qloo.com` and treats only that host as "official" (`isOfficialQlooBaseUrl`). It never mentions `hackathon.api.qloo.com`.
-The docs dev guide says hackathon keys work **only** on `hackathon.api.qloo.com`. Make the base URL an env var
-(`QLOO_BASE_URL`, default `https://hackathon.api.qloo.com`) and test both with the issued key. A wrong host returns **401**.
+**Base URL: RESOLVED.** The official hackathon email (2026-10-18) confirms that hackathon keys work **only** on
+`https://hackathon.api.qloo.com`. This is the default `QLOO_BASE_URL` in `src/lib/config.ts`. The harness
+(`@qloo/qloo-harness@0.1.26`) defaults to `https://api.qloo.com` and treats only that host as "official". To use
+`qloo exec` / `qloo api` / `qloo mcp` with a hackathon key, set **both** `QLOO_BASE_URL=https://hackathon.api.qloo.com`
+and `QLOO_TRUSTED_BASE_URL=https://hackathon.api.qloo.com`. Without the trusted URL the harness refuses the custom host
+(`allowCustomBaseUrl` check in its API client). A wrong host returns **401**.
 
 **Rate limits and quotas:** no numbers are published. The dev guide says: "Hackathon API keys have rate and monthly quota limits
 set high enough... limits can be raised on a per-user basis" (ask in Discord #api-help). Keys deactivate after judging.
@@ -341,7 +343,7 @@ It also says to present results as aggregate affinities, not as claims about the
 ---
 
 ## 7. UNCERTAIN: validate once a key arrives
-1. Which base URL the issued key works on: `hackathon.api.qloo.com` (docs) or `api.qloo.com` (kit harness default). Expect a 401 on the wrong one.
+1. ~~Which base URL the issued key works on~~ RESOLVED by the hackathon email: `https://hackathon.api.qloo.com` only (see section 1).
 2. The exact `/search` and `/entities` item shape: `entity_id` vs `id`, `subtype` vs `types[]`, presence of `properties.image.url`,
    `popularity`, `properties.release_year`, and whether `results` is an array or `results.entities`.
 3. `urn:entity:videogame` vs `urn:entity:video_game`. Whether `urn:entity:destination` works in insights.
@@ -354,3 +356,107 @@ It also says to present results as aggregate affinities, not as claims about the
 10. Whether `/v2/tags` accepts `filter.parents.types=urn:entity:artist` (the enum lists only `urn:audience:*`).
 11. The default `take` for `/search`. Actual rate limit and quota numbers. `Retry-After` on 429.
 12. Whether the `/search` `types` param accepts multiple comma-separated values (the OpenAPI example implies yes).
+
+---
+
+## 8. Official harness (`@qloo/qloo-harness`) and how Rekindle uses it
+
+Source: `~/qloo-hackathon-kit` (cloned 2026-10-18: README, `docs/API_ACCESS.md`, `docs/SAFE_USE.md`, `docs/SUBMISSION.md`,
+`starter/cli-workflow`, `starter/mcp-client`, `starter/agent-chat`) and the type declarations and `dist/` of
+`@qloo/qloo-harness@0.1.26` (installed in a scratch folder, not in this repo).
+
+**Surfaces.** `qloo explore` (chat agent), `qloo exec <workflow>` (one validated workflow, JSON out), `qloo api <endpoint>`
+(raw endpoint call), `qloo mcp` (local stdio MCP server). All use the same credential and quota. The kit's API_ACCESS.md
+lists all four as supported surfaces; the coordinator's summary of the email named `qloo exec` and `qloo mcp`.
+`integrate`, `plan` and `build` modes, hosted MCP endpoints and the legacy `qloo api mcp` are excluded.
+Install: `npm install --global @qloo/qloo-harness` (Node 22.19 or newer; version 0.1.26 or newer), then `qloo setup --qloo`
+or `QLOO_API_KEY` in the environment.
+
+`qloo exec --help` (verified locally, no key needed):
+```
+Usage:
+  qloo exec <operation> --input '<json>'
+  qloo exec <operation> --input-file <path>
+  printf '<json>' | qloo exec <operation>
+  qloo exec <operation> --input '<json>' --jsonl
+Operations:
+  recommend, rank, describe, where_popular, compare_audiences, entity_tags, audience_demographics, trends, find_tags
+The execution transport is the direct Qloo API. No CLI or MCP fallback occurs.
+```
+
+### The 9 workflows (input schemas from `QLOO_WORKFLOW_INPUT_SCHEMAS`; MCP tool name is `qloo_<operation>`)
+
+| Workflow | Input | Calls | Rekindle relevance |
+|---|---|---|---|
+| `find_tags` | `query`, `semantic?`, `limit?` (1-20) | `/v2/tags` | Decade/genre tags (`urn:tag:genre:music:60s`) for artists, which have no year filter |
+| `describe` | `entity` (name or id), `type?` | `/search` (+ resolution) | Same job as our VERIFY step |
+| `recommend` | `target_type`, `signals?` (entity names/ids), `signal_tags?`, `signal_tags_operator?`, `signal_location?`, `demographic?`, `filter_location?`, `include_tags?`, `exclude_tags?`, `explain?`, `limit?` | `/v2/insights` | Same job as our EXPAND step, but **no era filters** |
+| `rank` | `options[]`, `option_type`, `signals?`, `signal_location?`, `demographic?`, `include_tags?`, `exclude_tags?` | `/v2/insights` with `filter.results.entities` | Could re-rank a shortlist |
+| `where_popular` | `entity`, `entity_type?`, `within`, `limit?` | heatmap | Not needed |
+| `compare_audiences` | `group_a[]`, `group_b[]`, `target_type?`, `limit?` | `/v2/analysis/compare` | Not needed |
+| `entity_tags` | `entities[]`, `entity_type?`, `limit?` | insights `filter.type=urn:tag` | Optional: themes for prompts |
+| `audience_demographics` | `entity`, `entity_type?`, `limit?` | insights `filter.type=urn:demographics` | Not needed |
+| `trends` | `entities[]`, `entity_type`, `start_date`, `end_date`, `limit?` | `/v2/trending` | Not needed |
+
+What `recommend` actually sends (read from `dist/qloo-tools.js`): `filter.type`, `take` (default limit), resolved
+`signal.interests.entities`, `signal.interests.tags` + `operator.signal.interests.tags` (default `intersection`),
+`signal.location.query`, `signal.demographics.gender/age` (demographic **requires** `signal_location`),
+`filter.location.query`, `filter.tags` + operator (`union`), `filter.exclude.tags` + operator, `feature.explainability=true` by default.
+It sends **no** `filter.release_year.*`, `filter.publication_year.*`, `filter.date_of_birth.*` or `bias.trends`.
+
+**Result envelope** (same for `exec`, `mcp`, `explore`; `schema_version: "1.0-preview.1"`):
+```jsonc
+{ "schema_version": "1.0-preview.1", "operation": "recommend",
+  "status": "ok",            // ok | empty | needs_input | partial | degraded | error
+  "summary": "…",
+  "interpretation": { "target_type": "urn:entity:movie", "signals": [ /* resolved inputs */ ] },
+  "results": [ { "entity_id": "…", "name": "…", "type": "urn:entity", "subtype": "urn:entity:movie",
+                 "popularity": 0.93, "affinity": 0.97,
+                 "properties": { "release_year": 1954, "image": { "url": "…" }, "short_description": "…" } } ],
+  "result_count": 1,
+  "provenance": { "source": "Qloo API", "endpoint": "/v2/insights",
+                  "documentation": "https://docs.qloo.com/reference/insights-api-deep-dive",
+                  "requests": [ { "method": "GET", "path": "/v2/insights", "query": { /* params */ } } ] },
+  "error": { "code": "QLOO_AUTH", "retryable": false, "recovery": "…" } }   // only when status = error
+```
+Error codes: `QLOO_AUTH, QLOO_RATE_LIMIT, QLOO_TIMEOUT, QLOO_UPSTREAM, QLOO_CONNECT, QLOO_DNS, QLOO_TLS, QLOO_CONTRACT,
+TOOL_INPUT, CANCELLED, HARNESS_INTERNAL, RESOLVER_*`. Entity resolution outcomes: `resolved` (match `identifier | exact | semantic`),
+`ambiguous` (candidates), `not_found`. The kit's guidance: "Do not force a fuzzy tag or entity match"; show resolved matches before relying on them.
+
+### Decision: Rekindle's `TastePort` adapter calls the HTTP API directly
+
+The production adapter (`src/lib/adapters/qloo/http.ts`) calls `https://hackathon.api.qloo.com` with `fetch` from the
+Vercel route handler. It does **not** spawn `qloo exec` or `qloo mcp`, and it does not import the harness package. Reasons:
+1. **Serverless.** The app runs in a Vercel function. A globally installed CLI is not available there, and the MCP starter says:
+   "A browser cannot start `qloo mcp`. Serverless functions are not a supported route." Spawning a process per request
+   would also add cold-start latency inside a 60 s budget.
+2. **Package weight and API surface.** The package root (`dist/index.js`) loads the interactive agent runtime
+   (`@earendil-works/pi-coding-agent`, about 146 MB of node_modules). The workflow executor is not exposed as a light,
+   separately importable module (`exports` only has `.`).
+3. **Era filters.** Rekindle's core value is era correctness. `recommend` cannot send `filter.release_year.*`,
+   `filter.publication_year.*`, `filter.date_of_birth.*` or `bias.trends=off`, which the raw insights API supports.
+4. **Same transport anyway.** `qloo exec` itself says "The execution transport is the direct Qloo API". We send the same
+   documented GET requests with the same `X-Api-Key` credential and quota.
+
+How we stay aligned with the official tooling:
+- We mirror the harness's conventions: comma-joined arrays; retries only on 429/5xx with `Retry-After` and a bounded attempt count;
+  defensive parsing (`entity_id ?? id`, `subtype`, `query.affinity`); exact-match-or-explicitly-disambiguate resolution
+  (never a silent fuzzy match); a `provenance.requests`-style redacted request log (our `qloo_call` events).
+- **Development parity check (W-CORE task C3.4):** `scripts/qloo-probe.ts` runs the persona anchors through
+  `qloo exec describe` / `qloo exec recommend` / `qloo exec find_tags` (the supported surface) **and** through our HTTP adapter,
+  then compares the resolved ids. It runs on a developer machine only and is never imported by the app.
+- The submission (docs/submission-requirements.md) states the workflows used to design and validate, and the direct endpoints used in production.
+
+**Open question for the organizers (UNCERTAIN):** whether direct HTTP calls with the event key from a serverless backend are acceptable,
+given that "supported surfaces" lists only the harness commands. The README of the CLI starter itself documents direct
+API usage through `qloo api`, and the dev guide documents the raw endpoints. Ask in the event support channel before submission.
+
+### Hard data rules (from SAFE_USE.md and the hackathon email)
+- The key stays server-side (`src/lib/config.ts`, server-only). Never in client code, a public config, logs or a demo recording.
+- **Never send personal data to Qloo**: no names, emails, device ids, account ids or location histories. Only cultural anchors:
+  public entity names and ids, tag ids, public place names, years, the `55_and_older` age bucket. Enforced by the strict
+  query schemas and `withPersonalDataGuard` in `src/lib/ports/taste.ts`.
+- Qloo results describe **aggregate** affinities of groups, not an individual's preferences. The UI and README must say so
+  ("people who enjoy X also tend to enjoy Y"), and must keep a Qloo result separate from our own interpretation.
+- Cached Qloo data may be kept server-side but **must not be committed to a public repo**. Recorded live responses go in a
+  git-ignored folder (`.qloo-recordings/`); committed mock fixtures are hand-authored.

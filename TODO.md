@@ -105,40 +105,51 @@ Build against `src/lib/domain/sample-events.ts` until the W-CORE API works (C6.2
 with two implementations: `fetch` + `readEventStream`, and a sample replay (`?source=sample`).
 
 ### Epic U1: Design system
-- [todo] U1.1 Tokens in `globals.css`: warm, calm, era-evocative palette (paper, ink, terracotta, sage), light and dark, WCAG AA contrast
-- [todo] U1.2 Typography: large readable type (base at least 18px), a display serif plus a highly legible sans (e.g. Atkinson Hyperlegible) via `next/font`
-- [todo] U1.3 Restyle the shadcn primitives through the theme so it does not look like default shadcn; app shell (header, footer with
+- [done] U1.1 Tokens in `globals.css`: warm, calm, era-evocative palette (paper, ink, terracotta, sage), light and dark, WCAG AA contrast
+  AC: paper/ink/terracotta/sage/ochre/rose tokens for light and dark (`next-themes`, class strategy); every text pair >= 4.5:1
+  (checked with an oklch contrast script); paper grain background; `prefers-reduced-motion` disables animation.
+- [done] U1.2 Typography: large readable type (base at least 18px), a display serif plus a highly legible sans (e.g. Atkinson Hyperlegible) via `next/font`
+  AC: Fraunces (display) + Atkinson Hyperlegible Next (body) + Atkinson Hyperlegible Mono (Qloo params); root font-size 18px.
+- [done] U1.3 Restyle the shadcn primitives through the theme so it does not look like default shadcn; app shell (header, footer with
   the non-medical disclaimer and the "nothing is stored" promise), `TooltipProvider` and `Toaster` in the layout
+  AC: buttons/inputs at least 48px tall, pill buttons, paper cards with a soft shadow; header with theme toggle; footer with disclaimer
+  and privacy promise; strings from `src/i18n/en.ts`.
   AC (epic): axe has no serious violations; focus rings visible; `prefers-reduced-motion` respected.
 
 ### Epic U2: Landing
-- [todo] U2.1 Hero and value proposition (non-medical wording), 3 one-tap persona cards from `PERSONAS`
-- [todo] U2.2 Custom form (notes, birth year, birthplace, session/caregiver language, minutes) validated with the `PersonInput` schema; grounded vs LLM-only toggle
+- [done] U2.1 Hero and value proposition (non-medical wording), 3 one-tap persona cards from `PERSONAS`
+  AC: first screen shows the promise ("nothing is stored"), three large persona cards linking to `/session?persona=<slug>`, form below.
+- [done] U2.2 Custom form (notes, birth year, birthplace, session/caregiver language, minutes) validated with the `PersonInput` schema; grounded vs LLM-only toggle
+  AC: zod `PersonInput.safeParse` with inline accessible errors (`aria-invalid`, `aria-describedby`); input is kept only in client memory
+  (module store, never in the URL or storage) and handed to `/session?persona=custom`.
 
 ### Epic U3: Session page (streaming)
-- [todo] U3.1 `useAgentStream` hook plus an events-to-view-state reducer (unit-safe, pure); sample replay source
-- [todo] U3.2 Live reasoning trace: phase timeline (started/completed/skipped), notes, candidate, verified and rejected chips with reasons,
+- [done] U3.1 `useAgentStream` hook plus an events-to-view-state reducer (unit-safe, pure); sample replay source
+  AC: `AgentEventSource` interface (`src/components/session/source.ts`) with `apiSource` (fetch + `readEventStream`, JSON 4xx mapped
+  to a safe message) and `sampleSource` (replays recorded events with their timing, `?speed=`); `?source=sample|api`, default `auto`
+  (API, falling back to the recording for Maria when the route is missing); reducer is pure and tested in `tests/e2e/view-state.spec.ts`.
+- [done] U3.2 Live reasoning trace: phase timeline (started/completed/skipped), notes, candidate, verified and rejected chips with reasons,
   expandable `qloo_call` rows (endpoint plus params: the request-to-result evidence); copy frames Qloo results as aggregate
   ("people who enjoy X also tend to enjoy Y")
-- [todo] U3.3 Plan timeline: step cards with an image or era-styled fallback, kind icon, duration, provenance and affinity badges, media hint, prompt and translation
-- [todo] U3.4 Error and degraded states (recoverable vs fatal), cancel and retry
+- [done] U3.3 Plan timeline: step cards with an image or era-styled fallback, kind icon, duration, provenance and affinity badges, media hint, prompt and translation
+- [done] U3.4 Error and degraded states (recoverable vs fatal), cancel and retry
 
 ### Epic U4: Comparison mode
-- [todo] U4.1 Side-by-side grounded vs LLM-only (two parallel streams) with a summary: verified count, anachronisms caught, images, affinity
+- [done] U4.1 Side-by-side grounded vs LLM-only (two parallel streams) with a summary: verified count, anachronisms caught, images, affinity
 
 ### Epic U5: Caregiver session mode
-- [todo] U5.1 One prompt at a time, huge text, step timer, next/prev, translation toggle, keyboard and touch friendly
-- [todo] U5.2 Lit up / no reaction / upset buttons call `POST /api/session/replan` (sample replan when on the sample source); animated plan update
+- [done] U5.1 One prompt at a time, huge text, step timer, next/prev, translation toggle, keyboard and touch friendly
+- [done] U5.2 Lit up / no reaction / upset buttons call `POST /api/session/replan` (sample replan when on the sample source); animated plan update
 
 ### Epic U6: Print, i18n, responsive
-- [todo] U6.1 Print stylesheet (session sheet the caregiver can print)
-- [todo] U6.2 UI strings in `src/i18n/` (en first, structure ready for it/fr), `lang` attributes on prompts
-- [todo] U6.3 Responsive pass (phone first: caregivers use phones)
+- [done] U6.1 Print stylesheet (session sheet the caregiver can print)
+- [done] U6.2 UI strings in `src/i18n/` (en first, structure ready for it/fr), `lang` attributes on prompts
+- [done] U6.3 Responsive pass (phone first: caregivers use phones)
 
 ### Epic U7: E2E (`tests/e2e/`)
-- [todo] U7.1 Persona to session (sample source and mock API), trace and plan render
-- [todo] U7.2 Custom form validation; comparison mode; session mode plus replan
-- [todo] U7.3 axe accessibility checks (`@axe-core/playwright`) on landing, session and session mode
+- [done] U7.1 Persona to session (sample source and mock API), trace and plan render
+- [done] U7.2 Custom form validation; comparison mode; session mode plus replan
+- [done] U7.3 axe accessibility checks (`@axe-core/playwright`) on landing, session and session mode
 
 ---
 

@@ -67,6 +67,7 @@ test.describe("view-state reducer", () => {
     expect(view.adaptations).toBe(1);
     expect(view.changedStepIds).toContain("s_murolo");
     expect(view.removedStepLabels).toEqual(["Forza Napoli: the Sívori years"]);
+    expect(view.lastReplan).toEqual({ n: 1, outcome: "adapted" });
     const replan = view.phases.at(-1);
     expect(replan?.key).toBe("replan-1");
     expect(replan?.status).toBe("completed");

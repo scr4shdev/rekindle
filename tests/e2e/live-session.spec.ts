@@ -58,6 +58,7 @@ test.describe("caregiver session mode", () => {
     await expect(page.getByTestId("react-upset")).toHaveAttribute("aria-pressed", "true");
     await expect(page.getByTestId("live-up-next")).toContainText("Roberto Murolo");
     await expect(page.getByTestId("live-up-next")).toContainText("Adapted");
+    await expect(page.getByTestId("live-notice")).toContainText("Plan adapted. Next up: Roberto Murolo");
     await page.getByRole("button", { name: "Close session mode" }).click();
     await expect(page.locator('[data-step-id="s_murolo"]')).toHaveAttribute("data-changed", "true");
     await expect(page.getByText("Set aside for now: Forza Napoli: the Sívori years")).toBeVisible();

@@ -74,6 +74,10 @@ export interface SessionView {
   replans: number;
   /** Number of replans that actually changed upcoming steps. */
   adaptations: number;
+  /** Counters when the running replan started (to judge its outcome). */
+  replanBaseline: { adaptations: number; warnings: number };
+  /** Outcome of the latest finished replan, numbered like `replans`. */
+  lastReplan?: { n: number; outcome: "adapted" | "unchanged" | "failed" };
 }
 
 export type ViewAction =
@@ -99,6 +103,7 @@ export function initialView(): SessionView {
     removedStepLabels: [],
     replans: 0,
     adaptations: 0,
+    replanBaseline: { adaptations: 0, warnings: 0 },
   };
 }
 
@@ -216,7 +221,15 @@ function applyEvent(view: SessionView, event: AgentEvent, fromReplan: boolean): 
     }
     case "done": {
       const { traceId, durationMs, stats } = event;
-      if (fromReplan) return { ...view, replanning: false };
+      if (fromReplan) {
+        const outcome =
+          view.adaptations > view.replanBaseline.adaptations
+            ? "adapted"
+            : view.warnings.length > view.replanBaseline.warnings
+              ? "failed"
+              : "unchanged";
+        return { ...view, replanning: false, lastReplan: { n: view.replans, outcome } };
+      }
       return { ...view, done: { traceId, durationMs, stats }, status: view.failure ? "error" : "done" };
     }
   }
@@ -241,6 +254,7 @@ export function reduceView(view: SessionView, action: ViewAction): SessionView {
         ...view,
         replans,
         replanning: true,
+        replanBaseline: { adaptations: view.adaptations, warnings: view.warnings.length },
         changedStepIds: [],
         removedStepLabels: [],
         currentKey: key,
@@ -252,6 +266,7 @@ export function reduceView(view: SessionView, action: ViewAction): SessionView {
         ...view,
         replanning: false,
         warnings: action.failure.code === "cancelled" ? view.warnings : [...view.warnings, action.failure],
+        lastReplan: action.failure.code === "cancelled" ? view.lastReplan : { n: view.replans, outcome: "failed" },
       };
   }
 }

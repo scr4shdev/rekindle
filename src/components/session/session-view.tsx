@@ -3,8 +3,7 @@
 import { ArrowLeftIcon, PlayIcon, PrinterIcon, RotateCcwIcon, ScaleIcon, SquareIcon, TriangleAlertIcon } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
+import { useEffect, useMemo, useState } from "react";
 import { LiveSession } from "@/components/session/live-session";
 import { PlanTimeline } from "@/components/session/plan-timeline";
 import { ReasoningTrace } from "@/components/session/reasoning-trace";
@@ -59,20 +58,6 @@ export function SessionView() {
     replan({ plan, anchors: view.anchors, stepId, reaction, history: [...latest.values()] });
   }
 
-  // Tell the caregiver what changed when a replan finishes.
-  const wasReplanning = useRef(false);
-  const before = useRef({ adaptations: 0, warnings: 0 });
-  useEffect(() => {
-    const tl = getMessages().live;
-    if (view.replanning && !wasReplanning.current) before.current = { adaptations: view.adaptations, warnings: view.warnings.length };
-    if (!view.replanning && wasReplanning.current) {
-      const next = view.plan?.steps[liveIndex + 1];
-      if (view.warnings.length > before.current.warnings) toast.error(tl.adaptFailed);
-      else if (view.adaptations > before.current.adaptations && next) toast.success(tl.adapted(next.title));
-      else toast(tl.unchanged);
-    }
-    wasReplanning.current = view.replanning;
-  }, [view.replanning, view.plan, view.adaptations, view.warnings.length, liveIndex]);
 
   useEffect(() => {
     if (resolved.ok) start(resolved.request);

@@ -13,6 +13,7 @@ import {
   PlayIcon,
   RotateCcwIcon,
   SunIcon,
+  WandSparklesIcon,
   XIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -110,6 +111,12 @@ export function LiveSession({
   const [showTranslation, setShowTranslation] = useState(true);
   // Focus the session itself on open, so Space starts the timer instead of pressing Close.
   const popupRef = useRef<HTMLDivElement>(null);
+  // The replan outcome stays in the bottom bar until the caregiver moves to another step.
+  const [seenReplan, setSeenReplan] = useState(0);
+  const go = (n: number) => {
+    setSeenReplan(view.replans);
+    onIndexChange(n);
+  };
   const steps = plan.steps;
   const i = Math.min(index, steps.length - 1);
   const step = steps[i];
@@ -120,12 +127,21 @@ export function LiveSession({
   const reaction = reactions[step.id];
   const replanPhase = view.phases.at(-1)?.phase === "replan" ? view.phases.at(-1) : undefined;
   const last = i === steps.length - 1;
+  const outcome = view.lastReplan && view.lastReplan.n > seenReplan ? view.lastReplan.outcome : undefined;
+  const notice =
+    outcome === "adapted" && next
+      ? { tone: outcome, text: t.adapted(next.title) }
+      : outcome === "failed"
+        ? { tone: outcome, text: t.adaptFailed }
+        : outcome
+          ? { tone: "unchanged" as const, text: t.unchanged }
+          : undefined;
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     const target = event.target as HTMLElement;
     if (target.closest("input, textarea, select")) return;
-    if (event.key === "ArrowRight" && !last) onIndexChange(i + 1);
-    else if (event.key === "ArrowLeft" && i > 0) onIndexChange(i - 1);
+    if (event.key === "ArrowRight" && !last) go(i + 1);
+    else if (event.key === "ArrowLeft" && i > 0) go(i - 1);
     else if (event.key === " " && !target.closest("button, a, summary")) {
       event.preventDefault();
       timer.toggle();
@@ -179,7 +195,7 @@ export function LiveSession({
           </div>
 
           {/* The prompt */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto" tabIndex={0} role="region" aria-label={t.title}>
             <div
               key={step.id}
               className="mx-auto grid w-full max-w-5xl animate-rise gap-5 px-5 py-5 sm:px-8 sm:py-10 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:items-start"
@@ -238,6 +254,21 @@ export function LiveSession({
                   {replanPhase?.message ?? t.adapting}
                 </p>
               )}
+              {!view.replanning && notice && (
+                <p
+                  className={cn(
+                    "flex animate-rise items-center gap-2 rounded-2xl px-4 py-2 font-semibold",
+                    notice.tone === "adapted" && "bg-ochre-soft text-ochre-ink",
+                    notice.tone === "unchanged" && "bg-sage-soft text-sage-ink",
+                    notice.tone === "failed" && "bg-rose-soft text-rose-ink",
+                  )}
+                  role="status"
+                  data-testid="live-notice"
+                >
+                  <WandSparklesIcon className="size-5 shrink-0" aria-hidden />
+                  {notice.text}
+                </p>
+              )}
               <fieldset className="flex flex-col gap-2" disabled={view.replanning}>
                 <legend className="mb-1 text-[0.95rem] font-semibold text-muted-foreground">{t.howDidItGo}</legend>
                 <div className="grid grid-cols-3 gap-2">
@@ -261,7 +292,7 @@ export function LiveSession({
                 </div>
               </fieldset>
               <div className="flex items-center gap-2 sm:gap-3">
-                <Button variant="outline" size="lg" className="px-4 sm:px-6" onClick={() => onIndexChange(i - 1)} disabled={i === 0} data-icon="inline-start">
+                <Button variant="outline" size="lg" className="px-4 sm:px-6" onClick={() => go(i - 1)} disabled={i === 0} data-icon="inline-start">
                   <ChevronLeftIcon aria-hidden />
                   <span className="hidden sm:inline">{t.prev}</span>
                   <span className="sr-only sm:hidden">{t.prev}</span>
@@ -281,7 +312,7 @@ export function LiveSession({
                 {last ? (
                   <DialogPrimitive.Close render={<Button size="lg" />}>{t.finish}</DialogPrimitive.Close>
                 ) : (
-                  <Button size="lg" className="px-4 sm:px-6" onClick={() => onIndexChange(i + 1)} data-icon="inline-end" data-testid="live-next">
+                  <Button size="lg" className="px-4 sm:px-6" onClick={() => go(i + 1)} data-icon="inline-end" data-testid="live-next">
                     <span className="hidden sm:inline">{t.next}</span>
                     <span className="sr-only sm:hidden">{t.next}</span>
                     <ChevronRightIcon aria-hidden />

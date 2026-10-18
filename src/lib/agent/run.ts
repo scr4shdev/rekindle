@@ -52,6 +52,8 @@ export interface Run {
   /** Set once Qloo failed; later Qloo work is skipped. */
   qlooDown: boolean;
   deadlineHit: () => boolean;
+  /** The caller's own signal aborted (e.g. the client disconnected), as opposed to the deadline. */
+  clientAborted: () => boolean;
   dispose: () => void;
 }
 
@@ -74,6 +76,7 @@ export function createRun(deps: AgentDeps, ctx: CallContext, forbiddenTerms: rea
     startedAt: deps.now().getTime(),
     qlooDown: false,
     deadlineHit: () => deadline.signal.aborted,
+    clientAborted: () => Boolean(ctx.signal?.aborted),
     dispose: () => timers.forEach(clearTimeout),
   };
 }
@@ -149,6 +152,11 @@ export function errorFromQloo(error: PortError, phase: AgentPhase): AgentEventPa
 export function fatalError(run: Run, error: unknown, phase: AgentPhase | undefined): AgentEventPayload {
   let code: ErrorCode = "internal";
   let message = "Something went wrong while planning. Please try again.";
+  if (run.clientAborted() && !run.deadlineHit()) {
+    // Nobody is listening any more; the event code has no "cancelled" value, the log does.
+    run.ctx.logger.info({ phase, reason: "client_disconnected" }, "agent run cancelled");
+    return { type: "error", code: "deadline_exceeded", message: "The request was cancelled.", recoverable: false, ...(phase ? { phase } : {}) };
+  }
   if (run.deadlineHit() || run.ctx.signal?.aborted) {
     code = "deadline_exceeded";
     message = "Planning took too long and was stopped. Please try again.";

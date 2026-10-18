@@ -9,7 +9,7 @@ import type { LlmPort, TastePort } from "@/lib/ports";
 import { PortError } from "@/lib/ports";
 
 import { collect, mockDeps } from "./agent-deps";
-import { testCtx } from "./helpers";
+import { recordingLogger, testCtx } from "./helpers";
 import { assertStreamRules } from "./stream-rules";
 
 const maria = PERSONAS.find((p) => p.slug === "maria")!;
@@ -196,11 +196,15 @@ describe("runSession degradation", () => {
     expect(events.at(-1)!.type).toBe("done");
   });
 
-  it("client abort: stops promptly", async () => {
+  it("client abort: stops promptly and logs a disconnect, not a deadline", async () => {
     const controller = new AbortController();
     controller.abort();
-    const events = await collect(runSession(mockDeps(), request(), testCtx({ signal: controller.signal })));
-    expect(ofType(events, "error")[0]?.code).toBe("deadline_exceeded");
+    const { logger, lines } = recordingLogger();
+    const events = await collect(runSession(mockDeps(), request(), testCtx({ signal: controller.signal, logger })));
+    expect(ofType(events, "error")[0]).toMatchObject({ code: "deadline_exceeded", message: "The request was cancelled." });
     expect(events.at(-1)!.type).toBe("done");
+    const logged = lines.map((l) => JSON.parse(l) as { reason?: string; code?: string });
+    expect(logged.some((l) => l.reason === "client_disconnected")).toBe(true);
+    expect(logged.some((l) => l.code === "deadline_exceeded")).toBe(false);
   });
 });

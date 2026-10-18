@@ -129,13 +129,13 @@ with two implementations: `fetch` + `readEventStream`, and a sample replay (`?so
   expandable `qloo_call` rows (endpoint plus params: the request-to-result evidence); copy frames Qloo results as aggregate
   ("people who enjoy X also tend to enjoy Y")
 - [done] U3.3 Plan timeline: step cards with an image or era-styled fallback, kind icon, duration, provenance and affinity badges, media hint, prompt and translation
-- [in-progress] U3.4 Error and degraded states (recoverable vs fatal), cancel and retry
+- [done] U3.4 Error and degraded states (recoverable vs fatal), cancel and retry
 
 ### Epic U4: Comparison mode
 - [todo] U4.1 Side-by-side grounded vs LLM-only (two parallel streams) with a summary: verified count, anachronisms caught, images, affinity
 
 ### Epic U5: Caregiver session mode
-- [todo] U5.1 One prompt at a time, huge text, step timer, next/prev, translation toggle, keyboard and touch friendly
+- [in-progress] U5.1 One prompt at a time, huge text, step timer, next/prev, translation toggle, keyboard and touch friendly
 - [todo] U5.2 Lit up / no reaction / upset buttons call `POST /api/session/replan` (sample replan when on the sample source); animated plan update
 
 ### Epic U6: Print, i18n, responsive

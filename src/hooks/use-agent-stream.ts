@@ -29,17 +29,21 @@ export function useAgentStream(source: AgentEventSource) {
   const [servedBy, setServedBy] = useState<SourceKind | undefined>();
   const controller = useRef<AbortController | null>(null);
 
-  const consume = useCallback(async (events: AsyncIterable<AgentEvent>, signal: AbortSignal, kind: "session" | "replan") => {
+  const consume = useCallback(async (events: AsyncIterable<AgentEvent>, ctrl: AbortController, kind: "session" | "replan") => {
+    // A stream superseded by a newer one (restart, or React re-running effects) goes quiet.
+    const current = () => controller.current === ctrl;
+    const { signal } = ctrl;
     let sawDone = false;
     try {
       for await (const event of events) {
-        if (signal.aborted) break;
+        if (signal.aborted || !current()) break;
         if (event.type === "done") sawDone = true;
         dispatch({ type: "event", event });
       }
-      if (!sawDone && !signal.aborted) throw new Error("Stream ended early");
       if (signal.aborted) throw new DOMException("Aborted", "AbortError");
+      if (!sawDone && current()) throw new Error("Stream ended early");
     } catch (error) {
+      if (!current()) return;
       const failure = toFailure(error, signal);
       dispatch(kind === "session" ? { type: "failed", failure } : { type: "replan-failed", failure });
     }
@@ -52,7 +56,7 @@ export function useAgentStream(source: AgentEventSource) {
       controller.current = ctrl;
       setServedBy(undefined);
       dispatch({ type: "start" });
-      void consume(source.session(request, { signal: ctrl.signal, onResolved: setServedBy }), ctrl.signal, "session");
+      void consume(source.session(request, { signal: ctrl.signal, onResolved: setServedBy }), ctrl, "session");
     },
     [consume, source],
   );
@@ -63,14 +67,21 @@ export function useAgentStream(source: AgentEventSource) {
       const ctrl = new AbortController();
       controller.current = ctrl;
       dispatch({ type: "replan-start" });
-      void consume(source.replan(request, { signal: ctrl.signal }), ctrl.signal, "replan");
+      void consume(source.replan(request, { signal: ctrl.signal }), ctrl, "replan");
     },
     [consume, source],
   );
 
   const cancel = useCallback(() => controller.current?.abort(), []);
 
-  useEffect(() => () => controller.current?.abort(), []);
+  useEffect(
+    () => () => {
+      const ctrl = controller.current;
+      controller.current = null;
+      ctrl?.abort();
+    },
+    [],
+  );
 
   return { view, servedBy, start, replan, cancel };
 }

@@ -41,7 +41,7 @@ export function SessionView() {
 
   if (!resolved.ok) {
     return (
-      <div className="mx-auto flex max-w-2xl flex-col items-start gap-5 rounded-3xl border border-border bg-card p-8 shadow-paper" role="alert">
+      <div className="mx-auto flex max-w-2xl flex-col items-start gap-5 rounded-3xl border border-border bg-card p-8 shadow-paper" role="alert" data-testid="session-alert">
         <p className="text-xl">{resolved.reason === "missing-custom" ? t.missingCustom : t.unknownPersona}</p>
         <div className="flex flex-wrap gap-3">
           <Link href="/#custom" className={buttonVariants({ size: "lg" })}>
@@ -122,7 +122,7 @@ export function SessionView() {
           </div>
         </div>
         {view.failure && (
-          <div role="alert" className="flex flex-col gap-3 rounded-2xl bg-rose-soft px-5 py-4 text-rose-ink sm:flex-row sm:items-center">
+          <div role="alert" data-testid="session-alert" className="flex flex-col gap-3 rounded-2xl bg-rose-soft px-5 py-4 text-rose-ink sm:flex-row sm:items-center">
             <TriangleAlertIcon className="size-6 shrink-0" aria-hidden />
             <p className="flex-1 font-semibold">{view.failure.message}</p>
             {!hasRecording && (

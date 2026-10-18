@@ -1,6 +1,6 @@
 import { expect } from "vitest";
 
-import type { AgentEvent, AgentPhase } from "@/lib/domain/types";
+import type { AgentEvent, AgentEventOf, AgentPhase } from "@/lib/domain/types";
 import { AgentEvent as AgentEventSchema } from "@/lib/domain/types";
 
 const SESSION_PHASES: AgentPhase[] = ["parse", "propose", "verify", "expand", "critique", "compose"];
@@ -55,13 +55,33 @@ export function assertStreamRules(events: AgentEvent[], kind: "session" | "repla
     expect(anchorsAt).toBeLessThan(parseDone);
   }
 
-  // Every verified/rejected item produced by Qloo in verify follows its qloo_call.
-  let lastQlooCall = -1;
-  events.forEach((e, i) => {
-    if (e.type === "qloo_call") lastQlooCall = i;
-    if (e.type === "verified") expect(lastQlooCall).toBeGreaterThanOrEqual(0);
-    if (e.type === "verified") expect(lastQlooCall).toBeLessThan(i);
-  });
+  // Every verified item follows the specific qloo_call that produced it.
+  const candidates = new Map(events.flatMap((e) => (e.type === "candidate" ? [[e.candidate.id, e.candidate] as const] : [])));
+  let lastCall: AgentEventOf<"qloo_call"> | undefined;
+  for (const e of events) {
+    if (e.type === "qloo_call") lastCall = e;
+    if (e.type === "verified") {
+      expect(lastCall, `no qloo_call before ${e.entity.name}`).toBeDefined();
+      const call = lastCall!.call;
+      expect(call.resultCount).toBeGreaterThan(0);
+      if (e.entity.provenance === "llm-proposed-qloo-verified") {
+        const candidate = candidates.get(e.entity.candidateId ?? "");
+        expect(call.endpoint).toBe("/search");
+        expect(call.params.query).toBe(candidate?.name);
+        expect(call.params.types).toContain(e.entity.qlooType);
+      } else {
+        expect(call.endpoint).toBe("/v2/insights");
+        expect(call.params["filter.type"]).toBe(e.entity.qlooType);
+        const seeds = call.params["signal.interests.entities"] as string[];
+        expect(e.entity.seedQlooIds?.length).toBeGreaterThan(0);
+        for (const seed of e.entity.seedQlooIds ?? []) expect(seeds).toContain(seed);
+      }
+    }
+    // A verify-phase "not found" that made a request follows the search for that same name.
+    if (e.type === "rejected" && e.item.phase === "verify" && lastCall?.call.endpoint === "/search" && e.item.reason.startsWith("No confident")) {
+      expect(lastCall.call.params.query).toBe(e.item.label);
+    }
+  }
 
   const done = events.at(-1)!;
   if (done.type === "done") {

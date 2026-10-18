@@ -9,7 +9,7 @@ import type { AgentDeps, CallContext } from "@/lib/ports";
 import { replanSessionPrompt } from "@/lib/prompts";
 import type { ReplanStepSummary } from "@/lib/prompts/replan-session";
 
-import { sameLanguage, toComposeMaterial, toStep, PLAN_MAX_STEPS } from "@/lib/agent/phases/critique-compose";
+import { materialAlias, sameLanguage, toComposeMaterial, toStep, PLAN_MAX_STEPS } from "@/lib/agent/phases/critique-compose";
 import { entityMaterial } from "@/lib/agent/phases/verify-expand";
 import type { Material, Run } from "@/lib/agent/run";
 import { callLlm, callTaste, createRun, errorFromQloo, qlooCallEvent, toVerifiedEntity } from "@/lib/agent/run";
@@ -124,7 +124,7 @@ export function runReplan(deps: AgentDeps, request: ReplanRequest, ctx: CallCont
         note: request.note,
         done: done.map(summarize),
         upcoming: upcoming.map(summarize),
-        newMaterials: newMaterials.map((m) => toComposeMaterial(m, newMaterials)),
+        newMaterials: newMaterials.map((m, i) => toComposeMaterial(m, newMaterials, materialAlias(i, "n"))),
         minutesRemaining: Math.max(1, plan.totalMinutes - doneMinutes),
         maxUpcoming,
       },
@@ -136,7 +136,7 @@ export function runReplan(deps: AgentDeps, request: ReplanRequest, ctx: CallCont
     }
 
     const byId = new Map(upcoming.map((s) => [s.id, s]));
-    const byRef = new Map(newMaterials.map((m) => [m.ref, m]));
+    const byRef = new Map(newMaterials.map((m, i) => [materialAlias(i, "n"), m]));
     const same = sameLanguage(plan.language, plan.caregiverLanguage);
     const next: SessionStep[] = [];
     const created = new Set<string>();

@@ -64,3 +64,36 @@ describe.each(PERSONAS.map((p) => [p.slug, p] as const))("golden mock run: %s", 
     });
   }
 });
+
+/** Replace generated ids (c_1, ve_12, s_3, plan_4) by their order of first appearance, so runs on shared deps compare. */
+function canonical(list: AgentEvent[]): unknown {
+  const ids = new Map<string, string>();
+  const walk = (v: unknown): unknown => {
+    if (typeof v === "string" && /^(c|ve|s|plan)_\d+$/.test(v)) {
+      if (!ids.has(v)) ids.set(v, `id${ids.size}`);
+      return ids.get(v);
+    }
+    if (Array.isArray(v)) return v.map(walk);
+    if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x)]));
+    return v;
+  };
+  return list.map(({ t, ...rest }) => {
+    void t;
+    if (rest.type === "done") return walk({ ...rest, stats: { ...rest.stats, cacheHits: 0 } });
+    return walk(rest);
+  });
+}
+
+describe("golden determinism across the cache", () => {
+  it.each(PERSONAS.map((p) => [p.slug, p] as const))("%s: a cache-hit run equals the cache-miss run", async (_slug, persona) => {
+    const deps = mockDeps();
+    const req = SessionRequest.parse({ person: persona.input });
+    const miss = await collect(runSession(deps, req, testCtx()));
+    const hit = await collect(runSession(deps, req, testCtx()));
+    const missDone = miss.at(-1)!;
+    const hitDone = hit.at(-1)!;
+    expect(missDone.type === "done" && missDone.stats.cacheHits).toBe(0);
+    expect(hitDone.type === "done" && hitDone.stats.cacheHits).toBe(hitDone.type === "done" ? hitDone.stats.llmCalls : -1);
+    expect(canonical(hit)).toEqual(canonical(miss));
+  });
+});

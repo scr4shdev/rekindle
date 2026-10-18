@@ -26,8 +26,8 @@ export async function* critiquePhase(run: Run, anchors: Anchors, person: PersonI
     {
       anchors,
       caregiverLanguage: person.caregiverLanguage,
-      items: materials.map((m) => ({
-        ref: m.ref,
+      items: materials.map((m, i) => ({
+        ref: materialAlias(i),
         label: m.label,
         domain: m.domain,
         year: m.year,
@@ -38,7 +38,7 @@ export async function* critiquePhase(run: Run, anchors: Anchors, person: PersonI
     },
     true,
   );
-  const byRef = new Map(materials.map((m) => [m.ref, m]));
+  const byRef = new Map(materials.map((m, i) => [materialAlias(i), m]));
   const rejected = new Set<string>();
   for (const verdict of out.verdicts) {
     const material = byRef.get(verdict.ref);
@@ -73,10 +73,16 @@ export async function* critiquePhase(run: Run, anchors: Anchors, person: PersonI
   return kept;
 }
 
-export function toComposeMaterial(m: Material, all: Material[]): ComposeMaterial {
+/**
+ * Refs shown to the LLM are per-call aliases by position ("m1", "m2", ...), not the
+ * generated ids, so equal inputs give equal prompts and the input-keyed cache can hit.
+ */
+export const materialAlias = (index: number, prefix = "m") => `${prefix}${index + 1}`;
+
+export function toComposeMaterial(m: Material, all: Material[], ref: string): ComposeMaterial {
   const seedNames = m.entity?.seedQlooIds?.map((id) => all.find((x) => x.entity?.qlooId === id)?.label).filter((n): n is string => Boolean(n));
   return {
-    ref: m.ref,
+    ref,
     label: m.label,
     domain: m.domain,
     year: m.year,
@@ -134,12 +140,12 @@ export async function* composePhase(
       sessionMinutes: person.sessionMinutes,
       maxSteps,
       disclaimerEnglish: DISCLAIMER_EN,
-      materials: kept.map((m) => toComposeMaterial(m, kept)),
+      materials: kept.map((m, i) => toComposeMaterial(m, kept, materialAlias(i))),
     },
     true,
   );
 
-  const byRef = new Map(kept.map((m) => [m.ref, m]));
+  const byRef = new Map(kept.map((m, i) => [materialAlias(i), m]));
   const same = sameLanguage(lang, person.caregiverLanguage);
   const draft: SessionStep[] = [];
   for (const model of out.steps) {

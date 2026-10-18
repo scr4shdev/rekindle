@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { getMessages } from "@/i18n";
 import { CompareView } from "@/components/compare/compare-view";
 
-export const metadata: Metadata = { title: "Compare · Rekindle" };
+const t = getMessages().app;
+
+export const metadata: Metadata = { title: `${t.pageTitles.compare} · ${t.name}` };
 
 export default function ComparePage() {
   return (

@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { getMessages } from "@/i18n";
 import { SessionView } from "@/components/session/session-view";
 
-export const metadata: Metadata = { title: "Session · Rekindle" };
+const t = getMessages().app;
+
+export const metadata: Metadata = { title: `${t.pageTitles.session} · ${t.name}` };
 
 export default function SessionPage() {
   return (

@@ -20,7 +20,7 @@ export function SiteHeader() {
             {t.name}
           </span>
         </Link>
-        <nav className="flex items-center gap-1" aria-label="Main">
+        <nav className="flex items-center gap-1" aria-label={t.nav.label}>
           <Link
             href="/compare?persona=maria"
             className="hidden h-11 items-center rounded-full px-4 font-semibold text-muted-foreground hover:bg-muted hover:text-foreground sm:inline-flex"

@@ -140,8 +140,8 @@ with two implementations: `fetch` + `readEventStream`, and a sample replay (`?so
 
 ### Epic U6: Print, i18n, responsive
 - [done] U6.1 Print stylesheet (session sheet the caregiver can print)
-- [in-progress] U6.2 UI strings in `src/i18n/` (en first, structure ready for it/fr), `lang` attributes on prompts
-- [todo] U6.3 Responsive pass (phone first: caregivers use phones)
+- [done] U6.2 UI strings in `src/i18n/` (en first, structure ready for it/fr), `lang` attributes on prompts
+- [in-progress] U6.3 Responsive pass (phone first: caregivers use phones)
 
 ### Epic U7: E2E (`tests/e2e/`)
 - [todo] U7.1 Persona to session (sample source and mock API), trace and plan render

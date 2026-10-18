@@ -4,7 +4,8 @@ export const en = {
     name: "Rekindle",
     tagline: "Reminiscence activities, rebuilt from their own era",
     skipToContent: "Skip to content",
-    nav: { home: "Home", compare: "Compare" },
+    nav: { label: "Main", home: "Home", compare: "Compare" },
+    pageTitles: { session: "Session", compare: "Compare" },
     theme: { toggle: "Switch light or dark theme", light: "Light", dark: "Dark" },
   },
   landing: {

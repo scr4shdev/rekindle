@@ -81,7 +81,7 @@ Add `BLOCKED: contract change needed: <file> <what and why> (<worker>, <date>)` 
 - [done] C5.5 CRITIQUE and COMPOSE phases. AC: rejected items never appear in the plan; step `provenance` is decided in code
   (has a verified entity: `qloo-grounded`); durations sum to `totalMinutes`; `meta` filled with prompt versions.
 - [done] C5.6 LLM-only mode. AC: verify/expand emitted as `skipped`; all steps `llm-only`; `meta.qlooMode = "unused"`.
-- [todo] C5.7 Replan loop `runReplan`. AC: semantics in docs/api.md; past steps unchanged; `meta.revision + 1`.
+- [done] C5.7 Replan loop `runReplan`. AC: semantics in docs/api.md; past steps unchanged; `meta.revision + 1`.
 - [done] C5.8 Degradation. AC: Qloo failure gives a recoverable `error` and the session continues as llm-only steps; LLM failure gives a fatal `error` then `done`.
 
 ### Epic C6: Composition and API routes

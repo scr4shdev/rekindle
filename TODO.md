@@ -91,8 +91,8 @@ Add `BLOCKED: contract change needed: <file> <what and why> (<worker>, <date>)` 
 - [done] C6.4 Route tests (call the handlers with `Request` objects in mock mode; assert the event order rules from docs/api.md)
 
 ### Epic C7: Quality
-- [todo] C7.1 Golden tests: mock run for each persona; no anachronism or sensitivity leaks; plan validates; stable output (determinism)
-- [todo] C7.2 Coverage at least 80% for `src/lib/agent` and `src/lib/adapters`
+- [done] C7.1 Golden tests: mock run for each persona; no anachronism or sensitivity leaks; plan validates; stable output (determinism)
+- [done] C7.2 Coverage at least 80% for `src/lib/agent` and `src/lib/adapters`
 
 ---
 

@@ -128,8 +128,8 @@ with two implementations: `fetch` + `readEventStream`, and a sample replay (`?so
 - [done] U3.2 Live reasoning trace: phase timeline (started/completed/skipped), notes, candidate, verified and rejected chips with reasons,
   expandable `qloo_call` rows (endpoint plus params: the request-to-result evidence); copy frames Qloo results as aggregate
   ("people who enjoy X also tend to enjoy Y")
-- [in-progress] U3.3 Plan timeline: step cards with an image or era-styled fallback, kind icon, duration, provenance and affinity badges, media hint, prompt and translation
-- [todo] U3.4 Error and degraded states (recoverable vs fatal), cancel and retry
+- [done] U3.3 Plan timeline: step cards with an image or era-styled fallback, kind icon, duration, provenance and affinity badges, media hint, prompt and translation
+- [in-progress] U3.4 Error and degraded states (recoverable vs fatal), cancel and retry
 
 ### Epic U4: Comparison mode
 - [todo] U4.1 Side-by-side grounded vs LLM-only (two parallel streams) with a summary: verified count, anachronisms caught, images, affinity

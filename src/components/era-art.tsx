@@ -41,12 +41,12 @@ const MOTIFS: Record<EraMotif, CSSProperties> = {
     backgroundImage: `radial-gradient(circle at 68% 58%, ${c("--primary")} 0 13%, oklch(0.93 0.03 85) 13.5% 14.5%, transparent 15%), radial-gradient(circle at 68% 58%, transparent 0 58%, ${c("--ochre-soft")} 58.5%), repeating-radial-gradient(circle at 68% 58%, oklch(0.2 0.01 50) 0 3px, oklch(0.3 0.01 50) 3px 4px)`,
   },
   filmstrip: {
-    backgroundColor: "oklch(0.24 0.015 50)",
+    backgroundColor: "oklch(0.22 0.015 50)",
     backgroundImage:
-      "linear-gradient(oklch(0.24 0.015 50) 0 14%, transparent 14% 86%, oklch(0.24 0.015 50) 86%), repeating-linear-gradient(90deg, oklch(0.93 0.02 80) 0 10px, transparent 10px 24px), linear-gradient(135deg, oklch(0.55 0.04 70), oklch(0.35 0.03 60))",
-    backgroundSize: "100% 100%, 100% 9%, 100% 100%",
-    backgroundPosition: "0 0, 0 3%, 0 0",
-    backgroundRepeat: "no-repeat, repeat-x, no-repeat",
+      "repeating-linear-gradient(90deg, oklch(0.93 0.02 80) 0 9px, transparent 9px 22px), repeating-linear-gradient(90deg, oklch(0.93 0.02 80) 0 9px, transparent 9px 22px), linear-gradient(oklch(0.22 0.015 50) 0 15%, transparent 15% 85%, oklch(0.22 0.015 50) 85%), radial-gradient(ellipse at 40% 40%, oklch(0.78 0.06 75), oklch(0.5 0.05 60) 75%)",
+    backgroundSize: "100% 7%, 100% 7%, 100% 100%, 100% 100%",
+    backgroundPosition: "0 4%, 0 96%, 0 0, 0 0",
+    backgroundRepeat: "repeat-x, repeat-x, no-repeat, no-repeat",
   },
   pennant: {
     backgroundImage: `repeating-linear-gradient(-30deg, ${c("--primary", 80)} 0 26px, ${c("--card")} 26px 40px, oklch(0.45 0.09 250) 40px 66px, ${c("--card")} 66px 80px)`,

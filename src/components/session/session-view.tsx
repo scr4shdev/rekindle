@@ -71,7 +71,7 @@ export function SessionView() {
         </Link>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex flex-col gap-2">
-            <h1 className="text-3xl leading-tight font-semibold sm:text-5xl" data-testid="session-title">
+            <h1 className="text-3xl leading-tight font-semibold sm:text-5xl" data-testid="session-title" lang={plan?.language}>
               {plan?.title ?? t.planningFor(name)}
             </h1>
             <div className="flex flex-wrap items-center gap-2">
@@ -100,20 +100,19 @@ export function SessionView() {
             )}
             {plan && (
               <>
-                <Button size="lg" data-icon="inline-start" data-testid="start-live">
+                <Button size="lg" className="flex-1 sm:flex-none" data-icon="inline-start" data-testid="start-live">
                   <PlayIcon aria-hidden />
                   {t.start}
                 </Button>
-                <Button variant="outline" size="lg" onClick={() => window.print()} data-icon="inline-start">
+                <Button variant="outline" size="icon-lg" onClick={() => window.print()} aria-label={t.print} title={t.print}>
                   <PrinterIcon aria-hidden />
-                  {t.print}
                 </Button>
               </>
             )}
             {!streaming && (
               <Link
                 href={`/compare?persona=${comparePersona}`}
-                className={buttonVariants({ variant: "ghost", size: plan ? "lg" : "default" })}
+                className={cn(buttonVariants({ variant: "ghost", size: plan ? "lg" : "default" }), "px-3 sm:px-6")}
                 data-icon="inline-start"
               >
                 <ScaleIcon aria-hidden />
@@ -141,7 +140,11 @@ export function SessionView() {
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <ReasoningTrace view={view} className="print:hidden lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)]" />
-        <PlanTimeline view={view} />
+        <PlanTimeline
+          view={view}
+          language={resolved.request.person.sessionLanguage ?? "en"}
+          caregiverLanguage={resolved.request.person.caregiverLanguage ?? "en"}
+        />
       </div>
     </div>
   );
@@ -151,7 +154,7 @@ function SourceBadge({ kind }: { kind: SourceKind }) {
   const t = getMessages().session;
   return (
     <Tooltip>
-      <TooltipTrigger render={<Badge variant="outline" className={cn("cursor-help")} tabIndex={0} />}>
+      <TooltipTrigger render={<Badge variant="outline" className="cursor-help" tabIndex={0} />}>
         {kind === "sample" ? t.sourceSample : t.sourceLive}
       </TooltipTrigger>
       <TooltipContent>{kind === "sample" ? t.sourceSampleHint : t.sourceLiveHint}</TooltipContent>

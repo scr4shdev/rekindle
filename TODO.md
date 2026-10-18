@@ -9,7 +9,7 @@ Deadline: **2026-10-30**. Judging: Technological Implementation, Design, Potenti
 
 Add `BLOCKED: contract change needed: <file> <what and why> (<worker>, <date>)` here. The integrator answers inline.
 
-- (none)
+- Request (non-blocking): tests/contract/domain.test.ts: export the `QUIZ` pattern from a shared helper (e.g. `tests/contract/quiz.ts`) so `tests/unit/mock-prompts-quiz.test.ts` can import it; it currently reads the constant from the contract file's source to avoid a copy. (W-CORE, 2026-10-18)
 
 ## Phase 0: Architect (done)
 

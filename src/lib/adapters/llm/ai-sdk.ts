@@ -17,6 +17,9 @@ import type { CallContext } from "@/lib/ports/common";
 import { PortError } from "@/lib/ports/common";
 import type { LlmPort, LlmRequest, LlmResult } from "@/lib/ports/llm";
 
+import type { Sleep } from "@/lib/adapters/shared/backoff";
+import { abortableSleep, backoffMs } from "@/lib/adapters/shared/backoff";
+
 export type LiveLlmConfig = AppConfig["llm"] & { provider: "gemini" | "groq" | "anthropic" };
 
 /** Build the provider model from config. The API key is passed explicitly (never read from env here). */
@@ -45,16 +48,18 @@ export class AiSdkLlm implements LlmPort {
   readonly model: string;
   private readonly languageModel: LanguageModel;
   private readonly keyPrefix?: string;
+  private readonly sleep: Sleep;
 
   constructor(
     private readonly config: LiveLlmConfig,
     private readonly cache: CachePort,
-    options: { languageModel?: LanguageModel; keyPrefix?: string } = {},
+    options: { languageModel?: LanguageModel; keyPrefix?: string; sleep?: Sleep } = {},
   ) {
     this.provider = config.provider;
     this.model = config.model;
     this.languageModel = options.languageModel ?? createLanguageModel(config);
     this.keyPrefix = options.keyPrefix;
+    this.sleep = options.sleep ?? abortableSleep;
   }
 
   async generateObject<T>(request: LlmRequest<T>, ctx: CallContext): Promise<LlmResult<T>> {
@@ -99,6 +104,7 @@ export class AiSdkLlm implements LlmPort {
         lastError = toPortError(error, timeout.aborted && !ctx.signal?.aborted);
         log.warn({ attempt, code: lastError.code, retryable: lastError.retryable }, "llm call failed");
         if (!lastError.retryable || ctx.signal?.aborted) break;
+        if (attempt < attempts) await this.sleep(backoffMs(attempt), ctx.signal);
       }
     }
     throw lastError ?? new PortError("llm", "unavailable", "The language model is unavailable", true);

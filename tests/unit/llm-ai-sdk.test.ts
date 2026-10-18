@@ -32,6 +32,8 @@ const request: LlmRequest<{ answer: string }> = {
   schema,
 };
 
+const noSleep = async () => {};
+
 const usage = {
   inputTokens: { total: 10, noCache: 10, cacheRead: undefined, cacheWrite: undefined },
   outputTokens: { total: 5, text: 5, reasoning: undefined },
@@ -50,7 +52,7 @@ describe("AiSdkLlm", () => {
   it("generates a schema-valid object at temperature 0 and caches it", async () => {
     const model = new MockLanguageModelV4({ doGenerate: async () => textResult('{"answer":"ok"}') });
     const cache = new MemoryCache();
-    const llm = new AiSdkLlm(config, cache, { languageModel: model });
+    const llm = new AiSdkLlm(config, cache, { languageModel: model, sleep: noSleep });
     const { logger, lines } = recordingLogger();
 
     const first = await llm.generateObject(request, testCtx({ logger }));
@@ -73,15 +75,31 @@ describe("AiSdkLlm", () => {
     const model = new MockLanguageModelV4({
       doGenerate: [textResult('{"wrong":1}'), textResult('{"answer":"second"}')],
     });
-    const llm = new AiSdkLlm(config, new MemoryCache(), { languageModel: model });
+    const llm = new AiSdkLlm(config, new MemoryCache(), { languageModel: model, sleep: noSleep });
     const result = await llm.generateObject(request, testCtx());
     expect(result.object.answer).toBe("second");
     expect(model.doGenerateCalls).toHaveLength(2);
   });
 
+  it("backs off exponentially between retries and stops waiting when aborted", async () => {
+    const waits: number[] = [];
+    const sleep = async (ms: number) => void waits.push(ms);
+    const model = new MockLanguageModelV4({ doGenerate: async () => textResult("not json") });
+    const llm = new AiSdkLlm({ ...config, maxRetries: 3 }, new MemoryCache(), { languageModel: model, sleep });
+    await expect(llm.generateObject(request, testCtx())).rejects.toMatchObject({ code: "invalid_response" });
+    expect(waits).toEqual([300, 600, 1200]);
+
+    const controller = new AbortController();
+    const slow = new AiSdkLlm({ ...config, maxRetries: 3 }, new MemoryCache(), {
+      languageModel: new MockLanguageModelV4({ doGenerate: async () => textResult("not json") }),
+      sleep: async () => controller.abort(),
+    });
+    await expect(slow.generateObject(request, testCtx({ signal: controller.signal }))).rejects.toMatchObject({ code: "timeout" });
+  });
+
   it("throws PortError(llm, invalid_response) after exhausting retries", async () => {
     const model = new MockLanguageModelV4({ doGenerate: async () => textResult("not json") });
-    const llm = new AiSdkLlm(config, new MemoryCache(), { languageModel: model });
+    const llm = new AiSdkLlm(config, new MemoryCache(), { languageModel: model, sleep: noSleep });
     await expect(llm.generateObject(request, testCtx())).rejects.toMatchObject({
       name: "PortError",
       port: "llm",
@@ -96,7 +114,7 @@ describe("AiSdkLlm", () => {
         throw new APICallError({ message: "bad key", url: "https://x", requestBodyValues: {}, statusCode: 401 });
       },
     });
-    const llm = new AiSdkLlm(config, new MemoryCache(), { languageModel: model });
+    const llm = new AiSdkLlm(config, new MemoryCache(), { languageModel: model, sleep: noSleep });
     await expect(llm.generateObject(request, testCtx())).rejects.toMatchObject({ code: "unauthorized" });
     expect(model.doGenerateCalls).toHaveLength(1);
   });
@@ -105,14 +123,14 @@ describe("AiSdkLlm", () => {
     const controller = new AbortController();
     controller.abort();
     const model = new MockLanguageModelV4({ doGenerate: async () => textResult('{"answer":"x"}') });
-    const llm = new AiSdkLlm(config, new MemoryCache(), { languageModel: model });
+    const llm = new AiSdkLlm(config, new MemoryCache(), { languageModel: model, sleep: noSleep });
     await expect(llm.generateObject(request, testCtx({ signal: controller.signal }))).rejects.toMatchObject({ code: "timeout" });
   });
 
   it("ignores a cached value that no longer matches the schema", async () => {
     const cache = new MemoryCache();
     const model = new MockLanguageModelV4({ doGenerate: async () => textResult('{"answer":"fresh"}') });
-    const llm = new AiSdkLlm(config, cache, { languageModel: model });
+    const llm = new AiSdkLlm(config, cache, { languageModel: model, sleep: noSleep });
     await llm.generateObject(request, testCtx());
     const other = { ...request, schema: z.object({ answer: z.number() }) } as unknown as LlmRequest<{ answer: string }>;
     await expect(llm.generateObject(other, testCtx())).rejects.toBeInstanceOf(PortError);

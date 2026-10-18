@@ -16,6 +16,7 @@ import type { TasteEntity, TastePort, TasteResponse, TasteTag } from "@/lib/port
 import { TasteInsightsQuery, TasteLookupQuery, TasteSearchQuery, TasteTagSearchQuery } from "@/lib/ports/taste";
 
 import { extractEntities, extractTags } from "@/lib/adapters/qloo/mapping";
+import { abortableSleep, BACKOFF_MAX_MS, backoffMs } from "@/lib/adapters/shared/backoff";
 import type { QlooEndpoint, QlooParams } from "@/lib/adapters/qloo/params";
 import {
   insightsParams,
@@ -29,8 +30,7 @@ import {
 /** Adapter/API version in the cache key. Bump when the mapping or params change. */
 export const QLOO_CACHE_VERSION = "qloo-v2";
 /** Longest Retry-After we are willing to wait inside a serverless request. */
-export const QLOO_MAX_RETRY_WAIT_MS = 4_000;
-const BACKOFF_BASE_MS = 300;
+export const QLOO_MAX_RETRY_WAIT_MS = BACKOFF_MAX_MS;
 
 export type FetchLike = (input: string, init: RequestInit) => Promise<Response>;
 
@@ -138,7 +138,7 @@ export class QlooHttp implements TastePort {
         const timedOut = timeout.aborted && !ctx.signal?.aborted;
         if (ctx.signal?.aborted) throw new PortError("taste", "timeout", "The Qloo request was cancelled", false, { cause: error });
         if (attempt < attempts) {
-          await sleep(backoff(attempt), ctx.signal);
+          await sleep(backoffMs(attempt), ctx.signal);
           continue;
         }
         throw timedOut
@@ -148,7 +148,7 @@ export class QlooHttp implements TastePort {
       const retryable = response.status === 429 || response.status >= 500;
       if (!retryable || attempt >= attempts) return response;
       ctx.logger.warn({ port: "taste", endpoint, status: response.status, attempt }, "qloo call retry");
-      await sleep(retryAfterMs(response.headers.get("retry-after")) ?? backoff(attempt), ctx.signal);
+      await sleep(retryAfterMs(response.headers.get("retry-after")) ?? backoffMs(attempt), ctx.signal);
     }
   }
 }
@@ -163,9 +163,6 @@ export function parseQuery<T>(schema: z.ZodType<T>, query: unknown): T {
   return parsed.data;
 }
 
-function backoff(attempt: number): number {
-  return Math.min(BACKOFF_BASE_MS * 2 ** (attempt - 1), QLOO_MAX_RETRY_WAIT_MS);
-}
 
 /** Retry-After as seconds or an HTTP date, capped. */
 export function retryAfterMs(header: string | null, now: number = Date.now()): number | undefined {
@@ -181,12 +178,4 @@ function statusError(status: number): PortError {
   if (status === 429) return new PortError("taste", "rate_limited", "Qloo is rate limiting requests", true);
   if (status === 400 || status === 404) return new PortError("taste", "bad_request", `Qloo rejected the request (${status})`, false);
   return new PortError("taste", "unavailable", `Qloo is unavailable (${status})`, true);
-}
-
-function abortableSleep(ms: number, signal?: AbortSignal): Promise<void> {
-  return new Promise((resolve) => {
-    if (ms <= 0 || signal?.aborted) return resolve();
-    const timer = setTimeout(resolve, ms);
-    signal?.addEventListener("abort", () => (clearTimeout(timer), resolve()), { once: true });
-  });
 }

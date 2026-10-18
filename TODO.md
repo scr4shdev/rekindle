@@ -146,7 +146,7 @@ with two implementations: `fetch` + `readEventStream`, and a sample replay (`?so
 ### Epic U7: E2E (`tests/e2e/`)
 - [done] U7.1 Persona to session (sample source and mock API), trace and plan render
 - [done] U7.2 Custom form validation; comparison mode; session mode plus replan
-- [in-progress] U7.3 axe accessibility checks (`@axe-core/playwright`) on landing, session and session mode
+- [done] U7.3 axe accessibility checks (`@axe-core/playwright`) on landing, session and session mode
 
 ---
 

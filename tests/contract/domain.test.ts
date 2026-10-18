@@ -4,7 +4,9 @@ import { createEventStamper, decodeEventLine, encodeEvent, readEventStream, toNd
 import {
   SAMPLE_GROUNDED_EVENTS,
   SAMPLE_LLM_ONLY_EVENTS,
+  SAMPLE_LLM_ONLY_PLAN,
   SAMPLE_PLAN,
+  SAMPLE_REPLANNED_PLAN,
   SAMPLE_REPLAN_EVENTS,
 } from "@/lib/domain/sample-events";
 import { AgentEvent, PersonInput, ReplanRequest, SessionPlan, SessionRequest } from "@/lib/domain/types";
@@ -38,6 +40,20 @@ describe("sample event streams", () => {
     expect(() =>
       ReplanRequest.parse({ plan: SAMPLE_PLAN, anchors: anchors.anchors, stepId: "s_oro", reaction: "upset" }),
     ).not.toThrow();
+  });
+});
+
+describe("sample prompts are invitational, never a memory quiz", () => {
+  const QUIZ = /do you remember|si ricorda|vous souvenez|who was your favourite|did you /i;
+  const texts = (plan: typeof SAMPLE_PLAN) =>
+    plan.steps.flatMap((s) => [s.prompt, s.promptTranslation ?? "", ...s.followUps]);
+
+  it("grounded and replanned plans contain no quiz-style prompts", () => {
+    for (const text of [...texts(SAMPLE_PLAN), ...texts(SAMPLE_REPLANNED_PLAN)]) expect(text).not.toMatch(QUIZ);
+  });
+
+  it("the LLM-only recording keeps its quiz line as the intentional contrast", () => {
+    expect(texts(SAMPLE_LLM_ONLY_PLAN).some((t) => /do you remember/i.test(t))).toBe(true);
   });
 });
 

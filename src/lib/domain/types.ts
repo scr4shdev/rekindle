@@ -404,6 +404,30 @@ export const RejectedEvent = z.object({ ...EventBase, type: z.literal("rejected"
 export const StepEvent = z.object({ ...EventBase, type: z.literal("step"), step: SessionStep });
 export const PlanEvent = z.object({ ...EventBase, type: z.literal("plan"), plan: SessionPlan });
 
+/**
+ * Redacted record of one Qloo request: request-to-result provenance for the
+ * trace and the submission. Params contain only cultural anchors (by the
+ * TastePort contract), never personal data or the API key.
+ */
+export const QlooCallRecord = z.object({
+  endpoint: z.enum(["/search", "/entities", "/v2/insights", "/v2/tags"]),
+  /** Query params as sent (arrays comma-joined by the adapter at send time). */
+  params: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.array(z.string())])),
+  resultCount: z.number().int().min(0),
+  durationMs: z.number().min(0),
+  cached: z.boolean(),
+  /** "mock" when served by MockQloo. */
+  source: z.enum(["live", "mock"]),
+});
+export type QlooCallRecord = z.infer<typeof QlooCallRecord>;
+
+export const QlooCallEvent = z.object({
+  ...EventBase,
+  type: z.literal("qloo_call"),
+  phase: AgentPhase,
+  call: QlooCallRecord,
+});
+
 export const ErrorCode = z.enum([
   "invalid_input",
   "qloo_unavailable",
@@ -450,6 +474,7 @@ export const AgentEvent = z.discriminatedUnion("type", [
   RejectedEvent,
   StepEvent,
   PlanEvent,
+  QlooCallEvent,
   ErrorEvent,
   DoneEvent,
 ]);

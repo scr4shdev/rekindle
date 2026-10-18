@@ -4,6 +4,7 @@ import { ArrowLeftIcon, PlayIcon, PrinterIcon, RotateCcwIcon, ScaleIcon, SquareI
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { LiveSession } from "@/components/session/live-session";
 import { PlanTimeline } from "@/components/session/plan-timeline";
 import { ReasoningTrace } from "@/components/session/reasoning-trace";
 import { RECORDED_PERSONA, resolveRequest } from "@/components/session/session-request";
@@ -13,7 +14,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAgentStream } from "@/hooks/use-agent-stream";
 import { getMessages } from "@/i18n";
-import type { Anchors, SessionMode } from "@/lib/domain/types";
+import type { Anchors, Reaction, SessionMode } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
 
 function languageNames(anchors: Anchors): string {
@@ -34,6 +35,13 @@ export function SessionView() {
   const source = useMemo(() => resolveSource(sourceParam, { speed, hasRecording }), [sourceParam, speed, hasRecording]);
   const { view, servedBy, start, cancel } = useAgentStream(source);
   const [runId, setRunId] = useState(0);
+  const [liveOpen, setLiveOpen] = useState(false);
+  const [liveIndex, setLiveIndex] = useState(0);
+  const [reactions, setReactions] = useState<Record<string, Reaction>>({});
+
+  function react(stepId: string, reaction: Reaction) {
+    setReactions((r) => ({ ...r, [stepId]: reaction }));
+  }
 
   useEffect(() => {
     if (resolved.ok) start(resolved.request);
@@ -100,7 +108,13 @@ export function SessionView() {
             )}
             {plan && (
               <>
-                <Button size="lg" className="flex-1 sm:flex-none" data-icon="inline-start" data-testid="start-live">
+                <Button
+                  size="lg"
+                  className="flex-1 sm:flex-none"
+                  data-icon="inline-start"
+                  data-testid="start-live"
+                  onClick={() => setLiveOpen(true)}
+                >
                   <PlayIcon aria-hidden />
                   {t.start}
                 </Button>
@@ -146,6 +160,18 @@ export function SessionView() {
           caregiverLanguage={resolved.request.person.caregiverLanguage ?? "en"}
         />
       </div>
+      {plan && (
+        <LiveSession
+          open={liveOpen}
+          onOpenChange={setLiveOpen}
+          view={view}
+          plan={plan}
+          index={liveIndex}
+          onIndexChange={setLiveIndex}
+          reactions={reactions}
+          onReact={react}
+        />
+      )}
     </div>
   );
 }

@@ -135,8 +135,8 @@ with two implementations: `fetch` + `readEventStream`, and a sample replay (`?so
 - [todo] U4.1 Side-by-side grounded vs LLM-only (two parallel streams) with a summary: verified count, anachronisms caught, images, affinity
 
 ### Epic U5: Caregiver session mode
-- [in-progress] U5.1 One prompt at a time, huge text, step timer, next/prev, translation toggle, keyboard and touch friendly
-- [todo] U5.2 Lit up / no reaction / upset buttons call `POST /api/session/replan` (sample replan when on the sample source); animated plan update
+- [done] U5.1 One prompt at a time, huge text, step timer, next/prev, translation toggle, keyboard and touch friendly
+- [in-progress] U5.2 Lit up / no reaction / upset buttons call `POST /api/session/replan` (sample replan when on the sample source); animated plan update
 
 ### Epic U6: Print, i18n, responsive
 - [todo] U6.1 Print stylesheet (session sheet the caregiver can print)

@@ -91,7 +91,7 @@ export function StepCard({
   return (
     <article
       className={cn(
-        "grid overflow-hidden rounded-3xl border border-border bg-card shadow-paper sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-1 sm:p-4 print:break-inside-avoid print:shadow-none",
+        "grid overflow-hidden rounded-3xl border border-border bg-card shadow-paper sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-1 sm:p-4 print:block print:break-inside-avoid print:rounded-xl print:p-0 print:shadow-none",
         changed && "animate-flash ring-3 ring-ochre",
       )}
       data-testid="step-card"
@@ -102,7 +102,7 @@ export function StepCard({
       <StepMedia step={step} className="h-32 border-b border-border sm:aspect-square sm:h-auto sm:rounded-2xl sm:border sm:shadow-paper print:hidden" />
       <div className="flex min-w-0 flex-col gap-3 p-5 sm:py-1 sm:pr-2 sm:pl-4">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          <span className="flex size-9 items-center justify-center rounded-full bg-primary font-heading font-semibold text-primary-foreground" aria-hidden>
+          <span className="flex size-9 items-center justify-center rounded-full bg-primary font-heading font-semibold text-primary-foreground print:border print:border-current print:text-foreground" aria-hidden>
             {step.order + 1}
           </span>
           <span className="inline-flex items-center gap-1.5 font-semibold text-muted-foreground">
@@ -151,6 +151,15 @@ export function StepCard({
             </span>
           </p>
         )}
+        <div className="hidden flex-wrap items-center gap-x-6 gap-y-1 border-t border-dashed pt-2 text-sm print:flex" aria-hidden>
+          <span className="font-semibold">{getMessages().print.reactions}</span>
+          {(["lit_up", "neutral", "upset"] as const).map((r) => (
+            <span key={r} className="inline-flex items-center gap-1.5">
+              <span className="inline-block size-3.5 rounded-sm border border-current" />
+              {getMessages().live.reactions[r]}
+            </span>
+          ))}
+        </div>
         {searchable && (
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.95rem] text-muted-foreground print:hidden">
             {step.mediaHint && (

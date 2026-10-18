@@ -210,3 +210,41 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Printable session sheet: plan only, black on white, compact. */
+@media print {
+  @page {
+    margin: 14mm;
+  }
+  html {
+    font-size: 11pt;
+  }
+  :root,
+  .dark {
+    --background: #fff;
+    --foreground: #111;
+    --card: #fff;
+    --card-foreground: #111;
+    --muted-foreground: #444;
+    --paper-deep: #fff;
+    --border: #bbb;
+    --ochre-soft: #f4f4f4;
+    --ochre-ink: #111;
+  }
+  body {
+    background: #fff;
+    background-image: none;
+  }
+  body::before {
+    display: none;
+  }
+  *,
+  ::before,
+  ::after {
+    animation: none !important;
+    box-shadow: none !important;
+  }
+  [data-sonner-toaster] {
+    display: none !important;
+  }
+}

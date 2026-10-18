@@ -139,8 +139,8 @@ with two implementations: `fetch` + `readEventStream`, and a sample replay (`?so
 - [done] U5.2 Lit up / no reaction / upset buttons call `POST /api/session/replan` (sample replan when on the sample source); animated plan update
 
 ### Epic U6: Print, i18n, responsive
-- [in-progress] U6.1 Print stylesheet (session sheet the caregiver can print)
-- [todo] U6.2 UI strings in `src/i18n/` (en first, structure ready for it/fr), `lang` attributes on prompts
+- [done] U6.1 Print stylesheet (session sheet the caregiver can print)
+- [in-progress] U6.2 UI strings in `src/i18n/` (en first, structure ready for it/fr), `lang` attributes on prompts
 - [todo] U6.3 Responsive pass (phone first: caregivers use phones)
 
 ### Epic U7: E2E (`tests/e2e/`)

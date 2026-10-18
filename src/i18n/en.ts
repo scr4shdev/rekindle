@@ -217,6 +217,12 @@ export const en = {
     openGrounded: "Open the grounded session",
     working: "Working…",
   },
+  print: {
+    sheet: "Session sheet",
+    reactions: "How did they respond?",
+    notes: "Notes",
+    footer: "Printed from Rekindle. Nothing you typed was stored.",
+  },
   domains: {
     music: "Music",
     film: "Film",

@@ -69,3 +69,13 @@ test.describe("caregiver session mode", () => {
     expect(replanBody?.history).toEqual([]);
   });
 });
+
+test("print view shows the session sheet without the trace", async ({ page }) => {
+  await page.goto("/session?persona=maria&source=sample&speed=40");
+  await expect(page.getByTestId("session-view")).toHaveAttribute("data-status", "done");
+  await page.emulateMedia({ media: "print" });
+  await expect(page.getByTestId("reasoning-trace")).toBeHidden();
+  await expect(page.getByText("Session sheet")).toBeVisible();
+  await expect(page.getByText("How did they respond?").first()).toBeVisible();
+  await expect(page.getByRole("banner")).toBeHidden();
+});

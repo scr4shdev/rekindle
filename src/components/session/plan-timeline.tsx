@@ -9,11 +9,20 @@ import { getMessages } from "@/i18n";
 export function PlanTimeline({ view, language, caregiverLanguage }: { view: SessionView; language: string; caregiverLanguage: string }) {
   const t = getMessages().session;
   const ts = getMessages().step;
+  const tp = getMessages().print;
   const plan = view.plan;
   const composing = !plan && view.steps.length > 0;
   const minutes = plan?.totalMinutes ?? view.steps.reduce((n, s) => n + s.durationMin, 0);
   return (
     <section aria-labelledby="plan-title" className="flex flex-col gap-4" data-testid="plan-timeline" aria-busy={view.status === "streaming"}>
+      {plan && (
+        <div className="hidden print:block">
+          <p className="text-sm tracking-wide uppercase">{tp.sheet}</p>
+          <p className="font-heading text-3xl font-semibold" lang={plan.language}>
+            {plan.title}
+          </p>
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <h2 id="plan-title" className="text-2xl font-semibold sm:text-3xl">
           {t.planTitle}
@@ -83,6 +92,7 @@ export function PlanTimeline({ view, language, caregiverLanguage }: { view: Sess
           {plan.disclaimer}
         </p>
       )}
+      {plan && <p className="hidden text-sm print:block">{tp.footer}</p>}
     </section>
   );
 }

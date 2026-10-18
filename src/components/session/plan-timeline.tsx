@@ -64,9 +64,9 @@ export function PlanTimeline({
       </div>
 
       {view.steps.length === 0 ? (
-        <div className="flex flex-col gap-3" aria-hidden={view.status !== "streaming"}>
-          <p className="rounded-3xl border-2 border-dashed border-border px-6 py-8 text-center text-lg text-muted-foreground">
-            {t.planWaiting}
+        <div className="flex flex-col gap-3">
+          <p className="rounded-3xl border-2 border-dashed border-border px-6 py-8 text-center text-lg text-muted-foreground" data-testid="plan-placeholder">
+            {view.status === "error" ? t.planNone : view.status === "cancelled" ? t.planStopped : t.planWaiting}
           </p>
           {view.status === "streaming" &&
             [0, 1, 2].map((i) => <div key={i} className="h-40 animate-pulse rounded-3xl bg-muted/70" style={{ animationDelay: `${i * 150}ms` }} />)}

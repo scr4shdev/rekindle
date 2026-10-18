@@ -85,6 +85,8 @@ export const en = {
     unknownPersona: "We could not find that person. Pick one of the demo people or write your own notes.",
     planTitle: "The session",
     planWaiting: "Your session will appear here as soon as the agent starts composing it.",
+    planNone: "No plan this time. Try again, or open the recorded demo.",
+    planStopped: "Stopped before a plan was made. Nothing was kept.",
     planDraft: "Composing…",
     totalMinutes: (n: number) => `${n} minutes`,
     stepsCount: (n: number) => `${n} steps`,

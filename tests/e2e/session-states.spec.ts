@@ -19,6 +19,7 @@ test.describe("session error and degraded states", () => {
     await expect(page.getByTestId("session-view")).toHaveAttribute("data-status", "error");
     await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Open Maria's recorded demo" })).toBeVisible();
+    await expect(page.getByTestId("plan-placeholder")).toContainText("No plan this time");
   });
 
   test("400 before streaming maps to a friendly message without echoing input", async ({ page }) => {
@@ -54,6 +55,7 @@ test.describe("session error and degraded states", () => {
     await page.getByRole("button", { name: "Stop" }).click();
     await expect(page.getByTestId("session-view")).toHaveAttribute("data-status", "cancelled");
     await expect(page.getByText("Stopped. Nothing was kept.")).toBeVisible();
+    await expect(page.getByTestId("plan-placeholder")).toContainText("Stopped before a plan was made");
     await page.goto("/session?persona=maria&source=sample&speed=40");
     await expect(page.getByTestId("session-view")).toHaveAttribute("data-status", "done");
   });

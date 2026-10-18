@@ -53,15 +53,20 @@ export function ReasoningTrace({ view, className }: { view: SessionView; classNa
             {tr.title}
           </h2>
           {streaming ? (
-            <span className="inline-flex items-center gap-2 rounded-full bg-primary px-3 py-1 text-sm font-semibold text-primary-foreground">
-              <span className="size-2 animate-pulse rounded-full bg-primary-foreground" aria-hidden />
-              {tr.live}
+            <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span className="text-sm font-semibold text-muted-foreground tabular-nums" data-testid="trace-live-count">
+                {tr.liveCount(view.qlooCalls, verified)}
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full bg-primary px-3 py-1 text-sm font-semibold text-primary-foreground">
+                <span className="size-2 animate-pulse rounded-full bg-primary-foreground" aria-hidden />
+                {tr.live}
+              </span>
             </span>
           ) : view.done ? (
             <span className="text-sm font-semibold text-muted-foreground">{tr.finished((view.done.durationMs / 1000).toFixed(1))}</span>
           ) : null}
         </div>
-        <dl className="grid grid-cols-4 gap-2 text-center">
+        <dl className="hidden grid-cols-4 gap-2 text-center sm:grid">
           {[
             [view.candidates, tr.stats.ideas, "text-foreground"],
             [verified, tr.stats.verified, "text-sage"],

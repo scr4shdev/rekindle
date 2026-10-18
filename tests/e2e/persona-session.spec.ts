@@ -22,6 +22,10 @@ test.describe("persona to session", () => {
     await expect(trace).toBeVisible();
     // Live: the first phase is working before the plan exists.
     await expect(trace.locator('[data-phase="parse"]')).toHaveAttribute("data-status", /started|completed/);
+    // Until steps arrive the trace has the full width, with a live count next to the Live pill.
+    await expect(page.getByTestId("trace-live-count")).toContainText("Qloo requests");
+    await expect(page.getByTestId("plan-timeline")).toHaveCount(0);
+    await expect(page.getByTestId("plan-timeline")).toBeVisible({ timeout: 25_000 });
     await expect(page.getByTestId("session-view")).toHaveAttribute("data-status", "done", { timeout: 25_000 });
     await expect(page.getByText("Recorded demo")).toBeVisible();
     await expect(page.getByTestId("step-card")).toHaveCount(8);

@@ -85,6 +85,8 @@ export function SessionView() {
   const anchors = view.anchors;
   const name = resolved.name ?? t.someone;
   const comparePersona = resolved.persona;
+  // While the agent is still thinking and nothing is composed yet, the trace gets the full width.
+  const traceWide = view.status === "streaming" && view.steps.length === 0;
 
   return (
     <div className="flex flex-col gap-6" data-testid="session-view" data-status={view.status}>
@@ -177,13 +179,16 @@ export function SessionView() {
         )}
       </header>
 
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] print:block">
+      <div className={cn("grid items-start gap-6 print:block", !traceWide && "lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]")}>
         <ReasoningTrace view={view} className="max-h-[60dvh] print:hidden lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)]" />
-        <PlanTimeline
-          view={view}
-          language={resolved.request.person.sessionLanguage ?? "en"}
-          caregiverLanguage={resolved.request.person.caregiverLanguage ?? "en"}
-        />
+        {!traceWide && (
+          <PlanTimeline
+            className="animate-in duration-500 fade-in slide-in-from-right-8 motion-reduce:animate-none"
+            view={view}
+            language={resolved.request.person.sessionLanguage ?? "en"}
+            caregiverLanguage={resolved.request.person.caregiverLanguage ?? "en"}
+          />
+        )}
       </div>
       {plan && (
         <LiveSession

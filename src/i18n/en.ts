@@ -101,6 +101,7 @@ export const en = {
   trace: {
     title: "How the agent is thinking",
     live: "Live",
+    liveCount: (calls: number, found: number) => `${calls} Qloo ${calls === 1 ? "request" : "requests"} · ${found} found`,
     finished: (seconds: string) => `Finished in ${seconds} s`,
     stats: {
       ideas: "ideas",

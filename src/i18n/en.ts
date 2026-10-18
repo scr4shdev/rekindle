@@ -62,6 +62,23 @@ export const en = {
     },
     privacy: "Kept only in this tab's memory. Reloading the page clears it.",
   },
+  errors: {
+    cancelled: "Stopped.",
+    invalid: "The planner could not accept these notes. Please check them and try again.",
+    busy: "The planner is busy right now. Please try again in a minute.",
+    unreachable: "The planner is not reachable right now. Please try again.",
+    network: "The connection was lost. Please check your network and try again.",
+    unknown: "Something went wrong while reading the plan. Please try again.",
+  },
+  sample: {
+    replanStarted: {
+      lit_up: "That landed well. Leaning into this thread…",
+      neutral: "No reaction this time. Trying a different kind of moment next…",
+      upset: "They seemed upset. Slowing down with something calm and familiar…",
+    },
+    replanNote: "Recorded demo: the plan is kept as it is. Connect the live planner to adapt it for real.",
+    replanCompleted: "Plan checked. Carry on when you are ready.",
+  },
   footer: {
     disclaimer:
       "Rekindle suggests reminiscence activities. It is not medical advice, therapy or a diagnosis tool. Follow the person's lead, stop if they seem uncomfortable, and check with their care team about anything health-related.",

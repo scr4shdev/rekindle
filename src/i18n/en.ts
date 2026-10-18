@@ -224,6 +224,11 @@ export const en = {
     notes: "Notes",
     footer: "Printed from Rekindle. Nothing you typed was stored.",
   },
+  notFound: {
+    title: "This page is not here",
+    body: "Nothing is stored in Rekindle, so old links to a session do not survive. Start again from one of the demo people or your own notes.",
+    home: "Back to the start",
+  },
   domains: {
     music: "Music",
     film: "Film",

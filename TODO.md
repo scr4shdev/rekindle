@@ -32,7 +32,7 @@ Add `BLOCKED: contract change needed: <file> <what and why> (<worker>, <date>)` 
   JSON round-trip; tests with a fake Redis client.
 
 ### Epic C2: LLM adapter (`src/lib/adapters/llm/`)
-- [todo] C2.1 `AiSdkLlm`: provider factory (gemini/groq/anthropic) from config, `generateText` + `Output.object`, temperature 0
+- [done] C2.1 `AiSdkLlm`: provider factory (gemini/groq/anthropic) from config, `generateText` + `Output.object`, temperature 0
   AC: cache-through via `buildCacheKey({provider, model, promptVersion: version, input})` (with `sensitive` passed on); timeout via
   AbortSignal; retries from config; errors mapped to `PortError("llm", ...)`; returns latency/usage; logs promptId, version,
   latency and cache hit only; tests use the AI SDK mock model (`ai/test`).

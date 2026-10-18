@@ -13,7 +13,8 @@ test.describe("persona to session", () => {
     await expect(page.getByRole("contentinfo")).toContainText("not medical advice");
   });
 
-  test("tapping Maria streams the trace and the plan (recorded demo fallback)", async ({ page }) => {
+  test("tapping Maria falls back to the recorded demo when the API route is missing", async ({ page }) => {
+    await page.route("**/api/session", (route) => route.fulfill({ status: 404 }));
     await page.goto("/");
     await page.getByTestId("persona-maria").click();
     await expect(page).toHaveURL(/\/session\?persona=maria/);
@@ -23,6 +24,16 @@ test.describe("persona to session", () => {
     await expect(trace.locator('[data-phase="parse"]')).toHaveAttribute("data-status", /started|completed/);
     await expect(page.getByTestId("session-view")).toHaveAttribute("data-status", "done", { timeout: 25_000 });
     await expect(page.getByText("Recorded demo")).toBeVisible();
+    await expect(page.getByTestId("step-card")).toHaveCount(8);
+  });
+
+  test("tapping Maria uses the live planner when the API answers", async ({ page }) => {
+    await mockStream(page, "/api/session", SAMPLE_GROUNDED_EVENTS);
+    await page.goto("/");
+    await page.getByTestId("persona-maria").click();
+    await expect(page.getByTestId("session-view")).toHaveAttribute("data-status", "done");
+    await expect(page.getByText("Live planner")).toBeVisible();
+    await expect(page.getByText("Recorded demo")).toHaveCount(0);
     await expect(page.getByTestId("step-card")).toHaveCount(8);
   });
 

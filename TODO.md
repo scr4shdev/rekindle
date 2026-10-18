@@ -61,12 +61,12 @@ Add `BLOCKED: contract change needed: <file> <what and why> (<worker>, <date>)` 
   `.qloo-recordings/` (never commit live data); hand-authors any committed fixtures; integrator updates the docs.
 
 ### Epic C4: Versioned prompts (`src/lib/prompts/`)
-- [todo] C4.1 `parse-anchors` (notes to `Anchors`; formative window from config ages; sensitivities; languages)
-- [todo] C4.2 `propose-candidates` (anchors to candidates per domain, era and locale correct, with a `qlooType` hint per `TASTE_DOMAIN_QLOO_TYPES`)
-- [todo] C4.3 `match-entity` (pick the matching Qloo search result or none, for when an exact normalized-name match fails)
-- [todo] C4.4 `critique-items` (anachronism, wrong_locale, emotional_risk, duplicate, with reasons in the caregiver language)
-- [todo] C4.5 `compose-session` (timed steps, open-ended non-quiz prompts in the session language plus translations, tips, disclaimer)
-- [todo] C4.6 `replan-session` (reaction-aware rewrite of upcoming steps)
+- [done] C4.1 `parse-anchors` (notes to `Anchors`; formative window from config ages; sensitivities; languages)
+- [done] C4.2 `propose-candidates` (anchors to candidates per domain, era and locale correct, with a `qlooType` hint per `TASTE_DOMAIN_QLOO_TYPES`)
+- [done] C4.3 `match-entity` (pick the matching Qloo search result or none, for when an exact normalized-name match fails)
+- [done] C4.4 `critique-items` (anachronism, wrong_locale, emotional_risk, duplicate, with reasons in the caregiver language)
+- [done] C4.5 `compose-session` (timed steps, open-ended non-quiz prompts in the session language plus translations, tips, disclaimer)
+- [done] C4.6 `replan-session` (reaction-aware rewrite of upcoming steps)
   AC (all): module exports `ID`, `VERSION`, `system`, `render`, `schema` as a `PromptDefinition`; dementia-friendly guidance
   (no quizzing, no "do you remember?" pressure, follow their lead); render snapshot tests.
 

@@ -21,6 +21,8 @@ export const MATCH_RESULTS = 5;
 /** At most this many insights targets (types) per run, and seeds per call. */
 export const EXPAND_MAX_TARGETS = 4;
 export const EXPAND_MAX_SEEDS = 5;
+/** Tag results looked at per decade query (only an exact decade id is used). */
+export const DECADE_TAG_TAKE = 3;
 const TARGET_PRIORITY: QlooInsightsType[] = ["urn:entity:artist", "urn:entity:movie", "urn:entity:person", "urn:entity:tv_show", "urn:entity:book"];
 
 export function ideaMaterial(candidate: Candidate): Material {
@@ -181,11 +183,13 @@ export async function* expandPhase(run: Run, anchors: Anchors, materials: Materi
     const decades: number[] = [];
     for (let d = Math.floor(startYear / 10) * 10; d <= endYear && decades.length < 3; d += 10) decades.push(d);
     for (const decade of decades) {
+      const label = `${String(decade % 100).padStart(2, "0")}s`;
       try {
-        const res = await callTaste(run, (taste, ctx) => taste.searchTags({ query: `${String(decade % 100).padStart(2, "0")}s`, tagTypes: ["urn:tag:genre:music"], take: 1 }, ctx));
+        const res = await callTaste(run, (taste, ctx) => taste.searchTags({ query: label, tagTypes: ["urn:tag:genre:music"], take: DECADE_TAG_TAKE }, ctx));
         calls++;
         yield qlooCallEvent(run, "expand", res);
-        tagIds.push(...res.items.map((t) => t.id));
+        // Exact id check only (e.g. "urn:tag:genre:music:60s"): never a fuzzy tag match.
+        tagIds.push(...res.items.filter((t) => t.id.split(":").at(-1) === label).map((t) => t.id));
       } catch (error) {
         if (isTasteOutage(error)) {
           run.qlooDown = true;

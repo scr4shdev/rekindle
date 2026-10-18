@@ -183,6 +183,25 @@ describe("degraded paths", () => {
     expect(events.at(-1)!.type).toBe("done");
   });
 
+  it("uses only decade tags whose id ends exactly with the decade", async () => {
+    const inner = new MockQloo({ defaultTake: 10 });
+    const taste: TastePort = {
+      mode: "mock",
+      search: (q, c) => inner.search(q, c),
+      getEntities: (q, c) => inner.getEntities(q, c),
+      insights: (q, c) => inner.insights(q, c),
+      searchTags: async (q, c) => {
+        const res = await inner.searchTags(q, c);
+        return { ...res, items: [{ id: `urn:tag:genre:music:${q.query}_pop`, name: "Pop" }, ...res.items] };
+      },
+    };
+    const events = await collect(runSession(mockDeps({ taste }), SessionRequest.parse({ person: maria.input }), testCtx()));
+    const artist = ofType(events, "qloo_call").find((e) => e.call.params["filter.type"] === "urn:entity:artist")!;
+    expect(artist.call.params["signal.interests.tags"]).toEqual(["urn:tag:genre:music:50s", "urn:tag:genre:music:60s", "urn:tag:genre:music:70s"]);
+    const tagCall = ofType(events, "qloo_call").find((e) => e.call.endpoint === "/v2/tags")!;
+    expect(tagCall.call.params.take).toBe(3);
+  });
+
   it("expansion turned off by config is reported as skipped", async () => {
     const events = await collect(runSession(mockDeps({}, { MAX_EXPANSIONS_PER_DOMAIN: "0" }), SessionRequest.parse({ person: maria.input }), testCtx()));
     assertStreamRules(events, "session");

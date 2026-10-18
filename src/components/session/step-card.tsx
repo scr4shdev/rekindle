@@ -22,9 +22,10 @@ export function ProvenanceBadge({ step }: { step: SessionStep }) {
         : [t.verified, t.verifiedHint, "sage" as const, BadgeCheckIcon];
   return (
     <Tooltip>
-      <TooltipTrigger render={<Badge variant={variant} className="cursor-help" tabIndex={0} data-provenance={step.provenance} />}>
+      <TooltipTrigger render={<Badge variant={variant} className="cursor-help" data-provenance={step.provenance} />}>
         <Icon aria-hidden />
         {label}
+        <span className="sr-only">: {hint}</span>
       </TooltipTrigger>
       <TooltipContent>{hint}</TooltipContent>
     </Tooltip>

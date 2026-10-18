@@ -49,7 +49,14 @@ export function SessionView() {
     const plan = view.plan;
     const isLast = plan?.steps.at(-1)?.id === stepId;
     if (!plan || !view.anchors || isLast) return;
-    replan({ plan, anchors: view.anchors, stepId, reaction, history });
+    // One record per step (latest reaction wins), oldest first, excluding the step being reacted to.
+    const latest = new Map<string, ReactionRecord>();
+    for (const record of history) {
+      latest.delete(record.stepId);
+      latest.set(record.stepId, record);
+    }
+    latest.delete(stepId);
+    replan({ plan, anchors: view.anchors, stepId, reaction, history: [...latest.values()] });
   }
 
   // Tell the caregiver what changed when a replan finishes.
@@ -213,8 +220,9 @@ function SourceBadge({ kind }: { kind: SourceKind }) {
   const t = getMessages().session;
   return (
     <Tooltip>
-      <TooltipTrigger render={<Badge variant="outline" className="cursor-help" tabIndex={0} />}>
+      <TooltipTrigger render={<Badge variant="outline" className="cursor-help" />}>
         {kind === "sample" ? t.sourceSample : t.sourceLive}
+        <span className="sr-only">: {kind === "sample" ? t.sourceSampleHint : t.sourceLiveHint}</span>
       </TooltipTrigger>
       <TooltipContent>{kind === "sample" ? t.sourceSampleHint : t.sourceLiveHint}</TooltipContent>
     </Tooltip>

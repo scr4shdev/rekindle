@@ -95,6 +95,16 @@ test.describe("caregiver session mode", () => {
     expect(replanBody?.plan.id).toBe("plan_sample_maria");
     expect(replanBody?.anchors.birthYear).toBe(1942);
     expect(replanBody?.history).toEqual([]);
+    // Changing the reaction on the same step, then reacting to the next one: history has one record per step.
+    await page.keyboard.press("Escape");
+    await page.getByTestId("start-live").click();
+    await page.getByTestId("react-neutral").click();
+    await expect(page.getByTestId("react-neutral")).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByTestId("react-upset")).toBeEnabled();
+    await page.getByTestId("live-next").click();
+    await page.getByTestId("react-upset").click();
+    await expect.poll(() => replanBody?.stepId).toBe("s_carosone");
+    expect(replanBody?.history).toEqual([{ stepId: "s_sinatra", reaction: "neutral" }]);
   });
 });
 

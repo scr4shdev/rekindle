@@ -12,6 +12,8 @@ import {
 } from "@/lib/domain/sample-events";
 
 test.describe("view-state reducer", () => {
+  // Pure Node tests: one project is enough.
+  test.skip(({ isMobile }) => isMobile, "runs in the desktop project only");
   test("grounded sample stream builds the full trace and plan", () => {
     const view = viewFromEvents(SAMPLE_GROUNDED_EVENTS);
     expect(view.status).toBe("done");

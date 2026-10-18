@@ -34,6 +34,7 @@ test.describe("persona to session", () => {
     await expect(page.getByTestId("session-view")).toHaveAttribute("data-status", "done");
     await expect(page.getByText("Live planner")).toBeVisible();
     await expect(page.getByText("Recorded demo")).toHaveCount(0);
+    await expect(page.getByTestId("qloo-mode")).toContainText("Qloo: demo data");
     await expect(page.getByTestId("step-card")).toHaveCount(8);
   });
 

@@ -115,6 +115,15 @@ export function SessionView() {
               )}
               <Badge variant={mode === "grounded" ? "sage" : "clay"}>{mode === "grounded" ? t.modeGrounded : t.modeLlmOnly}</Badge>
               {servedBy && <SourceBadge kind={servedBy} />}
+              {plan && plan.meta.qlooMode !== "unused" && (
+                <Tooltip>
+                  <TooltipTrigger render={<Badge variant={plan.meta.qlooMode === "live" ? "sage" : "outline"} className="cursor-help" />} data-testid="qloo-mode">
+                    {plan.meta.qlooMode === "live" ? t.qlooLive : t.qlooMock}
+                    <span className="sr-only">: {plan.meta.qlooMode === "live" ? t.qlooLiveHint : t.qlooMockHint}</span>
+                  </TooltipTrigger>
+                  <TooltipContent>{plan.meta.qlooMode === "live" ? t.qlooLiveHint : t.qlooMockHint}</TooltipContent>
+                </Tooltip>
+              )}
             </div>
           </div>
           <div className="flex flex-wrap gap-2.5">

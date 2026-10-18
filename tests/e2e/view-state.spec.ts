@@ -62,6 +62,7 @@ test.describe("view-state reducer", () => {
     for (const event of SAMPLE_REPLAN_EVENTS) view = reduceView(view, { type: "event", event });
     expect(view.replanning).toBe(false);
     expect(view.plan?.meta.revision).toBe(1);
+    expect(view.adaptations).toBe(1);
     expect(view.changedStepIds).toContain("s_murolo");
     expect(view.removedStepLabels).toEqual(["Forza Napoli: the Sívori years"]);
     const replan = view.phases.at(-1);

@@ -64,6 +64,16 @@ test.describe("caregiver session mode", () => {
     await expect(page.getByText("Adapted once")).toBeVisible();
   });
 
+  test("a reaction the recording does not cover keeps the plan and says so", async ({ page }) => {
+    await page.goto("/session?persona=maria&source=sample&speed=40");
+    await expect(page.getByTestId("session-view")).toHaveAttribute("data-status", "done");
+    await page.getByTestId("start-live").click();
+    await page.getByTestId("react-lit_up").click();
+    await expect(page.getByText("Plan checked. Nothing needed to change.")).toBeVisible();
+    await page.getByRole("button", { name: "Close session mode" }).click();
+    await expect(page.getByText(/Adapted/)).toHaveCount(0);
+  });
+
   test("reactions post a stateless replan request to the API", async ({ page }) => {
     await mockStream(page, "/api/session", SAMPLE_GROUNDED_EVENTS);
     let replanBody: ReplanRequestDraft | undefined;

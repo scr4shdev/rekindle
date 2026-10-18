@@ -72,6 +72,8 @@ export interface SessionView {
   removedStepLabels: string[];
   /** Number of replans started in this view. */
   replans: number;
+  /** Number of replans that actually changed upcoming steps. */
+  adaptations: number;
 }
 
 export type ViewAction =
@@ -95,6 +97,7 @@ export function initialView(): SessionView {
     changedStepIds: [],
     removedStepLabels: [],
     replans: 0,
+    adaptations: 0,
   };
 }
 
@@ -184,11 +187,14 @@ function applyEvent(view: SessionView, event: AgentEvent): SessionView {
             })
             .map((s) => s.id)
         : [];
+      const changedStepIds = previous ? [...new Set([...view.changedStepIds, ...changed])] : [];
+      const adapted = Boolean(previous) && (changedStepIds.length > 0 || view.removedStepLabels.length > 0);
       return {
         ...view,
         plan: event.plan,
         steps: event.plan.steps,
-        changedStepIds: previous ? [...new Set([...view.changedStepIds, ...changed])] : [],
+        changedStepIds,
+        adaptations: view.adaptations + (adapted ? 1 : 0),
       };
     }
     case "error": {

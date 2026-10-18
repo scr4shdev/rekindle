@@ -54,19 +54,18 @@ export function SessionView() {
 
   // Tell the caregiver what changed when a replan finishes.
   const wasReplanning = useRef(false);
-  const revisionBefore = useRef(0);
+  const before = useRef({ adaptations: 0, warnings: 0 });
   useEffect(() => {
     const tl = getMessages().live;
-    if (view.replanning && !wasReplanning.current) revisionBefore.current = view.plan?.meta.revision ?? 0;
+    if (view.replanning && !wasReplanning.current) before.current = { adaptations: view.adaptations, warnings: view.warnings.length };
     if (!view.replanning && wasReplanning.current) {
-      const revision = view.plan?.meta.revision ?? 0;
       const next = view.plan?.steps[liveIndex + 1];
-      if (revision > revisionBefore.current && view.changedStepIds.length > 0 && next) toast.success(tl.adapted(next.title));
-      else if (revision > revisionBefore.current) toast(tl.unchanged);
-      else toast.error(tl.adaptFailed);
+      if (view.warnings.length > before.current.warnings) toast.error(tl.adaptFailed);
+      else if (view.adaptations > before.current.adaptations && next) toast.success(tl.adapted(next.title));
+      else toast(tl.unchanged);
     }
     wasReplanning.current = view.replanning;
-  }, [view.replanning, view.plan, view.changedStepIds, liveIndex]);
+  }, [view.replanning, view.plan, view.adaptations, view.warnings.length, liveIndex]);
 
   useEffect(() => {
     if (resolved.ok) start(resolved.request);

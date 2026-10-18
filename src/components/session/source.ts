@@ -96,10 +96,10 @@ async function* replay(events: readonly AgentEvent[], speed: number, signal: Abo
   }
 }
 
-/** A short synthetic replan for reactions the recording does not cover: same plan, next revision. */
+/** A short synthetic replan for reactions the recording does not cover: the plan is returned unchanged. */
 function syntheticReplan(request: ReplanRequestDraft): AgentEvent[] {
   const t = getMessages().sample;
-  const plan = { ...request.plan, meta: { ...request.plan.meta, revision: (request.plan.meta.revision ?? 0) + 1 } };
+  const plan = { ...request.plan, meta: { ...request.plan.meta, revision: request.plan.meta.revision ?? 0 } };
   const payloads: AgentEventPayload[] = [
     { type: "phase", phase: "replan", status: "started", message: t.replanStarted[request.reaction] },
     { type: "note", phase: "replan", text: t.replanNote },

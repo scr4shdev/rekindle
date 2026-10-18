@@ -55,10 +55,10 @@ export function PlanTimeline({
             {t.planDraft}
           </Badge>
         )}
-        {plan && plan.meta.revision > 0 && (
+        {view.adaptations > 0 && (
           <Badge variant="ochre">
             <WandSparklesIcon aria-hidden />
-            {t.revision(plan.meta.revision)}
+            {t.revision(view.adaptations)}
           </Badge>
         )}
       </div>

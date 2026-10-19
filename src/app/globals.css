@@ -126,9 +126,10 @@
   --rose: #a94b36;
   --rose-soft: #f3d6cc;
   --rose-ink: #7d2e1e;
-  /* Clay: neutral / LLM-only. */
+  /* Clay: neutral / LLM-only. Ink is dark enough that opacity-80 descendants
+     (candidate chip year, see reasoning-trace.tsx) still clear WCAG AA. */
   --clay-soft: #ece4d4;
-  --clay-ink: #5a4f47;
+  --clay-ink: #4a3f36;
   --grain-opacity: 0.3;
 }
 

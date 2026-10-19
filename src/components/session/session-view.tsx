@@ -192,7 +192,11 @@ export function SessionView() {
       </header>
 
       <div className={cn("grid items-start gap-6 print:block", !traceWide && "lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]")}>
-        <ReasoningTrace view={view} className="max-h-[60dvh] print:hidden lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)]" />
+        <ReasoningTrace
+          view={view}
+          className="max-h-[60dvh] print:hidden lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)]"
+          onRetry={() => setRunId((n) => n + 1)}
+        />
         {!traceWide && (
           <PlanTimeline
             className="animate-in duration-500 fade-in slide-in-from-right-8 motion-reduce:animate-none"

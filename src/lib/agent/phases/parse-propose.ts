@@ -117,7 +117,18 @@ export function toCandidates(out: ProposeCandidatesOutput, run: Run): Candidate[
     const count = perDomain.get(c.domain) ?? 0;
     if (seen.has(key) || count >= max) continue;
     const allowed = TASTE_DOMAIN_QLOO_TYPES[c.domain];
-    const qlooType = c.qlooType === "none" ? undefined : allowed.includes(c.qlooType) ? c.qlooType : allowed[0];
+    // Food in Qloo has no "dish" type: urn:entity:place is coarse and returns
+    // offices/airports when there is no cuisine filter (live probe, F3). Keep
+    // food candidates as ungroundable ideas and let the verify phase do a
+    // cuisine-tag side-lookup as the cultural gate instead.
+    const qlooType =
+      c.qlooType === "none"
+        ? undefined
+        : c.domain === "food"
+          ? undefined
+          : allowed.includes(c.qlooType)
+            ? c.qlooType
+            : allowed[0];
     const parsed = CandidateSchema.safeParse({
       id: run.deps.newId("c"),
       domain: c.domain,

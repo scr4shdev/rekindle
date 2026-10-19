@@ -10,6 +10,15 @@ Deadline: **2026-10-30**. Judging: Technological Implementation, Design, Potenti
 Add `BLOCKED: contract change needed: <file> <what and why> (<worker>, <date>)` here. The integrator answers inline.
 
 - Request (non-blocking): tests/contract/domain.test.ts: export the `QUIZ` pattern from a shared helper (e.g. `tests/contract/quiz.ts`) so `tests/unit/mock-prompts-quiz.test.ts` can import it; it currently reads the constant from the contract file's source to avoid a copy. (W-CORE, 2026-10-18)
+- Request (non-blocking): src/lib/ports/taste.ts: expose a `fallbackOnEmpty?: boolean` option on `TastePort.insights` (or on `TasteInsightsQuery`) so the empty-result retry can be opt-in rather than being triggered automatically whenever a request combines `signal.location.query` and `filter.tags`. Current implementation (F1) lives in the adapter and is a strict improvement; no behavior opt-out needed for the hackathon demo. contract: src/lib/ports/taste.ts (W-CORE, 2026-10-19)
+- Request (non-blocking): src/lib/domain/types.ts: `RejectionKind` has no `cultural_mismatch` value. F2's cultural-check rejections currently use `wrong_locale` with a `cultural_mismatch:` reason prefix; a dedicated kind would read better in the trace. contract: src/lib/domain/types.ts (W-CORE, 2026-10-19)
+
+### feat/qloo-grounding (F1-F4) implementer notes
+
+- F1 (resilient insights on empty) — `src/lib/adapters/qloo/http.ts:107-137`: when `/v2/insights` returns 0 items AND the request had both `signal.location.query` and `filter.tags`, retry once without the location, then once without the tag filter. Logged at `info` with the dropped param name only; no key, no notes.
+- F2 (cultural-mismatch gate) — `src/lib/agent/phases/critique-compose.ts:21-82`: new `cultural-check` prompt (schema-validated structured output). Runs only when `isNonWesternOrigin(anchors, person.sessionLanguage)` is true. Mismatches surface as `rejected` events with `kind: wrong_locale` and a `cultural_mismatch:` reason prefix.
+- F3 (cuisine-tag gate for food) — `src/lib/agent/phases/verify-expand.ts:102-162` + `src/lib/agent/phases/parse-propose.ts:120-131`: food candidates are forced ungroundable, and a cuisine-tag `/v2/tags` side-lookup gates whether they stay as caregiver-led ideas or get dropped. Mock catalog gains cuisine tags for the three personas.
+- F4 (Fès alias, no country fallback) — `src/lib/agent/util.ts:91-105`: narrow `normalizePlaceName` (`Fes`/`Fez` → `Fès`), applied inside `primaryPlace`. The adapter already drops the location signal on 400 and does not widen to a country; F4 keeps that behavior.
 
 ## Phase 0: Architect (done)
 

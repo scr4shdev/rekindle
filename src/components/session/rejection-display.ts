@@ -27,11 +27,14 @@ export interface RejectionDisplay {
 export function rejectionDisplay(item: RejectedItem, messages = getMessages()): RejectionDisplay {
   const kinds = messages.trace.rejectedKinds;
   if (item.kind === "wrong_locale") {
-    const raw = item.reason.trimStart();
-    if (raw.toLowerCase().startsWith(CULTURAL_MISMATCH_PREFIX)) {
+    const raw = item.reason.trim();
+    // Tolerant: case-insensitive, allows whitespace around the colon so a
+    // slightly reformatted sentinel ("Cultural_Mismatch :  …") still strips.
+    const match = raw.match(/^cultural_mismatch\s*:\s*/i);
+    if (match) {
       return {
         label: kinds.wrong_locale_cultural,
-        reason: raw.slice(CULTURAL_MISMATCH_PREFIX.length).trimStart(),
+        reason: raw.slice(match[0].length),
       };
     }
   }

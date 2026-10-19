@@ -263,3 +263,7 @@
     display: none !important;
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise, .animate-glow, .animate-flash { animation: none !important; }
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeftIcon, PlayIcon, PrinterIcon, RotateCcwIcon, ScaleIcon, SquareIcon, TriangleAlertIcon } from "lucide-react";
+import { ArrowLeftIcon, BotIcon, PlayIcon, PrinterIcon, RotateCcwIcon, ScaleIcon, SquareIcon, TriangleAlertIcon } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -98,8 +98,13 @@ export function SessionView() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex flex-col gap-2">
             <h1 className="text-3xl leading-tight font-semibold sm:text-5xl" data-testid="session-title" lang={plan?.language}>
-              {plan?.title ?? t.planningFor(name)}
+              {plan?.title ?? (name === t.someone ? t.planningGeneric : t.planningFor(name))}
             </h1>
+            {streaming && view.steps.length === 0 && (
+              <p className="text-muted-foreground" data-testid="wait-hint">
+                {t.waitHint}
+              </p>
+            )}
             <div className="flex flex-wrap items-center gap-2">
               {anchors && (
                 <span className="mr-1 text-lg text-muted-foreground">
@@ -107,7 +112,14 @@ export function SessionView() {
                   {languageNames(anchors)}
                 </span>
               )}
-              <Badge variant={mode === "grounded" ? "sage" : "clay"}>{mode === "grounded" ? t.modeGrounded : t.modeLlmOnly}</Badge>
+              {mode === "grounded" ? (
+                <Badge variant="sage">{t.modeGrounded}</Badge>
+              ) : (
+                <Badge variant="outline">
+                  <BotIcon aria-hidden />
+                  {t.modeLlmOnly}
+                </Badge>
+              )}
               {servedBy && <SourceBadge kind={servedBy} />}
               {plan && plan.meta.qlooMode !== "unused" && (
                 <Tooltip>
@@ -153,7 +165,7 @@ export function SessionView() {
             {!streaming && (
               <Link
                 href={`/compare?persona=${comparePersona}`}
-                className={cn(buttonVariants({ variant: "ghost", size: plan ? "lg" : "default" }), "h-auto min-h-12 shrink px-3 py-2 whitespace-normal sm:px-6")}
+                className={cn(buttonVariants({ variant: "outline", size: plan ? "lg" : "default" }), "h-auto min-h-12 shrink px-3 py-2 whitespace-normal sm:px-6")}
                 data-icon="inline-start"
               >
                 <ScaleIcon aria-hidden />

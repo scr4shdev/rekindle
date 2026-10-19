@@ -10,8 +10,8 @@ test.describe("comparison mode", () => {
     await expect(view).toHaveAttribute("data-grounded-status", "done");
     await expect(view).toHaveAttribute("data-llm-status", "done");
     const score = page.getByTestId("compare-score");
-    await expect(score.getByRole("row", { name: /Ideas confirmed to exist/ })).toContainText("unchecked");
-    await expect(score.getByRole("row", { name: /Steps built on a verified entity/ })).toContainText("5 of 8");
+    await expect(score.getByRole("row", { name: /Songs, films and faces confirmed real/ })).toContainText("unchecked");
+    await expect(score.getByRole("row", { name: /Steps anchored in something real/ })).toContainText("5 of 8");
     await expect(page.getByTestId("compare-llm").getByTestId("compare-step")).toHaveCount(6);
     await expect(page.getByTestId("compare-grounded").getByTestId("compare-step")).toHaveCount(8);
     await expect(page.getByTestId("compare-grounded")).toContainText("Diego Maradona");

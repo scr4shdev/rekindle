@@ -16,9 +16,7 @@ export function SiteHeader() {
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
         <Link href="/" className="group flex items-center gap-3 rounded-full pr-3" aria-label={`${t.name}, ${t.nav.home}`}>
           <LogoMark className="size-10 transition-transform duration-300 group-hover:-rotate-6" />
-          <span className="font-heading text-2xl font-semibold tracking-tight" style={{ fontVariationSettings: '"SOFT" 100' }}>
-            {t.name}
-          </span>
+          <span className="font-heading text-2xl font-semibold tracking-tight">{t.name}</span>
         </Link>
         <nav className="flex items-center gap-1" aria-label={t.nav.label}>
           <Link

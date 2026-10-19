@@ -215,7 +215,6 @@ export function LiveSession({
                 <DialogPrimitive.Description
                   lang={plan.language}
                   className="font-heading text-[2rem] leading-[1.2] font-medium sm:text-5xl"
-                  style={{ fontVariationSettings: '"SOFT" 100, "opsz" 72' }}
                   data-testid="live-prompt"
                 >
                   {step.prompt}
@@ -281,7 +280,7 @@ export function LiveSession({
                       data-testid={`react-${value}`}
                       onClick={() => onReact(step.id, value)}
                       className={cn(
-                        "flex min-h-14 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-2xl border-2 border-border bg-background px-2 py-1.5 text-[0.95rem] leading-tight font-semibold sm:min-h-16 transition-colors hover:border-input disabled:cursor-not-allowed disabled:opacity-60 sm:flex-row sm:gap-2 sm:text-lg",
+                        "flex min-h-[5.5rem] min-w-[7rem] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-[1.375rem] border-2 border-border bg-background px-3 py-2 text-[0.95rem] leading-tight font-semibold transition-colors hover:border-input disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-24 sm:text-lg",
                         tone,
                       )}
                     >

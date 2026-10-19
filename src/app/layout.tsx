@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Atkinson_Hyperlegible_Mono, Atkinson_Hyperlegible_Next, Fraunces } from "next/font/google";
+import { Bricolage_Grotesque, Figtree, JetBrains_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -8,22 +8,27 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
-/** Display serif: warm, slightly soft, mid-century print feel. */
-const display = Fraunces({
+/** Display: Bricolage Grotesque. Humanist grotesque with optical sizing. */
+const display = Bricolage_Grotesque({
   subsets: ["latin", "latin-ext"],
-  axes: ["SOFT", "opsz"],
+  weight: ["500", "600", "700"],
   variable: "--font-display",
   display: "swap",
 });
-/** Body sans designed for low-vision readers (Braille Institute). */
-const body = Atkinson_Hyperlegible_Next({
+/** Body: Figtree. Warm, highly legible humanist sans. */
+const body = Figtree({
   subsets: ["latin", "latin-ext"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-body",
   display: "swap",
-  adjustFontFallback: false,
 });
-/** Mono for Qloo request parameters in the trace. */
-const code = Atkinson_Hyperlegible_Mono({ subsets: ["latin"], variable: "--font-code", display: "swap", adjustFontFallback: false });
+/** Mono: JetBrains Mono for Qloo request parameters, timers, and captions. */
+const code = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  variable: "--font-code",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Rekindle",
@@ -32,8 +37,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fbf5eb" },
-    { media: "(prefers-color-scheme: dark)", color: "#1d140f" },
+    { media: "(prefers-color-scheme: light)", color: "#efe9df" },
+    { media: "(prefers-color-scheme: dark)", color: "#171311" },
   ],
 };
 

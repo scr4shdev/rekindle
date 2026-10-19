@@ -121,7 +121,7 @@ export function StepCard({
           {step.title}
         </h3>
         <blockquote className="border-l-4 border-primary/70 pl-4">
-          <p lang={language} className="font-heading text-xl leading-snug" style={{ fontVariationSettings: '"SOFT" 100, "opsz" 24' }}>
+          <p lang={language} className="font-heading text-xl leading-snug">
             “{step.prompt}”
           </p>
           {step.promptTranslation && (

@@ -29,8 +29,13 @@ import { abortableSleep, backoffMs } from "@/lib/adapters/shared/backoff";
 
 /** Deterministic seed for every Ollama call. Not configurable on purpose. */
 export const OLLAMA_SEED = 42;
-/** Context window; Ollama allocates up to this many tokens per call. */
-export const OLLAMA_NUM_CTX = 32_768;
+/**
+ * Context window; Ollama allocates up to this many tokens per call.
+ * 8192 keeps a Q4 8B model (and its Q8 KV cache) fully in a 6 GB GPU on this
+ * box; qwen3's reasoning is disabled and Rekindle prompts are short, so we
+ * never approach this limit in practice.
+ */
+export const OLLAMA_NUM_CTX = 8_192;
 
 export type LiveOllamaConfig = AppConfig["llm"] & {
   provider: "ollama";

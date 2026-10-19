@@ -1,8 +1,8 @@
 "use client";
 
-import { ArrowRightIcon, ScaleIcon } from "lucide-react";
+import { ArrowRightIcon, LoaderCircleIcon, ScaleIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useId, useRef, useState, type ComponentProps, type FormEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ComponentProps, type FormEvent, type ReactNode } from "react";
 import { setPendingPerson } from "@/components/session/pending-request";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ const LANGUAGES = ["en", "it", "fr", "es", "de", "pt", "nl", "pl", "ga", "el", "
 const MINUTES = [10, 15, 20, 30];
 const NOTES_MAX = 2000;
 const MAX_YEAR = new Date().getFullYear();
+const DRAFT_KEY = "rekindle:draft:notes";
 
 type Field = "displayName" | "notes" | "birthYear" | "birthPlace" | "sessionMinutes";
 type Errors = Partial<Record<Field, string>>;
@@ -38,6 +39,30 @@ export function CustomForm() {
   const [grounded, setGrounded] = useState(true);
   const [minutes, setMinutes] = useState(20);
   const [errors, setErrors] = useState<Errors>({});
+  const [pending, setPending] = useState(false);
+
+  // Restore the in-progress notes draft so a reload or tab switch doesn't lose
+  // what the caregiver was writing. Scoped to this tab only (sessionStorage),
+  // kept out of the server-rendered HTML, cleared when the planner opens, and
+  // never persists across sessions.
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(DRAFT_KEY);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot restore from external storage on mount.
+      if (saved) setNotes(saved);
+    } catch {
+      // sessionStorage can be unavailable (private mode); ignore.
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      if (notes) sessionStorage.setItem(DRAFT_KEY, notes);
+      else sessionStorage.removeItem(DRAFT_KEY);
+    } catch {
+      // ignore
+    }
+  }, [notes]);
 
   const errorText: Record<Field, string> = {
     notes: t.errors.notes,
@@ -78,6 +103,12 @@ export function CustomForm() {
     }
     setErrors({});
     setPendingPerson(result.data);
+    try {
+      sessionStorage.removeItem(DRAFT_KEY);
+    } catch {
+      // ignore
+    }
+    setPending(true);
     const mode = grounded ? "grounded" : "llm-only";
     router.push(target === "compare" ? "/compare?persona=custom" : `/session?persona=custom&mode=${mode}`);
   }
@@ -175,9 +206,9 @@ export function CustomForm() {
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <Button type="submit" size="lg" data-icon="inline-end">
-          {t.submit}
-          <ArrowRightIcon aria-hidden />
+        <Button type="submit" size="lg" data-icon="inline-end" disabled={pending} aria-busy={pending || undefined}>
+          {pending ? "Opening the planner…" : t.submit}
+          {pending ? <LoaderCircleIcon className="animate-spin" aria-hidden /> : <ArrowRightIcon aria-hidden />}
         </Button>
         <Button
           type="button"
@@ -185,6 +216,7 @@ export function CustomForm() {
           size="lg"
           onClick={() => submit(formRef.current, "compare")}
           data-icon="inline-start"
+          disabled={pending}
         >
           <ScaleIcon aria-hidden />
           {t.compare}

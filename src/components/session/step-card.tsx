@@ -120,17 +120,20 @@ export function StepCard({
         <h3 id={`step-${step.id}-title`} className="text-2xl leading-snug font-semibold">
           {step.title}
         </h3>
-        <blockquote className="border-l-4 border-primary/70 pl-4">
-          <p lang={language} className="font-heading text-xl leading-snug">
-            “{step.prompt}”
-          </p>
-          {step.promptTranslation && (
-            <p lang={caregiverLanguage} className="mt-1.5 text-muted-foreground">
-              <span className="sr-only">{t.translation}: </span>
-              {step.promptTranslation}
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t.say}</p>
+          <blockquote className="mt-1 border-l-4 border-primary/70 pl-4">
+            <p lang={language} className="font-heading text-xl leading-snug">
+              “{step.prompt}”
             </p>
-          )}
-        </blockquote>
+            {step.promptTranslation && (
+              <p lang={caregiverLanguage} className="mt-1.5 text-muted-foreground">
+                <span className="sr-only">{t.translation}: </span>
+                {step.promptTranslation}
+              </p>
+            )}
+          </blockquote>
+        </div>
         {step.followUps.length > 0 && (
           <div>
             <p className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">{t.followUps}</p>

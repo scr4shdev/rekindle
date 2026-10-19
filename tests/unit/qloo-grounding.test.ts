@@ -118,6 +118,45 @@ describe("F1: resilient insights on empty with both location + tag filter", () =
     expect(sent).toHaveLength(1);
     expect(res.items).toHaveLength(0);
   });
+
+  it("R5: logs one info line and keeps best-effort semantics when the attempt 2 retry comes back non-OK", async () => {
+    // Each attempt in fetchWithRetry costs maxRetries + 1 attempts on a retryable
+    // 5xx; the test config sets maxRetries=2, so attempt 2 burns 3 fetches.
+    const fail500 = () => new Response("boom", { status: 500 });
+    const { fn, sent } = fakeFetch([emptyInsights(), fail500(), fail500(), fail500()]);
+    const { logger, lines } = recordingLogger();
+    const qloo = new QlooHttp(qlooConfig, new MemoryCache(), { fetch: fn, sleep: noSleep });
+    const res = await qloo.insights(
+      { type: "urn:entity:artist", locationQuery: "Naples", filterTagIds: ["urn:tag:genre:music:50s"] },
+      testCtx({ logger }),
+    );
+    // Best effort: no throw; the original empty result is returned.
+    expect(res.items).toHaveLength(0);
+    expect(sent.length).toBeGreaterThanOrEqual(2);
+    const log = lines.join("");
+    expect(log).toContain("attempt 2");
+    expect(log).toContain("signal.location.query");
+  });
+
+  it("R3: does not shadow attempt 2's non-empty result with an empty attempt 3", async () => {
+    // Attempt 1 empty -> attempt 2 (location dropped) empty -> attempt 3 (tag dropped) empty.
+    // The second non-empty result must come from attempt 2's semantics; attempt 3's
+    // empty response must not overwrite them (previous behavior wrote empty items).
+    // Here we also assert the cache stores the attempt-2 params when attempt 2 wins.
+    const entity = { entity_id: "a1", name: "Artist One", subtype: "urn:entity:artist" };
+    const { fn, sent } = fakeFetch([emptyInsights(), insightsWith([entity])]);
+    const cache = new MemoryCache();
+    const qloo = new QlooHttp(qlooConfig, cache, { fetch: fn, sleep: noSleep });
+    const res = await qloo.insights(
+      { type: "urn:entity:artist", locationQuery: "Naples", filterTagIds: ["urn:tag:genre:music:50s"] },
+      testCtx(),
+    );
+    expect(sent).toHaveLength(2);
+    expect(res.items).toHaveLength(1);
+    // The cached record uses attempt 2's params (no location, still has filter.tags).
+    expect(res.request.params["filter.tags"]).toBeDefined();
+    expect(res.request.params["signal.location.query"]).toBeUndefined();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -181,6 +220,61 @@ describe("F2: cultural-mismatch gate for non-Western origin", () => {
     expect(culturalReject!.kind).toBe("wrong_locale");
     const plan = ofType(events, "plan")[0]!.plan;
     expect(plan.steps.flatMap((s) => (s.entity ? [s.entity.name] : []))).not.toContain("Donald Trump");
+  });
+
+  it("keeps a candidate flagged as unclear by the cultural check (not rejected)", async () => {
+    const fatima = PERSONAS.find((p) => p.slug === "fatima")!;
+    const baseLlm = new MockLlm({ cacheTtlSeconds: 0 });
+    // Wrap: cultural-check marks any entity with "ambiguous" in its name as unclear
+    // and everything else as cultural_match. Nothing should be rejected by the gate.
+    const llm = {
+      mode: baseLlm.mode,
+      provider: baseLlm.provider,
+      model: baseLlm.model,
+      generateObject: async (request: Parameters<typeof baseLlm.generateObject>[0], ctx: Parameters<typeof baseLlm.generateObject>[1]) => {
+        if (request.promptId === "cultural-check") {
+          const input = request.input as { items: Array<{ ref: string; name: string }> };
+          const verdicts = input.items.map((item) => ({
+            ref: item.ref,
+            verdict: item.name.toLowerCase().includes("ambiguous") ? ("unclear" as const) : ("cultural_match" as const),
+            reason: item.name.toLowerCase().includes("ambiguous")
+              ? "Could belong to this culture but the signal is weak."
+              : "Belongs to the person's culture.",
+          }));
+          return { object: { verdicts } as never, cached: false, provider: "mock", model: "mock-llm", latencyMs: 0 };
+        }
+        return baseLlm.generateObject(request, ctx);
+      },
+    };
+
+    const baseQloo = new MockQloo({ defaultTake: 10 });
+    const taste: TastePort = {
+      mode: "mock",
+      search: (q, c) => baseQloo.search(q, c),
+      getEntities: (q, c) => baseQloo.getEntities(q, c),
+      searchTags: (q, c) => baseQloo.searchTags(q, c),
+      insights: async (q, c) => {
+        const res = await baseQloo.insights(q, c);
+        if (q.type === "urn:entity:person" && (q.seedEntityIds?.length ?? 0) > 0) {
+          const ambiguous: TasteEntity = {
+            qlooId: "person-ambiguous-figure",
+            name: "Ambiguous Figure",
+            type: "urn:entity:person",
+            affinity: 0.8,
+            popularity: 0.6,
+            tags: [],
+          };
+          return { ...res, items: [ambiguous, ...res.items] };
+        }
+        return res;
+      },
+    };
+
+    const deps = mockDeps({ taste, llm: llm as never });
+    const events = await collect(runSession(deps, SessionRequest.parse({ person: fatima.input }), testCtx()));
+    const rejected = ofType(events, "rejected").map((e) => e.item);
+    // The cultural gate must not reject an unclear verdict.
+    expect(rejected.find((r) => r.label === "Ambiguous Figure" && r.reason.toLowerCase().startsWith("cultural_mismatch:"))).toBeUndefined();
   });
 
   it("skips the cultural gate for Western-origin personas (Seamus)", async () => {

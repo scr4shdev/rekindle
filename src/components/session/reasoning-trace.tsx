@@ -13,6 +13,7 @@ import {
 import { useEffect, useRef } from "react";
 import { QlooCallRow } from "@/components/session/qloo-call-row";
 import { DOMAIN_ICON } from "@/components/session/icons";
+import { rejectionDisplay } from "@/components/session/rejection-display";
 import type { PhaseView, SessionView, TraceItem } from "@/components/session/view-state";
 import { getMessages } from "@/i18n";
 import type { Candidate, RejectedItem, VerifiedEntity } from "@/lib/domain/types";
@@ -244,15 +245,15 @@ function VerifiedRow({ entity, entities }: { entity: VerifiedEntity; entities: S
 }
 
 function RejectedRow({ item }: { item: RejectedItem }) {
-  const tr = t();
+  const display = rejectionDisplay(item);
   return (
     <div className="flex flex-col gap-1 rounded-xl border border-rose/30 bg-rose-soft/60 px-3 py-2" data-testid="trace-rejected">
       <div className="flex flex-wrap items-center gap-2">
         <CircleSlashIcon className="size-4 shrink-0 text-rose-ink" aria-hidden />
         <span className="font-semibold text-rose-ink line-through decoration-2">{item.label}</span>
-        <span className="rounded-full bg-card px-2 py-0.5 text-xs font-semibold text-rose-ink">{tr.rejectedKinds[item.kind]}</span>
+        <span className="rounded-full bg-card px-2 py-0.5 text-xs font-semibold text-rose-ink">{display.label}</span>
       </div>
-      <p className="text-[0.9rem] leading-snug">{item.reason}</p>
+      <p className="text-[0.9rem] leading-snug">{display.reason}</p>
     </div>
   );
 }

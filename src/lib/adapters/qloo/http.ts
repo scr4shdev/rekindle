@@ -117,7 +117,12 @@ export class QlooHttp implements TastePort {
       log.info({ droppedParam: "signal.location.query" }, "qloo insights returned 0; retrying without location signal");
       const attempt2Params = withoutParam(sent, "signal.location.query");
       const attempt2 = await this.fetchWithRetry(endpoint, attempt2Params, ctx);
-      if (attempt2.ok) {
+      if (!attempt2.ok) {
+        // R5: a 5xx that still slipped through the retry budget would otherwise be
+        // silently swallowed. Keep best-effort semantics (do not throw) but log one
+        // line so an operator can see which drop was attempted.
+        log.info({ droppedParam: "signal.location.query", status: attempt2.status }, "qloo insights retry (attempt 2) failed; keeping original empty result");
+      } else {
         const attempt2Items = extract(await parseJson(attempt2));
         if (attempt2Items && attempt2Items.length > 0) {
           sent = attempt2Params;
@@ -126,9 +131,14 @@ export class QlooHttp implements TastePort {
           log.info({ droppedParam: "filter.tags" }, "qloo insights still 0; retrying without tag filter");
           const attempt3Params = withoutParam(params, "filter.tags");
           const attempt3 = await this.fetchWithRetry(endpoint, attempt3Params, ctx);
-          if (attempt3.ok) {
+          if (!attempt3.ok) {
+            log.info({ droppedParam: "filter.tags", status: attempt3.status }, "qloo insights retry (attempt 3) failed; keeping original empty result");
+          } else {
             const attempt3Items = extract(await parseJson(attempt3));
-            if (attempt3Items) {
+            // R3: only replace items/sent when the attempt actually produced results.
+            // Mirror attempt 2's semantics so the cache does not store an empty page
+            // under attempt-3 params and shadow a later request that could succeed.
+            if (attempt3Items && attempt3Items.length > 0) {
               sent = attempt3Params;
               items = attempt3Items;
             }

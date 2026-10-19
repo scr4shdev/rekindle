@@ -113,19 +113,18 @@ export const CUISINE_TAG_PARENT = "urn:tag:cuisine";
 /** First comma-separated token of a free-text classifier (structural reshape only). */
 function cuisineHints(anchors: Anchors): string[] {
   const seen = new Set<string>();
+  const out: string[] = [];
   const push = (raw: string | undefined) => {
     const t = raw?.split(",")[0]?.trim();
-    if (t && !seen.has(t.toLowerCase())) {
-      seen.add(t.toLowerCase());
-    }
-    return t;
+    if (!t) return;
+    const key = t.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push(t);
   };
-  const out: string[] = [];
-  const bg = push(anchors.culturalBackground);
-  if (bg) out.push(bg);
+  push(anchors.culturalBackground);
   // Fallback: the primary place name itself (e.g. "Naples", "Fès").
-  const place = push(anchors.places[0]?.name);
-  if (place) out.push(place);
+  push(anchors.places[0]?.name);
   return out;
 }
 

@@ -4,6 +4,7 @@ import { ArrowLeftIcon, ArrowRightIcon, BotIcon, CircleSlashIcon, SearchCheckIco
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo } from "react";
+import { wouldSlip } from "@/components/compare/would-slip";
 import { STEP_ICON } from "@/components/session/icons";
 import { RECORDED_PERSONA, resolveRequest } from "@/components/session/session-request";
 import { rejectionDisplay } from "@/components/session/rejection-display";
@@ -42,26 +43,6 @@ function metrics(view: SessionView): Metrics {
     images: steps.filter((s) => s.entity?.imageUrl || s.mediaUrl).length,
     calls: view.qlooCalls,
   };
-}
-
-/** Significant-word tokens from a rejection label, used to catch LLM step titles. */
-function labelTokens(label: string): string[] {
-  return label
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}\s]/gu, " ")
-    .split(/\s+/)
-    .filter((w) => w.length >= 4);
-}
-
-/** True when a step title shares a meaningful word with any rejected label. */
-function wouldSlip(stepTitle: string, rejected: RejectedItem[]): RejectedItem | undefined {
-  const title = stepTitle.toLowerCase();
-  for (const item of rejected) {
-    const tokens = labelTokens(item.label);
-    if (tokens.length === 0) continue;
-    if (tokens.some((tok) => title.includes(tok))) return item;
-  }
-  return undefined;
 }
 
 export function CompareView() {
@@ -105,6 +86,10 @@ export function CompareView() {
   const a = metrics(llm.view);
   const b = metrics(grounded.view);
   const groundedRejected = grounded.view.rejected.filter((r) => r.phase !== "replan");
+  // Mobile "At a glance" strip mirrors the hero's `b.caught` count: same
+  // CAUGHT_KINDS set, so a reader doesn't see "0 slips" and then a list that
+  // includes `not_found` items.
+  const groundedCaught = groundedRejected.filter((r) => CAUGHT_KINDS.has(r.kind));
   const headlineReady = b.caught + b.verified > 0;
   const rows: { label: string; llm: string; grounded: string; win: boolean }[] = [
     { label: t.metrics.verified, llm: "", grounded: String(b.verified), win: b.verified > 0 },
@@ -132,13 +117,7 @@ export function CompareView() {
         data-testid="compare-headline"
       >
         {headlineReady ? (
-          <p className="font-heading text-3xl leading-tight sm:text-5xl">
-            Qloo caught{" "}
-            <span className="font-semibold text-sage-ink">{b.caught}</span>{" "}
-            era/culture/risk slip{b.caught === 1 ? "" : "s"} and confirmed{" "}
-            <span className="font-semibold text-sage-ink">{b.verified}</span>{" "}
-            real match{b.verified === 1 ? "" : "es"}.
-          </p>
+          <p className="font-heading text-3xl leading-tight sm:text-5xl">{t.headline(b.caught, b.verified)}</p>
         ) : (
           <p className="font-heading text-3xl leading-tight text-muted-foreground sm:text-5xl">{t.headlineWorking}</p>
         )}
@@ -185,7 +164,7 @@ export function CompareView() {
         </p>
       </section>
 
-      {groundedRejected.length > 0 && (
+      {groundedCaught.length > 0 && (
         <section
           aria-label={t.glanceTitle}
           className="flex flex-col gap-3 rounded-3xl border border-border bg-card p-5 shadow-paper lg:hidden"
@@ -193,7 +172,7 @@ export function CompareView() {
         >
           <h2 className="font-sans text-base font-bold">{t.glanceTitle}</h2>
           <ul className="flex flex-col gap-3">
-            {groundedRejected.slice(0, 3).map((item) => {
+            {groundedCaught.slice(0, 3).map((item) => {
               const display = rejectionDisplay(item);
               return (
                 <li key={`glance-${item.label}-${item.kind}`} className="flex flex-col gap-1">

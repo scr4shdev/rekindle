@@ -324,7 +324,7 @@ export const SAMPLE_GROUNDED_EVENTS: AgentEvent[] = recorded([
   [120, { type: "candidate", candidate: { id: "c_maradona", domain: "sport", name: "Diego Maradona", qlooType: "urn:entity:person", year: 1984, rationale: "Napoli's greatest legend." } }],
   [120, { type: "candidate", candidate: { id: "c_ragu", domain: "food", name: "Ragù napoletano", rationale: "Stated love; a Sunday ritual." } }],
   [50, { type: "phase", phase: "propose", status: "completed", message: "11 ideas across music, film, sport, food and famous faces.", durationMs: 1950, counts: { proposed: 11 } }],
-  [100, { type: "phase", phase: "verify", status: "started", message: "Checking each idea against Qloo's cultural graph…" }],
+  [100, { type: "phase", phase: "verify", status: "started", message: "Checking each idea against Qloo…" }],
   [300, { type: "qloo_call", phase: "verify", call: { endpoint: "/search", params: { query: "Frank Sinatra", types: ["urn:entity:artist"], take: 5 }, resultCount: 5, durationMs: 210, cached: false, source: "mock" } }],
   [100, { type: "verified", entity: E.sinatra }],
   [200, { type: "verified", entity: E.carosone }],

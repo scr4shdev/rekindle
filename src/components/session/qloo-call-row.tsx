@@ -29,12 +29,17 @@ export function narration(call: QlooCallRecord, entities: Record<string, Verifie
   if (call.endpoint === "/v2/insights") {
     const seedNames = resolveSeedNames(p["signal.interests.entities"], entities);
     const { start, end } = yearSpan(p);
-    if (seedNames.length > 0 && start !== undefined && end !== undefined) {
+    if (seedNames.length === 0) {
+      // Fall through to the generic branch below.
+    } else if (start !== undefined && end !== undefined) {
       return tr.narrationInsights(seedNames.join(", "), start, end);
-    }
-    if (seedNames.length > 0) {
-      // No year window (e.g. artist insights): still name the taste seeds.
-      return tr.narrationInsights(seedNames.join(", "), "any era", "today");
+    } else if (start === undefined && end === undefined) {
+      // No year window (e.g. artist insights): just name the taste seeds.
+      return tr.narrationInsightsNoYears(seedNames.join(", "));
+    } else {
+      // One edge of the window is missing: say "up to today" rather than
+      // printing an awkward en-dash between English words like "any era–today".
+      return tr.narrationInsightsOpenEnd(seedNames.join(", "));
     }
   }
   if (call.endpoint === "/v2/tags" && typeof p.query === "string") {

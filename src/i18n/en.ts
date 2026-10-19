@@ -49,6 +49,7 @@ export const en = {
     grounded: "Check every idea against Qloo",
     groundedHint: "Recommended. Turn off to see what a language model alone would plan — or try both side-by-side with Compare.",
     submit: "Plan the session",
+    submitPending: "Opening the planner…",
     compare: "Compare with and without Qloo",
     errorsTitle: "Please check the highlighted fields.",
     errors: {
@@ -129,7 +130,12 @@ export const en = {
     narrationSearch: (query: string) => `Looking for ${query}`,
     narrationInsights: (seeds: string, startYear: string | number, endYear: string | number) =>
       `Checking who else people who enjoy ${seeds} tend to enjoy, in ${startYear}–${endYear}`,
-    narrationTags: (query: string) => `Resolving '${query}' as a cuisine tag`,
+    narrationInsightsOpenEnd: (seeds: string) =>
+      `Checking who else people who enjoy ${seeds} tend to enjoy, up to today`,
+    narrationInsightsNoYears: (seeds: string) =>
+      `Checking who else people who enjoy ${seeds} tend to enjoy`,
+    /** The only caller today is cuisine-tag resolution. Soften, but keep the word. Update when new /v2/tags callers appear. */
+    narrationTags: (query: string) => `Resolving '${query}' as a tag`,
     replanStarted: {
       lit_up: "Leaning into this thread…",
       neutral: "Trying something different…",
@@ -218,7 +224,7 @@ export const en = {
   compare: {
     eyebrow: "Comparison",
     title: (name: string) => `Same notes about ${name}, two planners`,
-    lead: "On the left, what a language model says alone. On the right, the same model with every idea checked against Qloo. The difference is what you'd otherwise miss.",
+    lead: "A language model's plan on its own, and the same model with every idea checked against Qloo. The difference is what you'd otherwise miss.",
     llmOnly: "Language model alone",
     grounded: "Grounded in Qloo",
     scoreTitle: "What grounding adds",

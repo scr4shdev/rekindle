@@ -207,7 +207,7 @@ export function CustomForm() {
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Button type="submit" size="lg" data-icon="inline-end" disabled={pending} aria-busy={pending || undefined}>
-          {pending ? "Opening the planner…" : t.submit}
+          {pending ? t.submitPending : t.submit}
           {pending ? <LoaderCircleIcon className="animate-spin" aria-hidden /> : <ArrowRightIcon aria-hidden />}
         </Button>
         <Button

@@ -124,6 +124,15 @@ export const en = {
     affinityLine: (seeds: string, name: string) => `People who enjoy ${seeds} also tend to enjoy ${name}.`,
     and: "and",
     qlooRequest: "Qloo request",
+    narrationSearch: (query: string) => `Looking for ${query}`,
+    narrationInsights: (seeds: string, startYear: string | number, endYear: string | number) =>
+      `Checking who else people who enjoy ${seeds} tend to enjoy, in ${startYear}–${endYear}`,
+    narrationTags: (query: string) => `Resolving '${query}' as a cuisine tag`,
+    replanStarted: {
+      lit_up: "Leaning into this thread…",
+      neutral: "Trying something different…",
+      upset: "They seemed upset. Slowing down with something calm and familiar…",
+    },
     results: (n: number) => (n === 1 ? "1 result" : `${n} results`),
     cached: "cached",
     mock: "demo data",

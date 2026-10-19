@@ -151,7 +151,7 @@ async function resolveCuisineTag(run: Run, anchors: Anchors): Promise<CuisineRes
 
 export async function* verifyPhase(run: Run, anchors: Anchors, candidates: Candidate[]): AsyncGenerator<AgentEventPayload, Material[]> {
   const started = run.deps.now().getTime();
-  yield { type: "phase", phase: "verify", status: "started", message: "Checking each idea against Qloo's cultural graph…" };
+  yield { type: "phase", phase: "verify", status: "started", message: "Checking each idea against Qloo…" };
   const groundable = candidates.filter((c) => c.qlooType);
   const ungroundable = candidates.filter((c) => !c.qlooType);
   const foodCandidates = ungroundable.filter((c) => c.domain === "food");
@@ -236,7 +236,7 @@ export async function* verifyPhase(run: Run, anchors: Anchors, candidates: Candi
     type: "phase",
     phase: "verify",
     status: "completed",
-    message: run.qlooDown ? `Qloo became unavailable: ${verified} confirmed, the rest stay as unverified ideas.` : `${verified} of ${checkable} checkable ideas confirmed in Qloo.`,
+    message: run.qlooDown ? `Qloo paused mid-check. ${verified} confirmed; the rest stay as unverified ideas.` : `${verified} of ${checkable} checkable ideas confirmed in Qloo.`,
     durationMs: run.deps.now().getTime() - started,
     counts: { verified, notFound: notFound + droppedFood.length, unverifiable: ungroundableKept.length + degraded },
   };
@@ -253,7 +253,7 @@ export async function* expandPhase(run: Run, anchors: Anchors, materials: Materi
   }
   const started = run.deps.now().getTime();
   const { startYear, endYear } = anchors.formativeWindow;
-  yield { type: "phase", phase: "expand", status: "started", message: `Asking Qloo what else people with these tastes enjoy, limited to ${startYear}-${endYear}…` };
+  yield { type: "phase", phase: "expand", status: "started", message: `Asking Qloo what else people with these tastes love, around ${startYear}–${endYear}…` };
 
   const targets = TARGET_PRIORITY.filter((t) => seeds.some((m) => EXPAND_TARGET[m.domain] === t)).slice(0, EXPAND_MAX_TARGETS);
   const known = new Set(seeds.map((m) => m.entity!.qlooId));

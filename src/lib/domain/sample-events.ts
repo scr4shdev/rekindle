@@ -338,7 +338,7 @@ export const SAMPLE_GROUNDED_EVENTS: AgentEvent[] = recorded([
   [200, { type: "verified", entity: E.sivori }],
   [200, { type: "verified", entity: { id: "ve_maradona", qlooId: "SAMPLE-PERSON-MARADONA", name: "Diego Maradona", domain: "sport", qlooType: "urn:entity:person", popularity: 0.98, provenance: "llm-proposed-qloo-verified", candidateId: "c_maradona" } }],
   [50, { type: "note", phase: "verify", text: "Ragù is a dish, not a Qloo entity: it stays as a caregiver-led sensory step." }],
-  [50, { type: "phase", phase: "verify", status: "completed", message: "9 of 10 checkable ideas confirmed in Qloo.", durationMs: 2300, counts: { verified: 9, notFound: 1 } }],
+  [50, { type: "phase", phase: "verify", status: "completed", message: "9 confirmed, 1 set aside (no match for 'Festival di Napoli 1958').", durationMs: 2300, counts: { verified: 9, notFound: 1 } }],
   [100, { type: "phase", phase: "expand", status: "started", message: "Asking Qloo what else people with these tastes love, limited to 1952-1972…" }],
   [500, { type: "qloo_call", phase: "expand", call: { endpoint: "/v2/insights", params: { "filter.type": "urn:entity:artist", "signal.interests.entities": ["SAMPLE-ARTIST-SINATRA", "SAMPLE-ARTIST-CAROSONE", "SAMPLE-ARTIST-MODUGNO"], "signal.location.query": "Naples", "signal.demographics.age": "55_and_older", "filter.tags": ["urn:tag:genre:music:60s"], "bias.trends": "off", take: 10 }, resultCount: 10, durationMs: 340, cached: false, source: "mock" } }],
   [200, { type: "verified", entity: E.peppino }],

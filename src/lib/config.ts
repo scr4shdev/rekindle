@@ -10,14 +10,23 @@
  */
 import { z } from "zod";
 
-export const LLM_PROVIDERS = ["gemini", "groq", "anthropic"] as const;
+export const LLM_PROVIDERS = ["anthropic", "gemini", "groq", "ollama"] as const;
 export type LlmProviderName = (typeof LLM_PROVIDERS)[number];
+
+/** Providers backed by a hosted API key. `ollama` is local-only. */
+export const KEYED_LLM_PROVIDERS = ["gemini", "groq", "anthropic"] as const;
+export type KeyedLlmProviderName = (typeof KEYED_LLM_PROVIDERS)[number];
+
+/** Default Ollama endpoint and model for the local provider. */
+export const OLLAMA_DEFAULT_BASE_URL = "http://127.0.0.1:11434";
+export const OLLAMA_DEFAULT_MODEL = "qwen3:8b";
 
 /** Pinned default model per provider. Override with LLM_MODEL. */
 export const DEFAULT_LLM_MODELS: Record<LlmProviderName, string> = {
   gemini: "gemini-3.5-flash",
   groq: "openai/gpt-oss-120b",
   anthropic: "claude-haiku-4-5",
+  ollama: OLLAMA_DEFAULT_MODEL,
 };
 
 const emptyToUndefined = (v: unknown) => (typeof v === "string" && v.trim() === "" ? undefined : v);
@@ -48,12 +57,19 @@ const EnvSchema = z.object({
   QLOO_DEFAULT_TAKE: int(10, 1, 50),
   QLOO_CACHE_TTL_SECONDS: int(60 * 60 * 24 * 7, 0, 60 * 60 * 24 * 30),
 
-  /** gemini | groq | anthropic | mock. Unset: first provider with a key, else mock. */
+  /**
+   * anthropic | gemini | groq | ollama | mock. Unset: first provider with a
+   * key (anthropic > gemini > groq), then ollama if reachable, else mock.
+   * `REKINDLE_LLM_PROVIDER` is accepted as an alias for A/B testing.
+   */
   LLM_PROVIDER: z.preprocess(emptyToUndefined, z.enum([...LLM_PROVIDERS, "mock"]).optional()),
+  REKINDLE_LLM_PROVIDER: z.preprocess(emptyToUndefined, z.enum([...LLM_PROVIDERS, "mock"]).optional()),
   LLM_MODEL: optionalString,
   GEMINI_API_KEY: optionalSecret,
   GROQ_API_KEY: optionalSecret,
   ANTHROPIC_API_KEY: optionalSecret,
+  OLLAMA_BASE_URL: z.preprocess(emptyToUndefined, z.url().default(OLLAMA_DEFAULT_BASE_URL)),
+  OLLAMA_MODEL: optionalString,
   LLM_TIMEOUT_MS: int(30_000, 1_000, 120_000),
   LLM_MAX_RETRIES: int(1, 0, 5),
   LLM_CACHE_TTL_SECONDS: int(60 * 60 * 24 * 7, 0, 60 * 60 * 24 * 30),
@@ -89,12 +105,15 @@ export interface AppConfig {
   };
   llm: {
     mode: ProviderMode;
-    mockReason?: "forced" | "missing_key" | "configured";
+    mockReason?: "forced" | "missing_key" | "configured" | "unreachable";
     /** "mock" when mode is mock. */
     provider: LlmProviderName | "mock";
     /** Pinned model id. "mock-llm" when mode is mock. */
     model: string;
+    /** Hosted-provider API key. Undefined for the local Ollama provider and in mock mode. */
     apiKey?: string;
+    /** Base URL for the local Ollama endpoint. Only meaningful when provider === "ollama". */
+    ollamaBaseUrl?: string;
     /** Always 0: deterministic outputs. Not configurable on purpose. */
     temperature: 0;
     timeoutMs: number;
@@ -129,7 +148,10 @@ const KEY_BY_PROVIDER = {
   gemini: "GEMINI_API_KEY",
   groq: "GROQ_API_KEY",
   anthropic: "ANTHROPIC_API_KEY",
-} as const satisfies Record<LlmProviderName, keyof z.infer<typeof EnvSchema>>;
+} as const satisfies Record<KeyedLlmProviderName, keyof z.infer<typeof EnvSchema>>;
+
+/** Hosted preference order when auto-picking a provider by API key. */
+const KEYED_AUTO_ORDER: readonly KeyedLlmProviderName[] = ["anthropic", "gemini", "groq"];
 
 /** Pure: parse an env record into AppConfig. Throws ConfigError on invalid values. */
 export function loadConfig(source: Record<string, string | undefined> = process.env): AppConfig {
@@ -160,12 +182,18 @@ export function loadConfig(source: Record<string, string | undefined> = process.
     cacheTtlSeconds: e.QLOO_CACHE_TTL_SECONDS,
   };
 
-  const requested = e.LLM_PROVIDER;
-  const autoProvider = LLM_PROVIDERS.find((p) => Boolean(e[KEY_BY_PROVIDER[p]]));
+  // REKINDLE_LLM_PROVIDER wins over LLM_PROVIDER (explicit A/B override).
+  const requested = e.REKINDLE_LLM_PROVIDER ?? e.LLM_PROVIDER;
+  // Auto-pick only looks at keyed providers; Ollama is a composition-time fallback
+  // chosen when it is actually reachable.
+  const autoProvider = KEYED_AUTO_ORDER.find((p) => Boolean(e[KEY_BY_PROVIDER[p]]));
   const provider: LlmProviderName | undefined =
     requested === "mock" ? undefined : (requested ?? autoProvider);
-  const apiKey = provider ? e[KEY_BY_PROVIDER[provider]] : undefined;
-  const llmLive = !forced && provider !== undefined && Boolean(apiKey);
+  const apiKey =
+    provider && provider !== "ollama" ? e[KEY_BY_PROVIDER[provider as KeyedLlmProviderName]] : undefined;
+  // Ollama needs no API key: being chosen is enough. Reachability is checked at composition time.
+  const needsKey = provider !== undefined && provider !== "ollama";
+  const llmLive = !forced && provider !== undefined && (!needsKey || Boolean(apiKey));
   const llmCommon = {
     temperature: 0 as const,
     timeoutMs: e.LLM_TIMEOUT_MS,
@@ -173,7 +201,14 @@ export function loadConfig(source: Record<string, string | undefined> = process.
     cacheTtlSeconds: e.LLM_CACHE_TTL_SECONDS,
   };
   const llm: AppConfig["llm"] = llmLive
-    ? { mode: "live", provider: provider!, model: e.LLM_MODEL ?? DEFAULT_LLM_MODELS[provider!], apiKey, ...llmCommon }
+    ? {
+        mode: "live",
+        provider: provider!,
+        model: e.LLM_MODEL ?? (provider === "ollama" ? (e.OLLAMA_MODEL ?? OLLAMA_DEFAULT_MODEL) : DEFAULT_LLM_MODELS[provider!]),
+        apiKey,
+        ollamaBaseUrl: provider === "ollama" ? e.OLLAMA_BASE_URL.replace(/\/+$/, "") : undefined,
+        ...llmCommon,
+      }
     : {
         mode: "mock",
         mockReason: forced ? "forced" : requested === "mock" ? "configured" : "missing_key",

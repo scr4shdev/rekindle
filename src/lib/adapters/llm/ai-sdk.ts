@@ -10,7 +10,7 @@ import { createGroq } from "@ai-sdk/groq";
 import type { LanguageModel } from "ai";
 import { APICallError, generateText, NoObjectGeneratedError, Output, TypeValidationError } from "ai";
 
-import type { AppConfig } from "@/lib/config";
+import type { AppConfig, KeyedLlmProviderName } from "@/lib/config";
 import type { CachePort } from "@/lib/ports/cache";
 import { buildCacheKey } from "@/lib/ports/cache";
 import type { CallContext } from "@/lib/ports/common";
@@ -20,7 +20,7 @@ import type { LlmPort, LlmRequest, LlmResult } from "@/lib/ports/llm";
 import type { Sleep } from "@/lib/adapters/shared/backoff";
 import { abortableSleep, backoffMs } from "@/lib/adapters/shared/backoff";
 
-export type LiveLlmConfig = AppConfig["llm"] & { provider: "gemini" | "groq" | "anthropic" };
+export type LiveLlmConfig = AppConfig["llm"] & { provider: KeyedLlmProviderName };
 
 /** Build the provider model from config. The API key is passed explicitly (never read from env here). */
 export function createLanguageModel(config: LiveLlmConfig): LanguageModel {

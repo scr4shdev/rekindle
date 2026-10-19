@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { AiSdkLlm } from "@/lib/adapters/llm/ai-sdk";
 import { MockLlm } from "@/lib/adapters/llm/mock";
+import { OllamaLlm } from "@/lib/adapters/llm/ollama";
 import { QlooHttp } from "@/lib/adapters/qloo/http";
 import { MockQloo } from "@/lib/adapters/qloo/mock";
 import { buildAgentDeps, getAgentDeps } from "@/lib/composition";
@@ -32,6 +33,19 @@ describe("composition", () => {
     expect(deps.llm).toBeInstanceOf(AiSdkLlm);
     expect(deps.llm).toMatchObject({ provider: "groq", model: "openai/gpt-oss-120b" });
     expect(deps.cache.driver).toBe("layered");
+  });
+
+  it("wires the Ollama adapter when LLM_PROVIDER=ollama", () => {
+    const deps = buildAgentDeps(
+      loadConfig({
+        NODE_ENV: "test",
+        LLM_PROVIDER: "ollama",
+        OLLAMA_BASE_URL: "http://127.0.0.1:11434",
+        OLLAMA_MODEL: "qwen3:8b",
+      }),
+    );
+    expect(deps.llm).toBeInstanceOf(OllamaLlm);
+    expect(deps.llm).toMatchObject({ provider: "ollama", model: "qwen3:8b" });
   });
 
   it("memoizes the process-wide deps (forced mock in tests)", () => {

@@ -5,16 +5,22 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Rekindle design tokens: paper, ink, terracotta, sage, ochre, rose.
+ * Rekindle visual system: "Lamplight".
+ *
+ * Oat ground, sage primary, warm amber accents. Dark mode is true low-light
+ * near-black for tired eyes at the bedside. Typography pairs Bricolage
+ * Grotesque (display), Figtree (body), and JetBrains Mono (data/captions):
+ * replaces the previous Fraunces + Atkinson Hyperlegible pair.
+ *
  * Text pairs are WCAG AA (>= 4.5:1) in light and dark; input borders and the
- * focus ring are >= 3:1 against the page. Colours are oklch.
+ * focus ring are >= 3:1 against the page.
  */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-code), ui-monospace, monospace;
-  --font-heading: var(--font-display), ui-serif, Georgia, serif;
+  --font-heading: var(--font-display), ui-sans-serif, system-ui, sans-serif;
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -31,7 +37,7 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  /* Semantic accents: sage = verified by Qloo, ochre = Qloo affinity, rose = rejected, clay = LLM-only. */
+  /* Semantic accents: sage = verified by Qloo, ochre/amber = Qloo affinity / set-aside, rose = rejected / upset, clay = LLM-only. */
   --color-sage: var(--sage);
   --color-sage-soft: var(--sage-soft);
   --color-sage-ink: var(--sage-ink);
@@ -44,15 +50,15 @@
   --color-clay-soft: var(--clay-soft);
   --color-clay-ink: var(--clay-ink);
   --color-paper-deep: var(--paper-deep);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
-  --shadow-paper: 0 1px 0 oklch(1 0 0 / 60%) inset, 0 1px 2px oklch(0.3 0.04 50 / 8%), 0 8px 24px -12px oklch(0.3 0.05 45 / 18%);
-  --shadow-lift: 0 1px 0 oklch(1 0 0 / 60%) inset, 0 2px 4px oklch(0.3 0.04 50 / 10%), 0 18px 40px -16px oklch(0.35 0.08 40 / 30%);
+  --radius-sm: 0.75rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.5rem;
+  --radius-xl: 1.75rem;
+  --radius-2xl: 2rem;
+  --radius-3xl: 2.5rem;
+  --radius-4xl: 3rem;
+  --shadow-paper: 0 1px 0 rgb(255 255 255 / 50%) inset, 0 1px 2px rgb(43 37 32 / 8%), 0 8px 24px -12px rgb(43 37 32 / 18%);
+  --shadow-lift: 0 1px 0 rgb(255 255 255 / 50%) inset, 0 2px 4px rgb(43 37 32 / 10%), 0 18px 40px -16px rgb(43 37 32 / 24%);
   --animate-rise: rise 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
   --animate-glow: glow 1.8s ease-in-out infinite;
   --animate-flash: flash 1.6s ease-out both;
@@ -85,71 +91,80 @@
 
 :root {
   --radius: 1rem;
-  --background: oklch(0.972 0.014 82);
-  --foreground: oklch(0.27 0.03 45);
-  --card: oklch(0.99 0.008 85);
-  --card-foreground: oklch(0.27 0.03 45);
-  --popover: oklch(0.99 0.008 85);
-  --popover-foreground: oklch(0.27 0.03 45);
-  --primary: oklch(0.53 0.135 40);
-  --primary-foreground: oklch(0.985 0.01 85);
-  --secondary: oklch(0.93 0.025 80);
-  --secondary-foreground: oklch(0.27 0.03 45);
-  --muted: oklch(0.935 0.02 80);
-  --muted-foreground: oklch(0.47 0.035 55);
-  --accent: oklch(0.9 0.06 85);
-  --accent-foreground: oklch(0.3 0.05 60);
-  --destructive: oklch(0.5 0.17 27);
-  --border: oklch(0.86 0.025 75);
-  --input: oklch(0.62 0.03 60);
-  --ring: oklch(0.53 0.135 40);
-  --paper-deep: oklch(0.945 0.022 78);
-  --sage: oklch(0.45 0.08 150);
-  --sage-soft: oklch(0.91 0.04 145);
-  --sage-ink: oklch(0.33 0.06 150);
-  --ochre: oklch(0.5 0.09 70);
-  --ochre-soft: oklch(0.9 0.08 85);
-  --ochre-ink: oklch(0.36 0.07 70);
-  --rose: oklch(0.5 0.14 20);
-  --rose-soft: oklch(0.93 0.035 20);
-  --rose-ink: oklch(0.42 0.12 20);
-  --clay-soft: oklch(0.92 0.015 60);
-  --clay-ink: oklch(0.4 0.03 55);
-  --grain-opacity: 0.35;
+  /* Lamplight light: oat ground, warm cream surface, deep brown ink. */
+  --background: #efe9df;
+  --foreground: #2b2520;
+  --card: #faf5ec;
+  --card-foreground: #2b2520;
+  --popover: #faf5ec;
+  --popover-foreground: #2b2520;
+  /* Primary: sage (verified / confirmed). */
+  --primary: #44583f;
+  --primary-foreground: #f5f0e6;
+  --secondary: #e6dece;
+  --secondary-foreground: #2b2520;
+  --muted: #ece4d4;
+  --muted-foreground: #5a4f47;
+  /* Accent: warm amber (set-aside, highlight). */
+  --accent: #f2ddc2;
+  --accent-foreground: #6e4318;
+  --destructive: #a94b36;
+  --border: #d9cfbd;
+  /* Input border meets >=3:1 against both --background and --card. */
+  --input: #9a8e82;
+  --ring: #44583f;
+  --paper-deep: #e6dece;
+  /* Sage: Qloo-verified. */
+  --sage: #44583f;
+  --sage-soft: #dbe6d4;
+  --sage-ink: #36472f;
+  /* Ochre repurposed as warm amber: Qloo affinity / set-aside. */
+  --ochre: #b07421;
+  --ochre-soft: #f2ddc2;
+  --ochre-ink: #6e4318;
+  /* Rose: upset / rejected / destructive. */
+  --rose: #a94b36;
+  --rose-soft: #f3d6cc;
+  --rose-ink: #7d2e1e;
+  /* Clay: neutral / LLM-only. */
+  --clay-soft: #ece4d4;
+  --clay-ink: #5a4f47;
+  --grain-opacity: 0.3;
 }
 
 .dark {
-  --background: oklch(0.2 0.018 50);
-  --foreground: oklch(0.93 0.02 80);
-  --card: oklch(0.245 0.02 50);
-  --card-foreground: oklch(0.93 0.02 80);
-  --popover: oklch(0.245 0.02 50);
-  --popover-foreground: oklch(0.93 0.02 80);
-  --primary: oklch(0.72 0.12 45);
-  --primary-foreground: oklch(0.2 0.03 40);
-  --secondary: oklch(0.29 0.02 50);
-  --secondary-foreground: oklch(0.93 0.02 80);
-  --muted: oklch(0.29 0.02 50);
-  --muted-foreground: oklch(0.74 0.03 70);
-  --accent: oklch(0.34 0.05 75);
-  --accent-foreground: oklch(0.9 0.07 85);
-  --destructive: oklch(0.7 0.15 25);
-  --border: oklch(0.34 0.02 55);
-  --input: oklch(0.53 0.03 60);
-  --ring: oklch(0.72 0.12 45);
-  --paper-deep: oklch(0.225 0.02 50);
-  --sage: oklch(0.78 0.08 150);
-  --sage-soft: oklch(0.32 0.04 150);
-  --sage-ink: oklch(0.88 0.05 145);
-  --ochre: oklch(0.8 0.1 80);
-  --ochre-soft: oklch(0.34 0.05 75);
-  --ochre-ink: oklch(0.9 0.07 85);
-  --rose: oklch(0.75 0.1 20);
-  --rose-soft: oklch(0.33 0.06 20);
-  --rose-ink: oklch(0.88 0.05 20);
-  --clay-soft: oklch(0.3 0.015 55);
-  --clay-ink: oklch(0.84 0.025 70);
-  --grain-opacity: 0.12;
+  /* Lamplight dark: true low-light near-black, warm oat ink. */
+  --background: #171311;
+  --foreground: #ece4d7;
+  --card: #221c18;
+  --card-foreground: #ece4d7;
+  --popover: #221c18;
+  --popover-foreground: #ece4d7;
+  --primary: #a6c09f;
+  --primary-foreground: #171311;
+  --secondary: #2e261f;
+  --secondary-foreground: #ece4d7;
+  --muted: #2e261f;
+  --muted-foreground: #b4a796;
+  --accent: #3a2c1d;
+  --accent-foreground: #e3a86e;
+  --destructive: #f0a89a;
+  --border: #332920;
+  --input: #776b5f;
+  --ring: #a6c09f;
+  --paper-deep: #1d1815;
+  --sage: #a6c09f;
+  --sage-soft: #2a3a2a;
+  --sage-ink: #a6c09f;
+  --ochre: #e3a86e;
+  --ochre-soft: #3a2c1d;
+  --ochre-ink: #e3a86e;
+  --rose: #f0a89a;
+  --rose-soft: #3a1f1a;
+  --rose-ink: #f0a89a;
+  --clay-soft: #2e261f;
+  --clay-ink: #b4a796;
+  --grain-opacity: 0.1;
 }
 
 @layer base {
@@ -165,7 +180,7 @@
   body {
     @apply bg-background text-foreground;
     line-height: 1.6;
-    background-image: radial-gradient(ellipse at top, color-mix(in oklch, var(--ochre-soft) 45%, transparent), transparent 60%);
+    background-image: radial-gradient(ellipse at top, color-mix(in oklch, var(--ochre-soft) 55%, transparent), transparent 60%);
     background-attachment: fixed;
   }
   body::before {
@@ -183,8 +198,7 @@
   h3,
   h4 {
     @apply font-heading;
-    font-variation-settings: "SOFT" 100;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
     text-wrap: balance;
   }
   p {

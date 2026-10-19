@@ -10,6 +10,8 @@ Deadline: **2026-10-30**. Judging: Technological Implementation, Design, Potenti
 Add `BLOCKED: contract change needed: <file> <what and why> (<worker>, <date>)` here. The integrator answers inline.
 
 - Request (non-blocking): tests/contract/domain.test.ts: export the `QUIZ` pattern from a shared helper (e.g. `tests/contract/quiz.ts`) so `tests/unit/mock-prompts-quiz.test.ts` can import it; it currently reads the constant from the contract file's source to avoid a copy. (W-CORE, 2026-10-18)
+- BLOCKED: contract change needed: src/lib/config.ts (added `ollamaBaseUrl` and `ollamaModel` to `AppConfig.llm`, extended `LLM_PROVIDERS` with `ollama` and `LLM_PROVIDER=ollama` auto-selection) — applied, pending integrator sign-off. (W-CORE, 2026-10-19)
+- Disclosure (not a bug): with Ollama in the mix, the keyed auto-selection order became `anthropic > gemini > groq` (previously `gemini > groq > anthropic`); a hosted env with multiple keys set may pick a different provider than before. Set `LLM_PROVIDER` explicitly to lock the choice. (W-CORE, 2026-10-19)
 
 ## Phase 0: Architect (done)
 

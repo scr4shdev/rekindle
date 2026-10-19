@@ -4,7 +4,7 @@
  */
 import { jsonError, ndjsonResponse, parseJsonBody, rateLimited, rateLimiters } from "@/app/api/_lib/http";
 import { runSession } from "@/lib/agent";
-import { getAgentDeps } from "@/lib/composition";
+import { getAgentDepsAsync } from "@/lib/composition";
 import { SessionRequest } from "@/lib/domain/types";
 import { createRequestLogger, newTraceId } from "@/lib/logger";
 
@@ -26,7 +26,7 @@ export async function POST(request: Request): Promise<Response> {
   }
   let deps;
   try {
-    deps = getAgentDeps();
+    deps = await getAgentDepsAsync();
   } catch (error) {
     logger.error({ err: error instanceof Error ? error.name : typeof error }, "agent dependencies unavailable");
     return jsonError(500, "internal", "The planner is not configured correctly.", traceId);

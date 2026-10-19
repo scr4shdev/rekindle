@@ -196,7 +196,7 @@ export const en = {
     timeUp: "Time is up. Move on whenever it feels right.",
     remaining: (time: string) => `${time} left`,
     howDidItGo: "How did they respond?",
-    reactions: { lit_up: "Lit up", neutral: "No reaction", upset: "Upset" },
+    reactions: { lit_up: "Lit up", neutral: "Quiet", upset: "Upset" },
     reactionHints: {
       lit_up: "Lean into this thread",
       neutral: "Try something different",
@@ -210,6 +210,8 @@ export const en = {
     upNext: "Up next",
     keyboard: "Keys: left and right arrows to move, space to start or pause the timer.",
     done: "That was the last step. Thank you for spending this time together.",
+    doneAction: "Finish",
+    planAnother: "Plan another session",
   },
   compare: {
     eyebrow: "Comparison",

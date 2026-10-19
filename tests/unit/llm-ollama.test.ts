@@ -167,6 +167,57 @@ describe("OllamaLlm", () => {
       retryable: false,
     });
   });
+
+  it("surfaces a timeout as retryable PortError(code:timeout) when the fetch never resolves", async () => {
+    // The internal AbortSignal.timeout fires at timeoutMs and the fetcher
+    // rejects with the DOMException it dispatches. We short-circuit the
+    // backoff sleep so maxRetries=0 exhausts in one attempt.
+    const fetcher: Fetcher = (_url, init) =>
+      new Promise<Response>((_resolve, reject) => {
+        const signal = init.signal as AbortSignal | undefined;
+        if (!signal) return;
+        signal.addEventListener("abort", () =>
+          reject(Object.assign(new Error("The operation timed out."), { name: "TimeoutError" })),
+        );
+      });
+    const llm = new OllamaLlm({ ...config, maxRetries: 0, timeoutMs: 10 }, new MemoryCache(), {
+      fetcher,
+      sleep: noSleep,
+    });
+    await expect(llm.generateObject(request, testCtx())).rejects.toMatchObject({
+      name: "PortError",
+      code: "timeout",
+      retryable: true,
+    });
+  });
+
+  it("backs off exponentially between retries and stops sleeping when aborted mid-backoff", async () => {
+    const waits: number[] = [];
+    const sleep = async (ms: number) => void waits.push(ms);
+    const fetcher: Fetcher = async () => new Response("boom", { status: 503 });
+    const llm = new OllamaLlm({ ...config, maxRetries: 3 }, new MemoryCache(), { fetcher, sleep });
+    await expect(llm.generateObject(request, testCtx())).rejects.toMatchObject({ code: "unavailable" });
+    expect(waits).toEqual([300, 600, 1200]);
+
+    const controller = new AbortController();
+    const slow = new OllamaLlm({ ...config, maxRetries: 3 }, new MemoryCache(), {
+      fetcher: async () => new Response("boom", { status: 503 }),
+      sleep: async () => controller.abort(),
+    });
+    await expect(slow.generateObject(request, testCtx({ signal: controller.signal }))).rejects.toMatchObject({
+      code: "timeout",
+    });
+  });
+
+  it("maps a 404 (model not pulled) to a non-retryable unavailable", async () => {
+    const fetcher: Fetcher = async () => new Response("model not found", { status: 404 });
+    const llm = new OllamaLlm({ ...config, maxRetries: 0 }, new MemoryCache(), { fetcher, sleep: noSleep });
+    await expect(llm.generateObject(request, testCtx())).rejects.toMatchObject({
+      name: "PortError",
+      code: "unavailable",
+      retryable: false,
+    });
+  });
 });
 
 describe("schemaToJsonSchema", () => {

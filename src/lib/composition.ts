@@ -15,7 +15,7 @@ import { isOllamaReachable, OllamaLlm } from "@/lib/adapters/llm/ollama";
 import { QlooHttp } from "@/lib/adapters/qloo/http";
 import { MockQloo } from "@/lib/adapters/qloo/mock";
 import type { AppConfig } from "@/lib/config";
-import { getConfig, OLLAMA_DEFAULT_BASE_URL, OLLAMA_DEFAULT_MODEL } from "@/lib/config";
+import { getConfig, OLLAMA_DEFAULT_BASE_URL } from "@/lib/config";
 import { getLogger } from "@/lib/logger";
 import type { AgentDeps, CachePort, LlmPort, TastePort } from "@/lib/ports";
 
@@ -89,20 +89,29 @@ export function getAgentDeps(): AgentDeps {
 }
 
 /**
- * Async variant: probes the local Ollama endpoint when it was selected and
- * downgrades to the Mock LLM if it is not reachable. Result is cached in-process.
+ * Async variant: probes the local Ollama endpoint when it was explicitly
+ * selected (LLM_PROVIDER=ollama) and downgrades to the Mock LLM if the endpoint
+ * is not reachable. There is no silent auto-upgrade from mock to Ollama when a
+ * hosted key is missing: Ollama is opt-in, because its generation latency does
+ * not fit the default AGENT_DEADLINE_MS and would surprise hosted deploys.
+ * Result is cached in-process.
  */
-export async function getAgentDepsAsync(): Promise<AgentDeps> {
+export async function getAgentDepsAsync(
+  {
+    probe = isOllamaReachable,
+    config: configOverride,
+  }: { probe?: typeof isOllamaReachable; config?: AppConfig } = {},
+): Promise<AgentDeps> {
   if (deps) return deps;
   if (depsPromise) return depsPromise;
   depsPromise = (async () => {
-    const config = getConfig();
+    const config = configOverride ?? getConfig();
     let effective = config;
     const baseUrl = config.llm.ollamaBaseUrl ?? OLLAMA_DEFAULT_BASE_URL;
 
     if (config.llm.mode === "live" && config.llm.provider === "ollama") {
       // Explicit Ollama request: probe, and downgrade to mock if the endpoint is dead.
-      const reachable = await isOllamaReachable(baseUrl);
+      const reachable = await probe(baseUrl);
       if (!reachable) {
         effective = {
           ...config,
@@ -118,25 +127,6 @@ export async function getAgentDepsAsync(): Promise<AgentDeps> {
         };
         getLogger().warn({ baseUrl }, "ollama not reachable; falling back to mock LLM");
       }
-    } else if (
-      config.llm.mode === "mock" &&
-      config.llm.mockReason === "missing_key" &&
-      await isOllamaReachable(baseUrl)
-    ) {
-      // No hosted API key, no explicit request, but a local Ollama is up: use it.
-      effective = {
-        ...config,
-        llm: {
-          ...config.llm,
-          mode: "live",
-          mockReason: undefined,
-          provider: "ollama",
-          model: OLLAMA_DEFAULT_MODEL,
-          apiKey: undefined,
-          ollamaBaseUrl: baseUrl,
-        },
-      };
-      getLogger().info({ baseUrl, model: OLLAMA_DEFAULT_MODEL }, "ollama reachable; using local LLM");
     }
 
     deps = buildAgentDeps(effective);
@@ -147,6 +137,25 @@ export async function getAgentDepsAsync(): Promise<AgentDeps> {
     return deps;
   })();
   return depsPromise;
+}
+
+/**
+ * Non-secret view of the EFFECTIVE deps for `/api/health`: reports what the
+ * agent will actually use (after the Ollama reachability probe), not what the
+ * static config file resolved to. Shape mirrors `publicConfigSummary` so the UI
+ * badge keeps working.
+ */
+export function effectiveConfigSummary(d: AgentDeps) {
+  return {
+    qloo: { mode: d.config.qloo.mode, mockReason: d.config.qloo.mockReason, baseUrl: d.config.qloo.baseUrl },
+    llm: {
+      mode: d.config.llm.mode,
+      mockReason: d.config.llm.mockReason,
+      provider: d.config.llm.provider,
+      model: d.config.llm.model,
+    },
+    cache: { driver: d.cache.driver },
+  };
 }
 
 /** Test-only: reset the memoized deps so subsequent calls rebuild. */

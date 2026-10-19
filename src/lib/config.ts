@@ -59,7 +59,9 @@ const EnvSchema = z.object({
 
   /**
    * anthropic | gemini | groq | ollama | mock. Unset: first provider with a
-   * key (anthropic > gemini > groq), then ollama if reachable, else mock.
+   * key (anthropic > gemini > groq), else mock. Ollama is opt-in: it must be
+   * requested explicitly (LLM_PROVIDER=ollama) because its generation latency
+   * does not fit the default AGENT_DEADLINE_MS.
    * `REKINDLE_LLM_PROVIDER` is accepted as an alias for A/B testing.
    */
   LLM_PROVIDER: z.preprocess(emptyToUndefined, z.enum([...LLM_PROVIDERS, "mock"]).optional()),
@@ -112,8 +114,10 @@ export interface AppConfig {
     model: string;
     /** Hosted-provider API key. Undefined for the local Ollama provider and in mock mode. */
     apiKey?: string;
-    /** Base URL for the local Ollama endpoint. Only meaningful when provider === "ollama". */
+    /** Base URL for the local Ollama endpoint. Set in every mode from OLLAMA_BASE_URL so composition can probe it. */
     ollamaBaseUrl?: string;
+    /** Model id for the local Ollama endpoint. Set in every mode from LLM_MODEL ?? OLLAMA_MODEL. */
+    ollamaModel?: string;
     /** Always 0: deterministic outputs. Not configurable on purpose. */
     temperature: 0;
     timeoutMs: number;
@@ -194,19 +198,25 @@ export function loadConfig(source: Record<string, string | undefined> = process.
   // Ollama needs no API key: being chosen is enough. Reachability is checked at composition time.
   const needsKey = provider !== undefined && provider !== "ollama";
   const llmLive = !forced && provider !== undefined && (!needsKey || Boolean(apiKey));
+  const ollamaBaseUrl = e.OLLAMA_BASE_URL.replace(/\/+$/, "");
+  const ollamaModel = e.LLM_MODEL ?? e.OLLAMA_MODEL ?? OLLAMA_DEFAULT_MODEL;
   const llmCommon = {
     temperature: 0 as const,
     timeoutMs: e.LLM_TIMEOUT_MS,
     maxRetries: e.LLM_MAX_RETRIES,
     cacheTtlSeconds: e.LLM_CACHE_TTL_SECONDS,
+    // Both branches carry Ollama coordinates so a mock -> ollama upgrade in composition
+    // (explicit LLM_PROVIDER=ollama followed by a reachability probe) uses the configured
+    // endpoint and model, not hardcoded defaults.
+    ollamaBaseUrl,
+    ollamaModel,
   };
   const llm: AppConfig["llm"] = llmLive
     ? {
         mode: "live",
         provider: provider!,
-        model: e.LLM_MODEL ?? (provider === "ollama" ? (e.OLLAMA_MODEL ?? OLLAMA_DEFAULT_MODEL) : DEFAULT_LLM_MODELS[provider!]),
+        model: provider === "ollama" ? ollamaModel : (e.LLM_MODEL ?? DEFAULT_LLM_MODELS[provider!]),
         apiKey,
-        ollamaBaseUrl: provider === "ollama" ? e.OLLAMA_BASE_URL.replace(/\/+$/, "") : undefined,
         ...llmCommon,
       }
     : {

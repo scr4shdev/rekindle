@@ -5,6 +5,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   CloudRainIcon,
+  HeartHandshakeIcon,
   LanguagesIcon,
   LightbulbIcon,
   LoaderCircleIcon,
@@ -17,6 +18,7 @@ import {
   XIcon,
   type LucideIcon,
 } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { STEP_ICON } from "@/components/session/icons";
 import { ProvenanceBadge, StepMedia } from "@/components/session/step-card";
@@ -50,13 +52,23 @@ interface TimerState {
 
 /**
  * Countdown for the current step, computed from elapsed wall-clock time (no
- * drift from interval jitter). Restarts (paused) only when `resetKey` changes.
+ * drift from interval jitter). Auto-starts on step entry: caregivers at the
+ * bedside should never find a paused timer silently waiting on them.
  */
 function useStepTimer(totalSeconds: number, resetKey: string) {
   const totalMs = totalSeconds * 1000;
-  const [state, setState] = useState<TimerState>({ key: resetKey, banked: 0, startedAt: null, now: 0 });
-  // Reset during render when the step changes (no effect needed).
-  if (state.key !== resetKey) setState({ key: resetKey, banked: 0, startedAt: null, now: 0 });
+  const [state, setState] = useState<TimerState>(() => {
+    const now = Date.now();
+    return { key: resetKey, banked: 0, startedAt: now, now };
+  });
+  // Reset during render when the step changes (no effect needed). Auto-start on entry.
+  if (state.key !== resetKey) {
+    // Reset-during-render reads the wall-clock to anchor the new step; the setState bailout
+    // re-renders immediately, so the fresh Date.now() is read once per step entry.
+    // eslint-disable-next-line react-hooks/purity
+    const now = Date.now();
+    setState({ key: resetKey, banked: 0, startedAt: now, now });
+  }
   const running = state.startedAt !== null;
   const elapsed = state.banked + (state.startedAt !== null ? state.now - state.startedAt : 0);
   const left = Math.max(0, Math.ceil((totalMs - elapsed) / 1000));
@@ -109,12 +121,16 @@ export function LiveSession({
   const t = getMessages().live;
   const ts = getMessages().step;
   const [showTranslation, setShowTranslation] = useState(true);
-  // Focus the session itself on open, so Space starts the timer instead of pressing Close.
+  // Focus the session itself on open, so Space toggles the timer instead of pressing Close.
   const popupRef = useRef<HTMLDivElement>(null);
   // The replan outcome stays in the bottom bar until the caregiver moves to another step.
   const [seenReplan, setSeenReplan] = useState(0);
+  // Manual trigger for the closing moment (the Finish button). The derived `showClosing`
+  // below adds the implicit case: timer reached zero on the last step.
+  const [closingManual, setClosingManual] = useState(false);
   const go = (n: number) => {
     setSeenReplan(view.replans);
+    setClosingManual(false);
     onIndexChange(n);
   };
   const steps = plan.steps;
@@ -136,6 +152,11 @@ export function LiveSession({
         : outcome
           ? { tone: "unchanged" as const, text: t.unchanged }
           : undefined;
+  // Only show a translation if it is actually a different reading of the prompt.
+  const hasTranslation = Boolean(step.promptTranslation) && step.promptTranslation !== step.prompt;
+  // The closing moment overlays the step view when triggered by the Finish button or when
+  // the timer reaches zero on the last step.
+  const showClosing = closingManual || (last && timer.left === 0);
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     const target = event.target as HTMLElement;
@@ -179,7 +200,7 @@ export function LiveSession({
                 ))}
               </ol>
             </div>
-            {step.promptTranslation && (
+            {hasTranslation && (
               <Button
                 variant="outline"
                 size="sm"
@@ -219,7 +240,7 @@ export function LiveSession({
                 >
                   {step.prompt}
                 </DialogPrimitive.Description>
-                {showTranslation && step.promptTranslation && (
+                {showTranslation && hasTranslation && (
                   <p lang={plan.caregiverLanguage} className="text-xl text-muted-foreground sm:text-2xl" data-testid="live-translation">
                     {step.promptTranslation}
                   </p>
@@ -239,7 +260,6 @@ export function LiveSession({
                     {step.caregiverTip}
                   </p>
                 )}
-                {last && <p className="text-lg font-semibold text-sage">{t.done}</p>}
               </div>
             </div>
           </div>
@@ -278,14 +298,19 @@ export function LiveSession({
                       aria-pressed={reaction === value}
                       data-selected={reaction === value}
                       data-testid={`react-${value}`}
-                      onClick={() => onReact(step.id, value)}
+                      onClick={(e) => {
+                        // Blur so Space falls through to the timer handler on the dialog.
+                        e.currentTarget.blur();
+                        onReact(step.id, value);
+                      }}
                       className={cn(
-                        "flex min-h-[5.5rem] min-w-[7rem] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-[1.375rem] border-2 border-border bg-background px-3 py-2 text-[0.95rem] leading-tight font-semibold transition-colors hover:border-input disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-24 sm:text-lg",
+                        "flex min-h-[5.5rem] min-w-[7rem] cursor-pointer flex-col items-center justify-center gap-1 rounded-[1.375rem] border-2 border-border bg-background px-3 py-2 text-[0.95rem] leading-tight font-semibold transition-colors hover:border-input disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-24 sm:text-lg",
                         tone,
                       )}
                     >
                       <RIcon className="size-6 shrink-0" aria-hidden />
-                      {t.reactions[value]}
+                      <span>{t.reactions[value]}</span>
+                      <span className="text-[0.8rem] font-normal max-sm:sr-only">{t.reactionHints[value]}</span>
                     </button>
                   ))}
                 </div>
@@ -309,7 +334,9 @@ export function LiveSession({
                   </Button>
                 </div>
                 {last ? (
-                  <DialogPrimitive.Close render={<Button size="lg" />}>{t.finish}</DialogPrimitive.Close>
+                  <Button size="lg" onClick={() => setClosingManual(true)} data-testid="live-finish">
+                    {t.finish}
+                  </Button>
                 ) : (
                   <Button size="lg" className="px-4 sm:px-6" onClick={() => go(i + 1)} data-icon="inline-end" data-testid="live-next">
                     <span className="hidden sm:inline">{t.next}</span>
@@ -332,6 +359,28 @@ export function LiveSession({
               <p className="sr-only">{t.keyboard}</p>
             </div>
           </div>
+          {showClosing && (
+            <div
+              className="absolute inset-0 z-10 flex animate-in flex-col items-center justify-center gap-6 bg-background/95 px-6 py-10 text-center fade-in-0 backdrop-blur-sm"
+              role="dialog"
+              aria-modal="true"
+              aria-label={t.done}
+              data-testid="live-closing"
+            >
+              <HeartHandshakeIcon className="size-16 text-sage" aria-hidden />
+              <p className="font-heading max-w-xl text-3xl leading-[1.2] font-medium text-foreground sm:text-5xl">
+                {t.done}
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <DialogPrimitive.Close render={<Button size="lg" variant="secondary" data-testid="live-closing-finish" />}>
+                  {t.doneAction}
+                </DialogPrimitive.Close>
+                <Button size="lg" render={<Link href="/" data-testid="live-closing-plan-another" />}>
+                  {t.planAnother}
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogPrimitive.Popup>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>
@@ -354,7 +403,7 @@ function TimerRing({ progress }: { progress: number }) {
         strokeLinecap="round"
         strokeDasharray={c}
         strokeDashoffset={c * (1 - progress)}
-        className="transition-[stroke-dashoffset] duration-1000 ease-linear"
+        className="transition-[stroke-dashoffset] duration-[250ms] ease-linear"
       />
     </svg>
   );

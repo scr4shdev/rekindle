@@ -12,20 +12,21 @@ test.describe("caregiver session mode", () => {
     await expect(live).toBeVisible();
     await expect(page.getByTestId("live-prompt")).toContainText("Buongiorno Maria");
     await expect(page.getByTestId("live-prompt")).toHaveAttribute("lang", "it");
-    await expect(page.getByTestId("live-timer")).toHaveText("2:00");
+    // Timer auto-starts on step entry — it ticks down without the caregiver pressing anything.
+    await expect(page.getByTestId("live-timer")).toHaveText("1:59", { timeout: 3000 });
+    await expect(page.getByRole("button", { name: "Pause timer" })).toBeVisible();
     // Focus starts on the session itself: Space toggles the timer and does not close the dialog.
     await page.keyboard.press(" ");
     await expect(live).toBeVisible();
-    await expect(page.getByTestId("live-timer")).toHaveText("1:59", { timeout: 3000 });
-    await expect(page.getByRole("button", { name: "Pause timer" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Start timer" })).toBeVisible();
     await expect(page.getByTestId("live-translation")).toBeVisible();
     await page.getByRole("button", { name: "Hide meaning" }).click();
     await expect(page.getByTestId("live-translation")).toBeHidden();
-    await page.getByRole("button", { name: "Pause timer" }).click();
     await page.getByTestId("live-prompt").click();
     await page.keyboard.press("ArrowRight");
     await expect(page.getByTestId("live-prompt")).toContainText("Ascoltiamo Sinatra");
-    await expect(page.getByTestId("live-timer")).toHaveText("3:00");
+    // Next step restarts the timer at 3:00 — auto-start means it is already running.
+    await expect(page.getByTestId("live-timer")).toHaveText(/^(3:00|2:59)$/);
     await page.keyboard.press("ArrowLeft");
     await expect(page.getByTestId("live-prompt")).toContainText("Buongiorno Maria");
     await page.keyboard.press("Escape");
@@ -37,8 +38,7 @@ test.describe("caregiver session mode", () => {
     await expect(page.getByTestId("session-view")).toHaveAttribute("data-status", "done");
     await page.getByTestId("start-live").click();
     for (let i = 0; i < 3; i++) await page.getByTestId("live-next").click();
-    await expect(page.getByTestId("live-timer")).toHaveText("3:00");
-    await page.getByRole("button", { name: "Start timer" }).click();
+    // Timer auto-starts on step entry — no manual Start needed.
     await expect(page.getByTestId("live-timer")).toHaveText("2:59", { timeout: 3000 });
     // The recorded replan for this step changes the plan (new revision).
     await page.getByTestId("react-upset").click();

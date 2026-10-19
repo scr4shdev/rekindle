@@ -7,6 +7,7 @@ import {
   CircleIcon,
   CircleSlashIcon,
   LoaderCircleIcon,
+  RotateCcwIcon,
   TelescopeIcon,
   TriangleAlertIcon,
 } from "lucide-react";
@@ -15,6 +16,7 @@ import { QlooCallRow } from "@/components/session/qloo-call-row";
 import { DOMAIN_ICON } from "@/components/session/icons";
 import { rejectionDisplay } from "@/components/session/rejection-display";
 import type { PhaseView, SessionView, TraceItem } from "@/components/session/view-state";
+import { Button } from "@/components/ui/button";
 import { getMessages } from "@/i18n";
 import type { Candidate, RejectedItem, VerifiedEntity } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
@@ -27,7 +29,7 @@ function joinNames(names: string[]): string {
   return `${names.slice(0, -1).join(", ")} ${t().and} ${names.at(-1)}`;
 }
 
-export function ReasoningTrace({ view, className }: { view: SessionView; className?: string }) {
+export function ReasoningTrace({ view, className, onRetry }: { view: SessionView; className?: string; onRetry?: () => void }) {
   const tr = t();
   const scroller = useRef<HTMLDivElement>(null);
   const streaming = view.status === "streaming" || view.replanning;
@@ -48,7 +50,7 @@ export function ReasoningTrace({ view, className }: { view: SessionView; classNa
       className={cn("flex flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-paper", className)}
       data-testid="reasoning-trace"
     >
-      <header className="flex flex-col gap-3 border-b border-border bg-paper-deep px-5 py-4">
+      <header className="flex flex-col gap-3 border-b border-border bg-paper-deep px-4 py-3 sm:px-5 sm:py-4">
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
           <h2 id="trace-title" className="text-xl font-semibold">
             {tr.title}
@@ -67,16 +69,16 @@ export function ReasoningTrace({ view, className }: { view: SessionView; classNa
             <span className="text-sm font-semibold text-muted-foreground">{tr.finished((view.done.durationMs / 1000).toFixed(1))}</span>
           ) : null}
         </div>
-        <dl className="hidden grid-cols-4 gap-2 text-center sm:grid">
+        <dl className="grid grid-cols-4 gap-1.5 text-center text-xs sm:gap-2 sm:text-base">
           {[
             [view.candidates, tr.stats.ideas, "text-foreground"],
             [verified, tr.stats.verified, "text-sage"],
             [view.rejected.length, tr.stats.rejected, "text-rose"],
             [view.qlooCalls, tr.stats.calls, "text-ochre"],
           ].map(([value, label, tone]) => (
-            <div key={label} className="flex flex-col-reverse rounded-xl bg-card px-1 py-2">
-              <dt className="text-xs leading-tight font-semibold text-muted-foreground">{label}</dt>
-              <dd className={cn("font-heading text-2xl font-semibold tabular-nums", tone)}>{value}</dd>
+            <div key={label} className="flex flex-col-reverse rounded-xl bg-card px-1 py-1.5 sm:py-2">
+              <dt className="text-[0.7rem] leading-tight font-semibold text-muted-foreground sm:text-xs">{label}</dt>
+              <dd className={cn("font-heading text-lg font-semibold tabular-nums sm:text-2xl", tone)}>{value}</dd>
             </div>
           ))}
         </dl>
@@ -87,7 +89,7 @@ export function ReasoningTrace({ view, className }: { view: SessionView; classNa
       <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5" tabIndex={0} role="region" aria-label={tr.title}>
         <ol className="relative flex flex-col">
           {view.phases.map((phase, i) => (
-            <PhaseRow key={phase.key} phase={phase} last={i === view.phases.length - 1} entities={view.entities} />
+            <PhaseRow key={phase.key} phase={phase} last={i === view.phases.length - 1} entities={view.entities} onRetry={onRetry} />
           ))}
         </ol>
       </div>
@@ -125,7 +127,7 @@ function PhaseNode({ status }: { status: PhaseView["status"] }) {
   }
 }
 
-function PhaseRow({ phase, last, entities }: { phase: PhaseView; last: boolean; entities: SessionView["entities"] }) {
+function PhaseRow({ phase, last, entities, onRetry }: { phase: PhaseView; last: boolean; entities: SessionView["entities"]; onRetry?: () => void }) {
   const tr = t();
   const pending = phase.status === "pending";
   const candidates = phase.items.filter((i): i is Extract<TraceItem, { kind: "candidate" }> => i.kind === "candidate");
@@ -155,7 +157,7 @@ function PhaseRow({ phase, last, entities }: { phase: PhaseView; last: boolean; 
           <ul className="flex flex-col gap-2">
             {others.map((item) => (
               <li key={item.seq} className="animate-rise">
-                <TraceItemView item={item} entities={entities} />
+                <TraceItemView item={item} entities={entities} onRetry={onRetry} />
               </li>
             ))}
           </ul>
@@ -179,26 +181,38 @@ function CandidateChip({ candidate }: { candidate: Candidate }) {
   );
 }
 
-function TraceItemView({ item, entities }: { item: TraceItem; entities: SessionView["entities"] }) {
+function TraceItemView({ item, entities, onRetry }: { item: TraceItem; entities: SessionView["entities"]; onRetry?: () => void }) {
   const tr = t();
+  const sessionT = getMessages().session;
   switch (item.kind) {
     case "note":
       return <p className="border-l-3 border-ochre/60 pl-3 text-[0.95rem] italic">{item.text}</p>;
     case "qloo_call":
-      return <QlooCallRow call={item.call} />;
+      return <QlooCallRow call={item.call} entities={entities} />;
     case "verified":
       return <VerifiedRow entity={item.entity} entities={entities} />;
     case "rejected":
       return <RejectedRow item={item.item} />;
     case "error":
       return (
-        <p className={cn("flex gap-2 rounded-xl px-3 py-2 text-[0.95rem]", item.recoverable ? "bg-ochre-soft text-ochre-ink" : "bg-rose-soft text-rose-ink")}>
+        <div
+          className={cn(
+            "flex flex-wrap items-start gap-2 rounded-xl px-3 py-2 text-[0.95rem]",
+            item.recoverable ? "bg-ochre-soft text-ochre-ink" : "bg-rose-soft text-rose-ink",
+          )}
+        >
           <TriangleAlertIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
-          <span>
+          <span className="min-w-0 flex-1">
             <strong>{item.recoverable ? tr.recoverable : tr.fatal}: </strong>
             {item.message}
           </span>
-        </p>
+          {!item.recoverable && onRetry && (
+            <Button size="sm" variant="outline" className="shrink-0" onClick={onRetry} data-icon="inline-start" data-testid="trace-retry">
+              <RotateCcwIcon aria-hidden />
+              {sessionT.retry}
+            </Button>
+          )}
+        </div>
       );
     default:
       return null;

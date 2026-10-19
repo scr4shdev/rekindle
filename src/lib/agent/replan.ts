@@ -19,10 +19,14 @@ import { ageBucket, clip, DOMAIN_OF_TYPE, eraFilter, isTasteOutage, normalizeNam
 /** New Qloo-affinity materials offered to the replan after a "lit up" reaction. */
 export const REPLAN_NEW_MATERIALS = 2;
 
+/**
+ * Replan-start narration keyed by reaction. Caregiver-language inner voice,
+ * matching the recorded demo copy in sample-events (`sample.replanStarted`).
+ */
 const STARTED: Record<ReplanRequest["reaction"], string> = {
-  lit_up: "They lit up! Leaning into that thread…",
-  neutral: "No reaction this time. Trying something different…",
-  upset: "They seemed upset. Adjusting what comes next…",
+  lit_up: "Leaning into this thread…",
+  neutral: "Trying something different…",
+  upset: "They seemed upset. Slowing down with something calm and familiar…",
 };
 
 const summarize = (s: SessionStep): ReplanStepSummary => ({
@@ -81,6 +85,7 @@ export function runReplan(deps: AgentDeps, request: ReplanRequest, ctx: CallCont
   return stamped(run, async function* () {
     const started = run.deps.now().getTime();
     yield { type: "phase", phase: "replan", status: "started", message: STARTED[request.reaction] };
+    yield { type: "note", phase: "replan", text: STARTED[request.reaction] };
     const reacted = plan.steps.find((s) => s.id === request.stepId);
     if (!reacted) {
       yield { type: "error", code: "invalid_input", phase: "replan", recoverable: false, message: "That step is not part of this plan." };

@@ -98,14 +98,54 @@ export class QlooHttp implements TastePort {
     }
     if (!response.ok) throw statusError(response.status);
 
-    let json: unknown;
-    try {
-      json = await response.json();
-    } catch (error) {
-      throw new PortError("taste", "invalid_response", "Qloo returned an unreadable response", false, { cause: error });
-    }
-    const items = extract(json);
+    const first = await parseJson(response);
+    let items = extract(first);
     if (!items) throw new PortError("taste", "invalid_response", "Qloo returned an unexpected response shape", false);
+
+    // Empty-result fallback for /v2/insights when the request combined a location
+    // signal and a tag filter: that pair is often too narrow on the hackathon tier.
+    // Probe showed e.g. Naples + 50s rock'n'roll returning 0. Attempt 2 drops the
+    // location (keeps tags); if still empty, attempt 3 drops tags (keeps the
+    // original location). Nothing personal ever reaches Qloo; the drops are logged
+    // with the dropped param name only.
+    if (
+      items.length === 0 &&
+      endpoint === "/v2/insights" &&
+      "signal.location.query" in sent &&
+      "filter.tags" in sent
+    ) {
+      log.info({ droppedParam: "signal.location.query" }, "qloo insights returned 0; retrying without location signal");
+      const attempt2Params = withoutParam(sent, "signal.location.query");
+      const attempt2 = await this.fetchWithRetry(endpoint, attempt2Params, ctx);
+      if (!attempt2.ok) {
+        // R5: a 5xx that still slipped through the retry budget would otherwise be
+        // silently swallowed. Keep best-effort semantics (do not throw) but log one
+        // line so an operator can see which drop was attempted.
+        log.info({ droppedParam: "signal.location.query", status: attempt2.status }, "qloo insights retry (attempt 2) failed; keeping original empty result");
+      } else {
+        const attempt2Items = extract(await parseJson(attempt2));
+        if (attempt2Items && attempt2Items.length > 0) {
+          sent = attempt2Params;
+          items = attempt2Items;
+        } else {
+          log.info({ droppedParam: "filter.tags" }, "qloo insights still 0; retrying without tag filter");
+          const attempt3Params = withoutParam(params, "filter.tags");
+          const attempt3 = await this.fetchWithRetry(endpoint, attempt3Params, ctx);
+          if (!attempt3.ok) {
+            log.info({ droppedParam: "filter.tags", status: attempt3.status }, "qloo insights retry (attempt 3) failed; keeping original empty result");
+          } else {
+            const attempt3Items = extract(await parseJson(attempt3));
+            // R3: only replace items/sent when the attempt actually produced results.
+            // Mirror attempt 2's semantics so the cache does not store an empty page
+            // under attempt-3 params and shadow a later request that could succeed.
+            if (attempt3Items && attempt3Items.length > 0) {
+              sent = attempt3Params;
+              items = attempt3Items;
+            }
+          }
+        }
+      }
+    }
 
     await this.cache.set<CachedPage<T>>(key, { items, params: sent }, { ttlSeconds: this.config.cacheTtlSeconds });
     const durationMs = Date.now() - started;
@@ -163,6 +203,14 @@ export function parseQuery<T>(schema: z.ZodType<T>, query: unknown): T {
   return parsed.data;
 }
 
+
+async function parseJson(response: Response): Promise<unknown> {
+  try {
+    return await response.json();
+  } catch (error) {
+    throw new PortError("taste", "invalid_response", "Qloo returned an unreadable response", false, { cause: error });
+  }
+}
 
 /** Retry-After as seconds or an HTTP date, capped. */
 export function retryAfterMs(header: string | null, now: number = Date.now()): number | undefined {

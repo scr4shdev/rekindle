@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import { STEP_ICON } from "@/components/session/icons";
 import { RECORDED_PERSONA, resolveRequest } from "@/components/session/session-request";
+import { rejectionDisplay } from "@/components/session/rejection-display";
 import { parseSourceParam, resolveSource } from "@/components/session/source";
 import { ProvenanceBadge } from "@/components/session/step-card";
 import { SESSION_PHASES, type SessionView } from "@/components/session/view-state";
@@ -222,16 +223,19 @@ function ComparePlan({ title, icon, view }: { title: string; icon: "llm" | "grou
           <p className="text-muted-foreground">{icon === "llm" ? t.llmCaughtNone : t.caughtNone}</p>
         ) : (
           <ul className="flex flex-col gap-2.5">
-            {caught.map((item) => (
-              <li key={`${item.label}-${item.kind}`} className="flex flex-col gap-0.5">
-                <span className="flex flex-wrap items-center gap-2">
-                  <CircleSlashIcon className="size-4 text-rose" aria-hidden />
-                  <span className="font-semibold text-rose-ink line-through">{item.label}</span>
-                  <Badge variant="rose">{tr.rejectedKinds[item.kind]}</Badge>
-                </span>
-                <span className="pl-6 text-[0.95rem] text-muted-foreground">{item.reason}</span>
-              </li>
-            ))}
+            {caught.map((item) => {
+              const display = rejectionDisplay(item);
+              return (
+                <li key={`${item.label}-${item.kind}`} className="flex flex-col gap-0.5">
+                  <span className="flex flex-wrap items-center gap-2">
+                    <CircleSlashIcon className="size-4 text-rose" aria-hidden />
+                    <span className="font-semibold text-rose-ink line-through">{item.label}</span>
+                    <Badge variant="rose">{display.label}</Badge>
+                  </span>
+                  <span className="pl-6 text-[0.95rem] text-muted-foreground">{display.reason}</span>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>

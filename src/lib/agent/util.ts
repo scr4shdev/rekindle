@@ -78,10 +78,69 @@ export function eraFilter(anchors: Anchors): TasteEraFilter {
   };
 }
 
+/**
+ * Narrow place-name normalizations for the hackathon Qloo tier. Not a general
+ * alias table: just the one city the live probe found rejected under its
+ * ASCII-folded form. "Fes" / "Fez" -> "Fès" (which Qloo accepts). Country-level
+ * fallback is intentionally omitted: the probe showed country-level queries
+ * returning 0 ("Ireland", "Morocco"), so when a city is unrecognised the agent
+ * drops the location signal rather than widening it to a useless country.
+ */
+const PLACE_ALIASES: Record<string, string> = { fes: "Fès", fez: "Fès" };
+
+export function normalizePlaceName(name: string): string {
+  if (!name) return name;
+  const compact = name
+    .normalize("NFKD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .trim();
+  // City-only form, e.g. "fes", or "fes, morocco": take the first segment before a comma.
+  const head = compact.split(",")[0].trim();
+  const alias = PLACE_ALIASES[head];
+  if (!alias) return name;
+  // Preserve any trailing qualifiers from the original ("Fes, Morocco" -> "Fès, Morocco").
+  const rest = name.includes(",") ? name.slice(name.indexOf(",")) : "";
+  return `${alias}${rest}`;
+}
+
 /** The place used as `signal.location.query`: where they grew up, else the first place. */
 export function primaryPlace(anchors: Anchors): string | undefined {
   const early = anchors.places.find((p) => p.role === "birthplace" || p.role === "childhood" || p.role === "youth");
-  return (early ?? anchors.places[0])?.name;
+  const name = (early ?? anchors.places[0])?.name;
+  return name ? normalizePlaceName(name) : undefined;
+}
+
+/**
+ * Structural "non-Western origin" signal for the critique's cultural-mismatch
+ * gate (F2). Deliberately coarse: a country-code allowlist and a BCP-47 primary
+ * subtag allowlist, both exact-equality checks. The semantic judgment itself
+ * (does this affinity extrapolate off-culture?) is done by the LLM via
+ * `cultural-check`; this helper only decides whether to run that check.
+ */
+const WESTERN_COUNTRY_CODES = new Set([
+  "US", "CA", "GB", "IE", "FR", "DE", "IT", "ES", "PT", "NL", "BE", "LU",
+  "SE", "NO", "DK", "FI", "IS", "AT", "CH", "AU", "NZ", "GR", "PL", "CZ",
+  "SK", "HU", "RO", "BG", "HR", "SI", "EE", "LT", "LV", "MT", "CY",
+]);
+/** Primary BCP-47 subtags strongly suggesting non-Western cultural origin. */
+const NON_WESTERN_LANG_PRIMARY = new Set([
+  "ar", "he", "fa", "ur", "hi", "bn", "pa", "ta", "te", "ml", "kn", "mr",
+  "zh", "ja", "ko", "vi", "th", "id", "ms", "tr", "az", "ka", "hy", "am",
+  "sw", "yo", "ha", "ig", "zu",
+]);
+
+export function primarySubtag(tag: string): string {
+  return tag.toLowerCase().split("-")[0] ?? tag.toLowerCase();
+}
+
+export function isNonWesternOrigin(anchors: Anchors, sessionLanguage: string): boolean {
+  if (NON_WESTERN_LANG_PRIMARY.has(primarySubtag(sessionLanguage))) return true;
+  for (const place of anchors.places) {
+    const code = place.countryCode?.toUpperCase();
+    if (code && !WESTERN_COUNTRY_CODES.has(code)) return true;
+  }
+  return false;
 }
 
 /** Insights target type per domain for EXPAND (the domain's Qloo type that supports affinity well). */

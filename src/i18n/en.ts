@@ -133,6 +133,8 @@ export const en = {
       not_found: "Not found in Qloo",
       anachronism: "Wrong era",
       wrong_locale: "Wrong place",
+      /** Sub-badge used when the reason text carries the `cultural_mismatch:` sentinel. */
+      wrong_locale_cultural: "Doesn't fit culture",
       emotional_risk: "Could upset",
       duplicate: "Duplicate",
       low_relevance: "Weak fit",

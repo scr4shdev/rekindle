@@ -6,27 +6,98 @@
 import type { AgentEventPayload, Anchors, PersonInput, SessionMode, SessionPlan, SessionStep } from "@/lib/domain/types";
 import { SessionPlan as SessionPlanSchema, SessionStep as SessionStepSchema } from "@/lib/domain/types";
 import { PortError } from "@/lib/ports";
-import { composeSessionPrompt, critiqueItemsPrompt } from "@/lib/prompts";
+import { composeSessionPrompt, critiqueItemsPrompt, culturalCheckPrompt } from "@/lib/prompts";
 import type { ComposeMaterial, ModelStep } from "@/lib/prompts/compose-session";
 import { DISCLAIMER_EN } from "@/lib/prompts/compose-session";
+import type { CulturalCheckItem } from "@/lib/prompts/cultural-check";
 
 import type { Material, Run } from "@/lib/agent/run";
 import { callLlm } from "@/lib/agent/run";
-import { clip, normalizeDurations } from "@/lib/agent/util";
+import { clip, isNonWesternOrigin, normalizeDurations } from "@/lib/agent/util";
 
 /** Domain schema limit on steps per plan. */
 export const PLAN_MAX_STEPS = 20;
 
+/**
+ * F2: cultural-mismatch gate for non-Western personas. The Qloo live probe
+ * showed that seeds like Oum Kalthoum / Faten Hamama expand to Hollywood or US
+ * political entities. For non-Western origin we ask the LLM to classify each
+ * qloo-affinity material as cultural_match | cultural_mismatch | unclear, and
+ * reject the mismatches with kind=wrong_locale (the closest frozen rejection
+ * kind; the reason text names the extrapolation).
+ */
+async function* culturalMismatchGate(
+  run: Run,
+  anchors: Anchors,
+  person: PersonInput,
+  materials: Material[],
+): AsyncGenerator<AgentEventPayload, Set<string>> {
+  const rejected = new Set<string>();
+  if (!isNonWesternOrigin(anchors, person.sessionLanguage)) return rejected;
+  const indexed = materials.map((m, i) => ({ ref: materialAlias(i), m })).filter(({ m }) => m.source === "qloo-affinity");
+  if (indexed.length === 0) return rejected;
+
+  const items: CulturalCheckItem[] = indexed.map(({ ref, m }) => ({
+    ref,
+    name: m.label,
+    domain: m.domain,
+    description: clip(m.description, 200),
+    seeds: m.entity?.seedQlooIds
+      ?.map((id) => materials.find((x) => x.entity?.qlooId === id)?.label)
+      .filter((n): n is string => Boolean(n)),
+  }));
+  const primary = anchors.places[0];
+  try {
+    const out = await callLlm(
+      run,
+      culturalCheckPrompt,
+      {
+        origin: {
+          primaryCountryCode: primary?.countryCode,
+          primaryPlace: primary?.name,
+          culturalBackground: anchors.culturalBackground,
+          languages: anchors.languages.map((l) => l.tag),
+        },
+        items,
+      },
+      true,
+    );
+    for (const verdict of out.verdicts) {
+      if (verdict.verdict !== "cultural_mismatch") continue;
+      const entry = indexed.find((x) => x.ref === verdict.ref);
+      if (!entry) continue;
+      rejected.add(entry.m.ref);
+      run.stats.rejected++;
+      yield {
+        type: "rejected",
+        item: {
+          label: clip(entry.m.label, 200)!,
+          reason: clip(`cultural_mismatch: ${verdict.reason}`, 400) ?? "Cross-cultural extrapolation.",
+          kind: "wrong_locale",
+          phase: "critique",
+          domain: entry.m.domain,
+          refId: entry.m.ref,
+        },
+      };
+    }
+  } catch (error) {
+    run.ctx.logger.warn({ phase: "critique", err: error instanceof Error ? error.name : typeof error }, "cultural-check failed; skipping gate");
+  }
+  return rejected;
+}
+
 export async function* critiquePhase(run: Run, anchors: Anchors, person: PersonInput, materials: Material[]): AsyncGenerator<AgentEventPayload, Material[]> {
   const started = run.deps.now().getTime();
   yield { type: "phase", phase: "critique", status: "started", message: "Double-checking dates, places and anything that could upset them…" };
+  const culturallyRejected = yield* culturalMismatchGate(run, anchors, person, materials);
+  const forCritique = materials.filter((m) => !culturallyRejected.has(m.ref));
   const out = await callLlm(
     run,
     critiqueItemsPrompt,
     {
       anchors,
       caregiverLanguage: person.caregiverLanguage,
-      items: materials.map((m, i) => ({
+      items: forCritique.map((m, i) => ({
         ref: materialAlias(i),
         label: m.label,
         domain: m.domain,
@@ -38,8 +109,8 @@ export async function* critiquePhase(run: Run, anchors: Anchors, person: PersonI
     },
     true,
   );
-  const byRef = new Map(materials.map((m, i) => [materialAlias(i), m]));
-  const rejected = new Set<string>();
+  const byRef = new Map(forCritique.map((m, i) => [materialAlias(i), m]));
+  const rejected = new Set<string>(culturallyRejected);
   for (const verdict of out.verdicts) {
     const material = byRef.get(verdict.ref);
     if (!material || verdict.keep || verdict.kind === "none" || rejected.has(material.ref)) continue;

@@ -198,8 +198,10 @@ describe("degraded paths", () => {
     const events = await collect(runSession(mockDeps({ taste }), SessionRequest.parse({ person: maria.input }), testCtx()));
     const artist = ofType(events, "qloo_call").find((e) => e.call.params["filter.type"] === "urn:entity:artist")!;
     expect(artist.call.params["signal.interests.tags"]).toEqual(["urn:tag:genre:music:50s", "urn:tag:genre:music:60s", "urn:tag:genre:music:70s"]);
-    const tagCall = ofType(events, "qloo_call").find((e) => e.call.endpoint === "/v2/tags")!;
-    expect(tagCall.call.params.take).toBe(3);
+    const decadeCall = ofType(events, "qloo_call").find(
+      (e) => e.call.endpoint === "/v2/tags" && (e.call.params["filter.tag.types"] as string[] | undefined)?.includes("urn:tag:genre:music"),
+    )!;
+    expect(decadeCall.call.params.take).toBe(3);
   });
 
   it("expansion turned off by config is reported as skipped", async () => {

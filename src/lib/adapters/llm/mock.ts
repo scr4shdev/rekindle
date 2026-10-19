@@ -13,6 +13,7 @@ import { PortError } from "@/lib/ports/common";
 import type { LlmPort, LlmRequest, LlmResult } from "@/lib/ports/llm";
 import type { ComposeMaterial, ComposeSessionInput, ComposeSessionOutput, ModelStep } from "@/lib/prompts/compose-session";
 import type { CritiqueItemsInput, CritiqueItemsOutput } from "@/lib/prompts/critique-items";
+import type { CulturalCheckInput, CulturalCheckOutput } from "@/lib/prompts/cultural-check";
 import type { MatchEntityInput, MatchEntityOutput } from "@/lib/prompts/match-entity";
 import type { ParseAnchorsInput, ParseAnchorsOutput } from "@/lib/prompts/parse-anchors";
 import type { ProposeCandidatesInput, ProposeCandidatesOutput } from "@/lib/prompts/propose-candidates";
@@ -259,11 +260,24 @@ function replanSession(input: ReplanSessionInput): ReplanSessionOutput {
   return { message, notes: [note], upcoming: [...(first ? [first] : []), ...upcoming.map(keep)].slice(0, Math.max(1, input.maxUpcoming)), removed };
 }
 
+/**
+ * Deterministic cultural-check for the mock LLM: no fixture persona has
+ * cross-culture leaks (MockQloo serves only the persona's group), so every
+ * verdict is `cultural_match`. Live-Qloo mode uses the real LLM; this is only
+ * reached in tests and demo mock sessions.
+ */
+function culturalCheck(input: CulturalCheckInput): CulturalCheckOutput {
+  return {
+    verdicts: input.items.map((item) => ({ ref: item.ref, verdict: "cultural_match", reason: "Mock: no cultural mismatch detected." })),
+  };
+}
+
 const RESPONDERS: Record<string, (input: never) => unknown> = {
   "parse-anchors": parseAnchors,
   "propose-candidates": proposeCandidates,
   "match-entity": matchEntity,
   "critique-items": critiqueItems,
+  "cultural-check": culturalCheck,
   "compose-session": composeSession,
   "replan-session": replanSession,
 };

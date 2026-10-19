@@ -1,11 +1,12 @@
 import { composeSessionPrompt } from "@/lib/prompts/compose-session";
 import { critiqueItemsPrompt } from "@/lib/prompts/critique-items";
+import { culturalCheckPrompt } from "@/lib/prompts/cultural-check";
 import { matchEntityPrompt } from "@/lib/prompts/match-entity";
 import { parseAnchorsPrompt } from "@/lib/prompts/parse-anchors";
 import { proposeCandidatesPrompt } from "@/lib/prompts/propose-candidates";
 import { replanSessionPrompt } from "@/lib/prompts/replan-session";
 
-export { composeSessionPrompt, critiqueItemsPrompt, matchEntityPrompt, parseAnchorsPrompt, proposeCandidatesPrompt, replanSessionPrompt };
+export { composeSessionPrompt, critiqueItemsPrompt, culturalCheckPrompt, matchEntityPrompt, parseAnchorsPrompt, proposeCandidatesPrompt, replanSessionPrompt };
 
 /** Every prompt module, keyed by id (for plan meta and the mock LLM). */
 export const PROMPTS = {
@@ -13,6 +14,7 @@ export const PROMPTS = {
   [proposeCandidatesPrompt.id]: proposeCandidatesPrompt,
   [matchEntityPrompt.id]: matchEntityPrompt,
   [critiqueItemsPrompt.id]: critiqueItemsPrompt,
+  [culturalCheckPrompt.id]: culturalCheckPrompt,
   [composeSessionPrompt.id]: composeSessionPrompt,
   [replanSessionPrompt.id]: replanSessionPrompt,
 } as const;

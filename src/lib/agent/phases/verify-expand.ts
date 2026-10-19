@@ -99,11 +99,90 @@ async function verifyOne(run: Run, candidate: Candidate): Promise<VerifyOutcome>
   return { kind: "not_found", events, reason: "No confident match in Qloo; not used." };
 }
 
-export async function* verifyPhase(run: Run, candidates: Candidate[]): AsyncGenerator<AgentEventPayload, Material[]> {
+/** Qloo tag parent type used to filter cuisine-cultural tags (F3). */
+export const CUISINE_TAG_PARENT = "urn:tag:cuisine";
+
+/**
+ * Cuisine-tag side-lookup (F3): food candidates have no "dish" type in Qloo,
+ * so a plain /search returns offices and airports. Instead we look for a
+ * cuisine tag that matches the person's cultural background and gate food
+ * candidates on it: tag found -> food stays as caregiver-led ideas (with the
+ * tag id surfaced for the trace); tag not found -> food is dropped so the
+ * plan omits a food step rather than suggesting an airport.
+ */
+/** First comma-separated token of a free-text classifier (structural reshape only). */
+function cuisineHints(anchors: Anchors): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  const push = (raw: string | undefined) => {
+    const t = raw?.split(",")[0]?.trim();
+    if (!t) return;
+    const key = t.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push(t);
+  };
+  push(anchors.culturalBackground);
+  // Fallback: the primary place name itself (e.g. "Naples", "Fès").
+  push(anchors.places[0]?.name);
+  return out;
+}
+
+type CuisineResult = { tag: { id: string; name: string } | undefined; event: AgentEventPayload } | { outage: PortError };
+
+async function resolveCuisineTag(run: Run, anchors: Anchors): Promise<CuisineResult | undefined> {
+  const hints = cuisineHints(anchors);
+  if (hints.length === 0) return undefined;
+  let event: AgentEventPayload | undefined;
+  for (const hint of hints) {
+    try {
+      const res = await callTaste(run, (taste, ctx) =>
+        taste.searchTags({ query: hint, tagTypes: [CUISINE_TAG_PARENT], take: 5 }, ctx),
+      );
+      event = qlooCallEvent(run, "verify", res);
+      const tag = res.items.find((t) => t.id.startsWith(`${CUISINE_TAG_PARENT}:`) || t.type === CUISINE_TAG_PARENT);
+      if (tag) return { tag, event };
+    } catch (error) {
+      if (isTasteOutage(error)) return { outage: error };
+    }
+  }
+  return event ? { tag: undefined, event } : undefined;
+}
+
+export async function* verifyPhase(run: Run, anchors: Anchors, candidates: Candidate[]): AsyncGenerator<AgentEventPayload, Material[]> {
   const started = run.deps.now().getTime();
   yield { type: "phase", phase: "verify", status: "started", message: "Checking each idea against Qloo's cultural graph…" };
   const groundable = candidates.filter((c) => c.qlooType);
   const ungroundable = candidates.filter((c) => !c.qlooType);
+  const foodCandidates = ungroundable.filter((c) => c.domain === "food");
+  const otherUngroundable = ungroundable.filter((c) => c.domain !== "food");
+
+  // F3: cuisine-tag gate for food candidates.
+  let foodDecision: "keep" | "drop" = "keep";
+  let cuisineTagName: string | undefined;
+  if (foodCandidates.length > 0 && !run.qlooDown) {
+    const resolved = await resolveCuisineTag(run, anchors);
+    if (resolved && "outage" in resolved) {
+      // Qloo is down. The main verify loop below will emit the single
+      // user-facing error event; here we just mark the run and keep food as
+      // caregiver-led ideas (don't drop them when Qloo itself is unavailable).
+      run.qlooDown = true;
+      run.ctx.logger.warn({ phase: "verify", code: resolved.outage.code }, "qloo unavailable; degrading to llm-only");
+      yield errorFromQloo(resolved.outage, "verify");
+      foodDecision = "keep";
+    } else if (resolved) {
+      yield resolved.event;
+      if (resolved.tag) {
+        cuisineTagName = resolved.tag.name;
+      } else {
+        foodDecision = "drop";
+      }
+    } else {
+      // No cultural hint to query: drop food (the plan omits a food step
+      // rather than reaching Qloo without a cuisine filter).
+      foodDecision = "drop";
+    }
+  }
   const outcomes = mapLimit(groundable, VERIFY_CONCURRENCY, (c) => verifyOne(run, c));
   // If one outcome throws, the rest are never awaited: keep their rejections handled.
   for (const outcome of outcomes) outcome.catch(() => undefined);
@@ -139,10 +218,18 @@ export async function* verifyPhase(run: Run, candidates: Candidate[]): AsyncGene
     }
   }
 
-  if (ungroundable.length > 0) {
-    const names = ungroundable.map((c) => c.name).join(", ");
-    yield { type: "note", phase: "verify", text: clip(`${names}: not something Qloo lists (for example a dish), so kept as caregiver-led ideas.`, 400)! };
-    materials.push(...ungroundable.map(ideaMaterial));
+  const keptFood = foodDecision === "keep" ? foodCandidates : [];
+  const droppedFood = foodDecision === "drop" ? foodCandidates : [];
+  const ungroundableKept = [...otherUngroundable, ...keptFood];
+  if (ungroundableKept.length > 0) {
+    const names = ungroundableKept.map((c) => c.name).join(", ");
+    const cuisineNote = cuisineTagName ? ` Food linked to ${cuisineTagName} cuisine.` : "";
+    yield { type: "note", phase: "verify", text: clip(`${names}: not something Qloo lists (for example a dish), so kept as caregiver-led ideas.${cuisineNote}`, 400)! };
+    materials.push(...ungroundableKept.map(ideaMaterial));
+  }
+  for (const c of droppedFood) {
+    run.stats.rejected++;
+    yield { type: "rejected", item: { label: c.name, reason: "No matching cuisine in Qloo for this cultural background, so the food step is omitted.", kind: "not_found", phase: "verify", domain: c.domain, refId: c.id } };
   }
   const checkable = groundable.length - degraded;
   yield {
@@ -151,7 +238,7 @@ export async function* verifyPhase(run: Run, candidates: Candidate[]): AsyncGene
     status: "completed",
     message: run.qlooDown ? `Qloo became unavailable: ${verified} confirmed, the rest stay as unverified ideas.` : `${verified} of ${checkable} checkable ideas confirmed in Qloo.`,
     durationMs: run.deps.now().getTime() - started,
-    counts: { verified, notFound, unverifiable: ungroundable.length + degraded },
+    counts: { verified, notFound: notFound + droppedFood.length, unverifiable: ungroundableKept.length + degraded },
   };
   return materials;
 }

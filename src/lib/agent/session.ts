@@ -58,7 +58,7 @@ export function runSession(deps: AgentDeps, request: SessionRequest, ctx: CallCo
       yield { type: "phase", phase: "expand", status: "skipped", message: "LLM-only mode: no cross-domain discoveries." };
       materials = candidates.map(ideaMaterial);
     } else {
-      materials = yield* verifyPhase(run, candidates);
+      materials = yield* verifyPhase(run, anchors, candidates);
       const discovered = yield* expandPhase(run, anchors, materials);
       materials = [...materials, ...discovered];
     }

@@ -147,4 +147,9 @@ export const MOCK_TAGS = [
   { id: "urn:tag:genre:music:80s", name: "80s", type: "urn:tag:genre:music" },
   { id: "urn:tag:genre:music:90s", name: "90s", type: "urn:tag:genre:music" },
   { id: "urn:tag:genre:brand:sports_organization:soccer", name: "soccer", type: "urn:tag:genre:brand" },
+  // Cuisine tags used by the F3 food-domain gate (resolveCuisineTag).
+  { id: "urn:tag:cuisine:neapolitan", name: "Neapolitan", type: "urn:tag:cuisine" },
+  { id: "urn:tag:cuisine:italian", name: "Italian", type: "urn:tag:cuisine" },
+  { id: "urn:tag:cuisine:moroccan", name: "Moroccan", type: "urn:tag:cuisine" },
+  { id: "urn:tag:cuisine:irish", name: "Irish", type: "urn:tag:cuisine" },
 ] as const;

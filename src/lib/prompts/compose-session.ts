@@ -11,7 +11,7 @@ import type { PromptDefinition } from "@/lib/ports/llm";
 import { AGGREGATE_GUIDANCE, dataBlock, DATA_NOTICE, DEMENTIA_FRIENDLY_GUIDANCE, lines, ROLE } from "@/lib/prompts/shared";
 
 export const ID = "compose-session";
-export const VERSION = "1.0.0";
+export const VERSION = "1.1.0";
 
 /** English source of the non-medical disclaimer; the model translates it to the caregiver language. */
 export const DISCLAIMER_EN =
@@ -75,6 +75,13 @@ export const system = lines(
     "- Durations are whole minutes and should add up to the session length.",
     "- Respect every sensitivity: 'avoid' topics never appear; 'handle_gently' topics get a caregiver tip.",
     "- For tastes: remind the caregiver to check swallowing and diet guidance.",
+  ].join("\n"),
+  [
+    "Specificity (required, every step except opening and closing):",
+    "- Every prompt names the specific grounded material it is built on (the entity's name as given in materials), and at least one specific year or decade drawn from the person's formative window.",
+    "- Every caregiverTip gives a concrete reason this material fits THIS person: name the material and a specific place or decade from the anchors. No generic reassurance ('they may enjoy this'), no boilerplate ('if they seem to enjoy it...'), no hedging about 'exposure' or 'background in general'.",
+    "- Forbidden register (never emit any variant): 'selections reflect X's Y background', 'international exposure', 'cultural heritage shaped them', 'this piece speaks to their roots', 'a classic from their era'. These sentences hide the fact that no concrete anchor was used.",
+    "- Required register: name the entity, name a year or decade, tie it to a place from anchors. Example for a 1954-born Moroccan who grew up in Rabat: prompt 'Khaled's 1980s rai still lifts a room. What does this song bring up for you?'; caregiverTip 'Cheb Khaled was everywhere in the Rabat of the 1980s; expect foot-tapping or humming along.' Example for a 1942-born Neapolitan: caregiverTip 'Carosone was the soundtrack of 1950s Naples; many families danced to this at home.'",
   ].join("\n"),
   DEMENTIA_FRIENDLY_GUIDANCE,
   AGGREGATE_GUIDANCE,

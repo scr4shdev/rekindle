@@ -448,7 +448,7 @@ const FATIMA: PersonaFixture = {
     tip: "Sit close and hold her hand if she welcomes it. A glass of water or mint to smell can help.",
     mediaHint: "Search 'Fairuz Ya Mersal El Merasil'",
   },
-  planOrder: ["Mohammed V", "Oum Kalthoum", "Faten Hamama", "Moroccan mint tea", "Abdelhalim Hafez", "Nass El Ghiwane", "Warda Al-Jazairia"],
+  planOrder: ["Oum Kalthoum", "Abdelhalim Hafez", "Nass El Ghiwane", "Moroccan mint tea", "Faten Hamama", "Mohammed V", "Warda Al-Jazairia"],
   steps: {
     "Mohammed V": {
       kind: "look", minutes: 3, title: "Mohammed V on the radio (1955)",

@@ -11,7 +11,7 @@ import type { PromptDefinition } from "@/lib/ports/llm";
 import { AGGREGATE_GUIDANCE, dataBlock, DATA_NOTICE, DEMENTIA_FRIENDLY_GUIDANCE, lines, ROLE } from "@/lib/prompts/shared";
 
 export const ID = "compose-session";
-export const VERSION = "1.3.1";
+export const VERSION = "1.4.0";
 
 /** English source of the non-medical disclaimer; the model translates it to the caregiver language. */
 export const DISCLAIMER_EN =
@@ -81,6 +81,10 @@ export const system = lines(
     "- Durations are whole minutes and should add up to the session length.",
     "- Respect every sensitivity: 'avoid' topics never appear; 'handle_gently' topics get a caregiver tip.",
     "- For tastes: remind the caregiver to check swallowing and diet guidance.",
+  ].join("\n"),
+  [
+    "Music primacy (required):",
+    "At least two steps must be music (kind 'listen' or 'move'). Music has the strongest evidence base for engagement in dementia, especially where speech recall has declined (Abraha 2017 BMJ Open umbrella review: pooled SMD -0.49 for agitation and -0.64 for anxiety; Säkämö 2014: singing lifted memory, thinking and orientation in mild-dementia under-80s). Prefer music steps as anchors around which other steps hang. Do not stack them all adjacent; distribute them across the session so the person gets a music anchor near the start, in the middle and near the close.",
   ].join("\n"),
   [
     "Lifespan coverage (required when anchors.lifePhases is non-empty):",

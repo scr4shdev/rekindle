@@ -5,7 +5,7 @@
     "match-entity": "1.1.0",
     "cultural-check": "1.0.1",
     "critique-items": "1.0.0",
-    "compose-session": "1.3.1",
+    "compose-session": "1.4.0",
     "replan-session": "1.1.0"
   },
   "qloo": {
@@ -18,5 +18,5 @@
   "recordedAt": "2026-10-18T19:00:00.000Z",
   "totalDurationMs": 2040,
   "eventCount": 84,
-  "sha256": "61024fd3bd94bc21d2b6b09bbf7c109d36aebda2a062ef86470ab8d2ae6c8271"
+  "sha256": "eee9808bc6b3c31a7e84d5f101e20d2a0a1c9f7dd428efe689e66668a30fbe62"
 }

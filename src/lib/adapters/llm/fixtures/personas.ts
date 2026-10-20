@@ -459,7 +459,7 @@ const FATIMA: PersonaFixture = {
       mediaHint: "Search 'Mohammed V 1955' on Google Images",
     },
     "Nass El Ghiwane": {
-      kind: "listen", minutes: 4, title: "Nass El Ghiwane (1972)",
+      kind: "listen", minutes: 3, title: "Nass El Ghiwane (1972)",
       prompt: "Nass El Ghiwane ! Vous aviez vingt-deux ans quand ils ont commencé. Qu'est-ce que ça vous fait, aujourd'hui ?",
       translation: "Nass El Ghiwane! You were twenty-two when they started. How does it feel today?",
       followUps: ["Si vous voulez, battez la mesure avec moi."],
@@ -467,7 +467,7 @@ const FATIMA: PersonaFixture = {
       mediaHint: "Search 'Nass El Ghiwane 1972' on YouTube",
     },
     "Oum Kalthoum": {
-      kind: "listen", minutes: 4, title: "Oum Kalthoum, 'Enta Omri' (1964)",
+      kind: "listen", minutes: 3, title: "Oum Kalthoum, 'Enta Omri' (1964)",
       prompt: "Écoutons Oum Kalthoum. Quelle voix ! Qu'est-ce que cette chanson vous évoque ?",
       translation: "Let's listen to Oum Kalthoum. What a voice! What does this song bring to mind?",
       followUps: ["Fermez les yeux et laissez-vous porter, si vous voulez."],
@@ -475,7 +475,7 @@ const FATIMA: PersonaFixture = {
       mediaHint: "Search 'Oum Kalthoum Enta Omri 1964'",
     },
     "Faten Hamama": {
-      kind: "look", minutes: 4, title: "Faten Hamama on screen",
+      kind: "look", minutes: 3, title: "Faten Hamama on screen",
       prompt: "Regardez cette photo de Faten Hamama. Qu'est-ce que vous remarquez ?",
       translation: "Look at this photo of Faten Hamama. What do you notice?",
       followUps: ["Si vous voulez, racontez-moi le cinéma à Fès."],
@@ -483,7 +483,7 @@ const FATIMA: PersonaFixture = {
       mediaHint: "Search 'Faten Hamama 1960s black and white photo'",
     },
     "Moroccan mint tea": {
-      kind: "taste", minutes: 4, title: "Mint tea, the morning ritual",
+      kind: "taste", minutes: 3, title: "Mint tea, the morning ritual",
       prompt: "Sentez cette menthe fraîche. Vous me montrez comment vous préparez le thé ?",
       translation: "Smell this fresh mint. Will you show me how you make the tea?",
       followUps: ["Vous me montrez votre façon de servir le thé ?"],
@@ -491,7 +491,7 @@ const FATIMA: PersonaFixture = {
       mediaHint: "",
     },
     "Abdelhalim Hafez": {
-      kind: "move", minutes: 4, title: "Sway along: Abdelhalim Hafez",
+      kind: "move", minutes: 3, title: "Sway along: Abdelhalim Hafez",
       prompt: "Abdelhalim Hafez ! On se balance doucement avec la musique ?",
       translation: "Abdelhalim Hafez! Shall we sway gently with the music?",
       followUps: [],

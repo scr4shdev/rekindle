@@ -11,7 +11,7 @@ import type { PromptDefinition } from "@/lib/ports/llm";
 import { AGGREGATE_GUIDANCE, dataBlock, DATA_NOTICE, DEMENTIA_FRIENDLY_GUIDANCE, lines, ROLE } from "@/lib/prompts/shared";
 
 export const ID = "compose-session";
-export const VERSION = "1.4.1";
+export const VERSION = "1.4.2";
 
 /** English source of the non-medical disclaimer; the model translates it to the caregiver language. */
 export const DISCLAIMER_EN =
@@ -95,7 +95,7 @@ export const system = lines(
   [
     "Stage tuning (follow the stage carried in `session.stage`, when present):",
     "- early (default when stage is absent): 6 to 8 steps, 2 to 3 minutes each, at least two music steps, follow-ups allowed. Evidence is strongest in mild dementia (Cochrane 2018 reminiscence review, Säkämö 2014 singing RCT), so the plan can span the fuller arc: a greeting, five or six anchors, a close.",
-    "- mid: 5 to 6 steps, 2 to 3 minutes each, at least three music or sensory anchors, keep follow-ups to one short line and drop them when the material already carries the moment. Attention narrows at mid-stage, so lean on music, familiar images and smells, and let the caregiver sit in each anchor longer rather than reaching for a sixth step.",
+    "- mid: 5 to 6 steps, 2 to 4 minutes each, at least three music or sensory anchors, keep follow-ups to one short line and drop them when the material already carries the moment. The upper bound widens to 4 minutes because the session normalizer scales step durations to the chosen session length; at 20 minutes with a 6-step mid plan, interior steps land near 4 minutes even when the raw target is 3. Attention narrows at mid-stage, so lean on music, familiar images and smells, and let the caregiver sit in each anchor longer rather than reaching for a seventh step.",
     "- late: 4 to 5 steps, about 90 seconds each (round to 1 or 2 minutes in `durationMin`), at least four music or sensory anchors, no follow-ups, no complex questions. In late-stage dementia speech recall often fails and NICE NG97's wellbeing bracket, not the cognition bracket, is what applies: prompts must be yes-no or presence invitations ('Shall we listen together?', 'This is Oum Kalthoum.'), never 'Who was that?' or 'Do you remember?'. Keep every prompt short and present-tense.",
   ].join("\n"),
   [

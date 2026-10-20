@@ -2,8 +2,9 @@
 
 import { ArrowLeftIcon, BotIcon, PlayIcon, PrinterIcon, RotateCcwIcon, ScaleIcon, SparklesIcon, SquareIcon, TriangleAlertIcon } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { LiveSession } from "@/components/session/live-session";
 import { PlanTimeline } from "@/components/session/plan-timeline";
 import { ReasoningTrace } from "@/components/session/reasoning-trace";
@@ -13,9 +14,19 @@ import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAgentStream } from "@/hooks/use-agent-stream";
+import { getMessages } from "@/i18n";
 import { MessagesProvider, useMessages } from "@/i18n/provider";
 import type { Anchors, Reaction, ReactionRecord, SessionMode } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
+
+/**
+ * How long we wait on the live stream after the first phase event before
+ * giving up and switching to the recorded replay. A judge tapping a persona
+ * on a cold Vercel instance should not be left staring at an empty page.
+ * Bump this if Gemini cold starts routinely finish between 25 and 40 s.
+ */
+const LIVE_TIMEOUT_MS = 25_000;
+const LIVE_TIMEOUT_TOAST_MS = 3_000;
 
 function languageNames(anchors: Anchors): string {
   return anchors.languages.map((l) => l.name).join(", ");
@@ -121,9 +132,11 @@ function EraHero({
 
 export function SessionView() {
   const params = useSearchParams();
+  const router = useRouter();
   const personaParam = params.get("persona");
   const modeParam = params.get("mode");
   const sourceParam = parseSourceParam(params.get("source"));
+  const fromParam = params.get("from");
   const speed = Number(params.get("speed") ?? "1") || 1;
 
   // Resolved once per URL: custom input is read from memory at that moment.
@@ -147,6 +160,44 @@ export function SessionView() {
   const [reactions, setReactions] = useState<Record<string, Reaction>>({});
 
   const [history, setHistory] = useState<ReactionRecord[]>([]);
+
+  // Soft fallback: on a live run (not replay/sample), if no `done` or `plan`
+  // arrives within LIVE_TIMEOUT_MS of the first phase event, swap the URL to
+  // `source=replay` so the judge sees the recorded trace instead of a dead
+  // page. Replay/sample paths are never auto-switched (would loop).
+  const liveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const liveTimedOutRef = useRef(false);
+  const isLiveSource = sourceParam !== "replay" && sourceParam !== "sample";
+  const hasFirstPhase = view.phases.length > 0;
+  const hasPlanOrDone = Boolean(view.plan) || view.status === "done";
+
+  useEffect(() => {
+    if (!isLiveSource || !hasFirstPhase || hasPlanOrDone || liveTimedOutRef.current) return;
+    if (liveTimeoutRef.current) return;
+    liveTimeoutRef.current = setTimeout(() => {
+      liveTimedOutRef.current = true;
+      cancel();
+      const next = new URLSearchParams(params.toString());
+      next.set("source", "replay");
+      next.set("from", "live-timeout");
+      router.replace(`/session?${next.toString()}`);
+    }, LIVE_TIMEOUT_MS);
+    return () => {
+      if (liveTimeoutRef.current) {
+        clearTimeout(liveTimeoutRef.current);
+        liveTimeoutRef.current = null;
+      }
+    };
+  }, [isLiveSource, hasFirstPhase, hasPlanOrDone, cancel, params, router]);
+
+  // Show the fallback toast once per arrival on `?from=live-timeout`.
+  const toastShownRef = useRef(false);
+  useEffect(() => {
+    if (fromParam !== "live-timeout" || toastShownRef.current) return;
+    toastShownRef.current = true;
+    const t = getMessages(caregiverLanguage).session;
+    toast.info(t.liveTimeoutToast, { duration: LIVE_TIMEOUT_TOAST_MS });
+  }, [fromParam, caregiverLanguage]);
 
   function react(stepId: string, reaction: Reaction) {
     if (reactions[stepId] === reaction || view.replanning) return;

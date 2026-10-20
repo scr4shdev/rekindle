@@ -108,6 +108,7 @@ export const it: PartialMessages = {
     retry: "Riprova",
     runLive: "Esegui dal vivo",
     runLiveHint: "Esegui l'agente sul modello dal vivo, più lento ma reale",
+    liveTimeoutToast: "Il modello dal vivo è lento oggi. Mostriamo la registrazione.",
     tryMaria: "Apri la demo registrata di Maria",
     missingCustom:
       "I tuoi appunti non vengono conservati, quindi ricaricando la pagina sono stati cancellati. Riscrivili, per favore.",

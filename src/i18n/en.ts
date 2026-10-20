@@ -94,6 +94,7 @@ export const en = {
     retry: "Try again",
     runLive: "Run it live",
     runLiveHint: "Run the agent against the live model, slower but real",
+    liveTimeoutToast: "Live model is slow today. Showing the recorded run.",
     tryMaria: "Open Maria's recorded demo",
     missingCustom: "Your notes are not kept anywhere, so reloading the page cleared them. Please write them again.",
     missingCustomAction: "Write notes",

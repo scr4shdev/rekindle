@@ -112,6 +112,7 @@ export const fr: PartialMessages = {
     retry: "Réessayer",
     runLive: "Lancer en direct",
     runLiveHint: "Lancer l'agent contre le modèle en direct, plus lent mais réel",
+    liveTimeoutToast: "Le modèle en direct est lent aujourd'hui. Nous affichons la version enregistrée.",
     tryMaria: "Ouvrir la démo enregistrée de Maria",
     missingCustom:
       "Vos notes ne sont conservées nulle part, donc recharger la page les a effacées. Réécrivez-les, s'il vous plaît.",

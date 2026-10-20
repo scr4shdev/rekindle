@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 /**
  * Normalize a BCP 47 tag to the short, lowercased language subtag used for
@@ -58,6 +58,9 @@ export interface SpeakerDeps {
   Utterance: UtteranceCtor;
 }
 
+/** Where the audio for the current/last playback came from. */
+export type SpeakSource = "browser" | "gemini" | null;
+
 /**
  * Imperative speaker, free of React, so unit tests can drive it the same way
  * the browser would. The hook below wraps a single instance and subscribes
@@ -67,6 +70,7 @@ export class Speaker {
   voices: VoiceLike[] = [];
   voiceLoaded = false;
   isPlaying = false;
+  source: SpeakSource = null;
   private subs = new Set<() => void>();
 
   constructor(private readonly deps: SpeakerDeps) {}
@@ -95,6 +99,7 @@ export class Speaker {
 
   speak(text: string, lang: string): () => void {
     this.deps.synthesis.cancel();
+    this.source = "browser";
     const utterance = new this.deps.Utterance(text);
     utterance.lang = lang;
     const voice = pickVoice(this.voices, lang);
@@ -117,6 +122,7 @@ export class Speaker {
       this.emit();
     };
     this.deps.synthesis.speak(utterance);
+    this.emit();
     return () => {
       utterance.onstart = null;
       utterance.onend = null;
@@ -131,6 +137,18 @@ export class Speaker {
       this.emit();
     }
   }
+
+  /** Signal that a cloud-audio playback has started/ended. */
+  setPlaying(playing: boolean, source: SpeakSource): void {
+    this.source = source;
+    if (this.isPlaying !== playing) {
+      this.isPlaying = playing;
+      this.emit();
+    } else {
+      // Still emit if the source changed so subscribers rerender.
+      this.emit();
+    }
+  }
 }
 
 export interface UseSpeakApi {
@@ -140,15 +158,63 @@ export interface UseSpeakApi {
   voiceLoaded: boolean;
   hasVoiceFor: (lang: string) => boolean;
   supported: boolean;
+  /** Which path produced the current / last playback: "browser" or "gemini". */
+  source: SpeakSource;
 }
 
 const EMPTY_SUBSCRIBE = () => () => {};
+
+/** Fetch result shape used by the cloud-TTS fallback. */
+export interface CloudAudio {
+  blob: Blob;
+  provider: string;
+}
+
+/**
+ * Minimal in-memory cache for cloud-TTS audio, keyed by (text, lang). Lives
+ * for the current session only (page nav cost dwarfs the fetch anyway when
+ * the server cache is warm).
+ */
+function cacheKey(text: string, lang: string): string {
+  return `${lang}:${text}`;
+}
+
+/**
+ * Fetch `/api/tts` and return the audio blob, or `null` on any failure
+ * (including 503 "no key"). Exported for unit tests; the hook wires this to
+ * an `HTMLAudioElement`.
+ */
+export async function fetchCloudTts(
+  text: string,
+  lang: string,
+  fetcher: typeof fetch = fetch,
+): Promise<CloudAudio | null> {
+  let res: Response;
+  try {
+    res = await fetcher("/api/tts", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ text, lang }),
+    });
+  } catch {
+    return null;
+  }
+  if (!res.ok) return null;
+  const blob = await res.blob();
+  return { blob, provider: res.headers.get("x-tts-provider") ?? "gemini" };
+}
 
 /**
  * Wire the browser's Web Speech API into React. Guarded for SSR: during
  * server render and in environments without speechSynthesis the hook returns
  * a no-op API with `supported: false`, so callers can still render the UI
  * and simply hide the button or show a fallback hint.
+ *
+ * When the browser has NO voice for the requested language, the hook calls
+ * `/api/tts` (Gemini-backed) and plays the returned blob through an
+ * `HTMLAudioElement`. If the server returns 503 (no key wired, mock mode) or
+ * the fetch fails, we fall back to the browser's default voice so the
+ * caregiver always hears something.
  */
 export function useSpeak(): UseSpeakApi {
   // Keep the speaker instance in state rather than a ref: refs cannot be
@@ -160,6 +226,8 @@ export function useSpeak(): UseSpeakApi {
     return new Speaker({ synthesis: window.speechSynthesis, Utterance: window.SpeechSynthesisUtterance });
   });
   const supported = speaker !== null;
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const blobCacheRef = useRef<Map<string, CloudAudio>>(new Map());
 
   useEffect(() => {
     if (!speaker) return;
@@ -170,6 +238,9 @@ export function useSpeak(): UseSpeakApi {
     return () => {
       synth.removeEventListener?.("voiceschanged", onVoicesChanged);
       speaker.stop();
+      // Tear down any in-flight cloud playback.
+      audioRef.current?.pause();
+      audioRef.current = null;
     };
   }, [speaker]);
 
@@ -178,22 +249,78 @@ export function useSpeak(): UseSpeakApi {
   // tuple so hydration matches the server render.
   const snapshot = useSyncExternalStore(
     speaker ? (fn) => speaker.subscribe(fn) : EMPTY_SUBSCRIBE,
-    () => (speaker ? `${speaker.isPlaying ? 1 : 0}:${speaker.voiceLoaded ? 1 : 0}:${speaker.voices.length}` : "0"),
+    () =>
+      speaker
+        ? `${speaker.isPlaying ? 1 : 0}:${speaker.voiceLoaded ? 1 : 0}:${speaker.voices.length}:${speaker.source ?? ""}`
+        : "0",
     () => "0",
   );
   void snapshot;
+
+  const stopAll = () => {
+    audioRef.current?.pause();
+    if (audioRef.current) {
+      audioRef.current.src = "";
+    }
+    audioRef.current = null;
+    speaker?.stop();
+  };
+
+  const playCloud = async (text: string, lang: string): Promise<void> => {
+    if (!speaker) return;
+    const key = cacheKey(text, lang);
+    let cached = blobCacheRef.current.get(key);
+    if (!cached) {
+      const fetched = await fetchCloudTts(text, lang);
+      if (!fetched) {
+        // 503 (no key) / network / decode error: fall back to browser default voice.
+        speaker.speak(text, lang);
+        return;
+      }
+      cached = fetched;
+      blobCacheRef.current.set(key, cached);
+    }
+    // Make a fresh audio element each call: reusing one across langs leaves
+    // residual state in some browsers.
+    const url = URL.createObjectURL(cached.blob);
+    const audio = new Audio(url);
+    audioRef.current = audio;
+    audio.addEventListener("play", () => speaker.setPlaying(true, "gemini"), { once: true });
+    const onEnd = () => {
+      speaker.setPlaying(false, "gemini");
+      URL.revokeObjectURL(url);
+      if (audioRef.current === audio) audioRef.current = null;
+    };
+    audio.addEventListener("ended", onEnd, { once: true });
+    audio.addEventListener("error", onEnd, { once: true });
+    try {
+      await audio.play();
+    } catch {
+      // Autoplay blocked or decode error: fall back to the browser voice.
+      URL.revokeObjectURL(url);
+      if (audioRef.current === audio) audioRef.current = null;
+      speaker.speak(text, lang);
+    }
+  };
 
   return {
     supported,
     isPlaying: speaker?.isPlaying ?? false,
     voiceLoaded: speaker?.voiceLoaded ?? false,
+    source: speaker?.source ?? null,
     hasVoiceFor: (lang: string) => (speaker ? speaker.hasVoiceFor(lang) : false),
     speak: (text: string, lang: string) => {
       if (!speaker) return;
-      speaker.speak(text, lang);
+      // Cancel any in-flight playback (either path) before starting a new one.
+      stopAll();
+      if (speaker.hasVoiceFor(lang)) {
+        speaker.speak(text, lang);
+        return;
+      }
+      // No browser voice: try the cloud path. Fire-and-forget: the hook
+      // state transitions as the audio element reports play/end.
+      void playCloud(text, lang);
     },
-    stop: () => {
-      speaker?.stop();
-    },
+    stop: stopAll,
   };
 }

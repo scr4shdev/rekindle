@@ -220,6 +220,7 @@ export const en = {
     listen: "Listen",
     listenHint: (language: string) => `Listen to the prompt in ${language}`,
     listenNoVoice: (language: string) => `No ${language} voice installed on this device. Using the default voice.`,
+    listenCloudVoice: (language: string) => `Playing a cloud voice for ${language}.`,
   },
   live: {
     title: "Session mode",

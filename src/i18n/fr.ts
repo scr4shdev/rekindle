@@ -244,6 +244,7 @@ export const fr: PartialMessages = {
     listen: "Écouter",
     listenHint: (language: string) => `Écouter la phrase en ${language}`,
     listenNoVoice: (language: string) => `Aucune voix ${language} installée sur cet appareil. La voix par défaut sera utilisée.`,
+    listenCloudVoice: (language: string) => `Lecture d'une voix cloud en ${language}.`,
   },
   live: {
     title: "Mode séance",

@@ -1,21 +1,32 @@
 "use client";
 
-import { ArrowLeftIcon, BotIcon, PlayIcon, PrinterIcon, RotateCcwIcon, ScaleIcon, SquareIcon, TriangleAlertIcon } from "lucide-react";
+import { ArrowLeftIcon, BotIcon, PlayIcon, PrinterIcon, RotateCcwIcon, ScaleIcon, SparklesIcon, SquareIcon, TriangleAlertIcon } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { LiveSession } from "@/components/session/live-session";
 import { PlanTimeline } from "@/components/session/plan-timeline";
 import { ReasoningTrace } from "@/components/session/reasoning-trace";
 import { RECORDED_PERSONA, resolveRequest } from "@/components/session/session-request";
-import { parseSourceParam, resolveSource, type SourceKind } from "@/components/session/source";
+import { parseSourceParam, resolveSource, type SourceKind, type SourceParam } from "@/components/session/source";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAgentStream } from "@/hooks/use-agent-stream";
+import { getMessages } from "@/i18n";
 import { MessagesProvider, useMessages } from "@/i18n/provider";
 import type { Anchors, Reaction, ReactionRecord, SessionMode } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
+
+/**
+ * How long we wait on the live stream after the first phase event before
+ * giving up and switching to the recorded replay. A judge tapping a persona
+ * on a cold Vercel instance should not be left staring at an empty page.
+ * Bump this if Gemini cold starts routinely finish between 25 and 40 s.
+ */
+const LIVE_TIMEOUT_MS = 25_000;
+const LIVE_TIMEOUT_TOAST_MS = 3_000;
 
 function languageNames(anchors: Anchors): string {
   return anchors.languages.map((l) => l.name).join(", ");
@@ -121,9 +132,11 @@ function EraHero({
 
 export function SessionView() {
   const params = useSearchParams();
+  const router = useRouter();
   const personaParam = params.get("persona");
   const modeParam = params.get("mode");
   const sourceParam = parseSourceParam(params.get("source"));
+  const fromParam = params.get("from");
   const speed = Number(params.get("speed") ?? "1") || 1;
 
   // Resolved once per URL: custom input is read from memory at that moment.
@@ -147,6 +160,44 @@ export function SessionView() {
   const [reactions, setReactions] = useState<Record<string, Reaction>>({});
 
   const [history, setHistory] = useState<ReactionRecord[]>([]);
+
+  // Soft fallback: on a live run (not replay/sample), if no `done` or `plan`
+  // arrives within LIVE_TIMEOUT_MS of the first phase event, swap the URL to
+  // `source=replay` so the judge sees the recorded trace instead of a dead
+  // page. Replay/sample paths are never auto-switched (would loop).
+  const liveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const liveTimedOutRef = useRef(false);
+  const isLiveSource = sourceParam !== "replay" && sourceParam !== "sample";
+  const hasFirstPhase = view.phases.length > 0;
+  const hasPlanOrDone = Boolean(view.plan) || view.status === "done";
+
+  useEffect(() => {
+    if (!isLiveSource || !hasFirstPhase || hasPlanOrDone || liveTimedOutRef.current) return;
+    if (liveTimeoutRef.current) return;
+    liveTimeoutRef.current = setTimeout(() => {
+      liveTimedOutRef.current = true;
+      cancel();
+      const next = new URLSearchParams(params.toString());
+      next.set("source", "replay");
+      next.set("from", "live-timeout");
+      router.replace(`/session?${next.toString()}`);
+    }, LIVE_TIMEOUT_MS);
+    return () => {
+      if (liveTimeoutRef.current) {
+        clearTimeout(liveTimeoutRef.current);
+        liveTimeoutRef.current = null;
+      }
+    };
+  }, [isLiveSource, hasFirstPhase, hasPlanOrDone, cancel, params, router]);
+
+  // Show the fallback toast once per arrival on `?from=live-timeout`.
+  const toastShownRef = useRef(false);
+  useEffect(() => {
+    if (fromParam !== "live-timeout" || toastShownRef.current) return;
+    toastShownRef.current = true;
+    const t = getMessages(caregiverLanguage).session;
+    toast.info(t.liveTimeoutToast, { duration: LIVE_TIMEOUT_TOAST_MS });
+  }, [fromParam, caregiverLanguage]);
 
   function react(stepId: string, reaction: Reaction) {
     if (reactions[stepId] === reaction || view.replanning) return;
@@ -180,6 +231,7 @@ export function SessionView() {
         resolved={resolved}
         view={view}
         servedBy={servedBy}
+        sourceParam={sourceParam}
         liveOpen={liveOpen}
         setLiveOpen={setLiveOpen}
         liveIndex={liveIndex}
@@ -216,6 +268,7 @@ function SessionViewBody({
   resolved,
   view,
   servedBy,
+  sourceParam,
   liveOpen,
   setLiveOpen,
   liveIndex,
@@ -228,6 +281,7 @@ function SessionViewBody({
   resolved: ResolvedOk;
   view: ReturnType<typeof useAgentStream>["view"];
   servedBy: ReturnType<typeof useAgentStream>["servedBy"];
+  sourceParam: SourceParam;
   liveOpen: boolean;
   setLiveOpen: (open: boolean) => void;
   liveIndex: number;
@@ -245,6 +299,15 @@ function SessionViewBody({
   const anchors = view.anchors;
   const name = resolved.name ?? t.someone;
   const comparePersona = resolved.persona;
+  const isReplay = sourceParam === "replay";
+  // Build the live URL by stripping `source=replay` and the fallback marker.
+  // Preserve mode and anything else the user picked.
+  const liveHref = (() => {
+    const params = new URLSearchParams();
+    params.set("persona", resolved.persona);
+    if (resolved.request.mode) params.set("mode", resolved.request.mode);
+    return `/session?${params.toString()}`;
+  })();
   // While the agent is still thinking and nothing is composed yet, the trace gets the full width.
   const traceWide = view.status === "streaming" && view.steps.length === 0;
 
@@ -283,18 +346,37 @@ function SessionViewBody({
                 </Badge>
               )}
               {servedBy && <SourceBadge kind={servedBy} />}
-              {plan && plan.meta.qlooMode !== "unused" && (
-                <Tooltip>
-                  <TooltipTrigger render={<Badge variant={plan.meta.qlooMode === "live" ? "sage" : "outline"} className="cursor-help" />} data-testid="qloo-mode">
-                    {plan.meta.qlooMode === "live" ? t.qlooLive : t.qlooMock}
-                    <span className="sr-only">: {plan.meta.qlooMode === "live" ? t.qlooLiveHint : t.qlooMockHint}</span>
-                  </TooltipTrigger>
-                  <TooltipContent>{plan.meta.qlooMode === "live" ? t.qlooLiveHint : t.qlooMockHint}</TooltipContent>
-                </Tooltip>
-              )}
+              {plan && plan.meta.qlooMode !== "unused" && (() => {
+                // On a replay fixture, the recording was taken with mock Qloo
+                // regardless of what the fixture's plan meta says, so the
+                // honest label is "demo data".
+                const effectiveLive = plan.meta.qlooMode === "live" && !isReplay;
+                return (
+                  <Tooltip>
+                    <TooltipTrigger render={<Badge variant={effectiveLive ? "sage" : "outline"} className="cursor-help" />} data-testid="qloo-mode">
+                      {effectiveLive ? t.qlooLive : t.qlooMock}
+                      <span className="sr-only">: {effectiveLive ? t.qlooLiveHint : t.qlooMockHint}</span>
+                    </TooltipTrigger>
+                    <TooltipContent>{effectiveLive ? t.qlooLiveHint : t.qlooMockHint}</TooltipContent>
+                  </Tooltip>
+                );
+              })()}
             </div>
           </div>
           <div className="flex flex-wrap gap-2.5">
+            {isReplay && (
+              <Link
+                href={liveHref}
+                className={cn(buttonVariants({ variant: "outline" }), "focus-visible:ring-2")}
+                data-icon="inline-start"
+                data-testid="run-live"
+                aria-label={t.runLiveHint}
+                title={t.runLiveHint}
+              >
+                <SparklesIcon aria-hidden />
+                {t.runLive}
+              </Link>
+            )}
             {streaming && (
               <Button variant="outline" onClick={onCancel} data-icon="inline-start">
                 <SquareIcon aria-hidden />

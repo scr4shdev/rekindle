@@ -28,7 +28,7 @@ export function PersonaCards() {
         return (
           <li key={persona.slug} className="animate-rise" style={{ animationDelay: `${120 + i * 90}ms` }}>
             <Link
-              href={`/session?persona=${persona.slug}`}
+              href={`/session?persona=${persona.slug}&source=replay`}
               data-testid={`persona-${persona.slug}`}
               className="group flex h-full flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-paper transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-lift focus-visible:-translate-y-1"
             >

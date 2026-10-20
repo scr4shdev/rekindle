@@ -4,8 +4,17 @@
  * `PartialMessages` object (any subset of the English keys) and register it in
  * DICTIONARIES; missing keys fall back to English. Prompts spoken to the person
  * come from the agent, never from here.
+ *
+ * This module is server-safe: it only exports pure data and the `getMessages`
+ * lookup. React tree plumbing (<MessagesProvider>, useMessages) lives in
+ * `@/i18n/provider` so this file can be imported from server components.
  */
 import { en } from "@/i18n/en";
+import { it } from "@/i18n/it";
+import { fr } from "@/i18n/fr";
+
+// `MessagesProvider` and `useMessages` live in a "use client" module; see
+// `@/i18n/provider`. Client components can import them from this entry too.
 
 type Widen<T> = T extends string
   ? string
@@ -27,8 +36,8 @@ type DeepPartial<T> = T extends (...args: never[]) => unknown
 
 export type PartialMessages = DeepPartial<Messages>;
 
-/** Registered caregiver-language dictionaries (e.g. `it`, `fr`), merged over English. */
-const DICTIONARIES: Record<string, PartialMessages> = {};
+/** Registered caregiver-language dictionaries (merged over English). */
+const DICTIONARIES: Record<string, PartialMessages> = { it, fr };
 
 /** Languages with a UI dictionary. */
 export const UI_LANGUAGES = ["en", ...Object.keys(DICTIONARIES)];
@@ -59,3 +68,4 @@ export function getMessages(lang?: string): Messages {
   cache.set(tag, messages);
   return messages;
 }
+

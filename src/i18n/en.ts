@@ -41,13 +41,6 @@ export const en = {
     thisIsMeTitle: "A short 'This is Me' sheet",
     thisIsMeIntro:
       "The Alzheimer's Society 'This is Me' document is the UK standard for person-centred care. Every field is optional. Anything you add helps the planner pick music, images and prompts that actually fit.",
-    pasteTitle: "Paste from an existing 'This is Me' sheet",
-    pasteHint:
-      "Paste the text from a 'This is Me' document and we'll try to split it into the fields below. If the structure doesn't match, your text stays in the notes block.",
-    pastePlaceholder: "Paste the full text of a 'This is Me' sheet here…",
-    pasteApply: "Fill the fields",
-    pasteApplied: "Fields filled from the pasted text.",
-    pasteFallback: "The text didn't match a 'This is Me' layout, so we kept it in the notes block below.",
     displayName: "What do you call them?",
     displayNameHint: "Optional. Used only in the spoken prompts, never sent to Qloo.",
     notes: "Anything else to know",

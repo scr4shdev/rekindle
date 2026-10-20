@@ -6,12 +6,12 @@
 import { z } from "zod";
 
 import { LifePhaseLabel, StepKind } from "@/lib/domain/types";
-import type { Anchors } from "@/lib/domain/types";
+import type { Anchors, DementiaStage } from "@/lib/domain/types";
 import type { PromptDefinition } from "@/lib/ports/llm";
 import { AGGREGATE_GUIDANCE, dataBlock, DATA_NOTICE, DEMENTIA_FRIENDLY_GUIDANCE, lines, ROLE } from "@/lib/prompts/shared";
 
 export const ID = "compose-session";
-export const VERSION = "1.3.1";
+export const VERSION = "1.4.1";
 
 /** English source of the non-medical disclaimer; the model translates it to the caregiver language. */
 export const DISCLAIMER_EN =
@@ -40,6 +40,12 @@ export interface ComposeSessionInput {
   caregiverLanguage: string;
   sessionMinutes: number;
   maxSteps: number;
+  /**
+   * Optional dementia-stage hint from the caregiver. Shapes pace, step count,
+   * music weight and the kinds of prompts allowed. Absent means use the
+   * early-stage defaults.
+   */
+  stage?: DementiaStage;
   disclaimerEnglish: string;
   materials: ComposeMaterial[];
 }
@@ -83,6 +89,16 @@ export const system = lines(
     "- For tastes: remind the caregiver to check swallowing and diet guidance.",
   ].join("\n"),
   [
+    "Music primacy (required):",
+    "At least two steps must be music (kind 'listen' or 'move'). Music has the strongest evidence base for engagement in dementia, especially where speech recall has declined (Abraha 2017 BMJ Open umbrella review: pooled SMD -0.49 for agitation and -0.64 for anxiety; Säkämö 2014: singing lifted memory, thinking and orientation in mild-dementia under-80s). Prefer music steps as anchors around which other steps hang. Do not stack them all adjacent; distribute them across the session so the person gets a music anchor near the start, in the middle and near the close.",
+  ].join("\n"),
+  [
+    "Stage tuning (follow the stage carried in `session.stage`, when present):",
+    "- early (default when stage is absent): 6 to 8 steps, 2 to 3 minutes each, at least two music steps, follow-ups allowed. Evidence is strongest in mild dementia (Cochrane 2018 reminiscence review, Säkämö 2014 singing RCT), so the plan can span the fuller arc: a greeting, five or six anchors, a close.",
+    "- mid: 5 to 6 steps, 2 to 3 minutes each, at least three music or sensory anchors, keep follow-ups to one short line and drop them when the material already carries the moment. Attention narrows at mid-stage, so lean on music, familiar images and smells, and let the caregiver sit in each anchor longer rather than reaching for a sixth step.",
+    "- late: 4 to 5 steps, about 90 seconds each (round to 1 or 2 minutes in `durationMin`), at least four music or sensory anchors, no follow-ups, no complex questions. In late-stage dementia speech recall often fails and NICE NG97's wellbeing bracket, not the cognition bracket, is what applies: prompts must be yes-no or presence invitations ('Shall we listen together?', 'This is Oum Kalthoum.'), never 'Who was that?' or 'Do you remember?'. Keep every prompt short and present-tense.",
+  ].join("\n"),
+  [
     "Lifespan coverage (required when anchors.lifePhases is non-empty):",
     "- Across the plan's body steps (not counting opening and closing), use materials from at least three different life phases. Aim for one childhood or youth step, one early_adulthood or mid_life step, and the remainder wherever the materials sit most richly. The reminiscence bump stays the richest zone; it should not be the only one.",
     "- Set each body step's lifePhase to its material's lifePhase. If the material has none, pick the phase whose window the material's year falls in. For opening and closing, set lifePhase to 'none'.",
@@ -121,6 +137,7 @@ export function render(input: ComposeSessionInput): string {
       caregiverLanguage: input.caregiverLanguage,
       sessionMinutes: input.sessionMinutes,
       maxSteps: input.maxSteps,
+      stage: input.stage ?? "early",
     }),
     dataBlock("anchors", input.anchors),
     dataBlock("materials", input.materials),

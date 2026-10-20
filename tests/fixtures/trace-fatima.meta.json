@@ -5,7 +5,7 @@
     "match-entity": "1.1.0",
     "cultural-check": "1.0.1",
     "critique-items": "1.0.0",
-    "compose-session": "1.3.1",
+    "compose-session": "1.4.1",
     "replan-session": "1.1.0"
   },
   "qloo": {
@@ -16,7 +16,7 @@
     "model": "mock-llm"
   },
   "recordedAt": "2026-10-18T19:00:00.000Z",
-  "totalDurationMs": 1880,
-  "eventCount": 76,
-  "sha256": "3257f1b339ea8588c0cac77aed2f0b68337d67360ec41ea772678f20f335dbeb"
+  "totalDurationMs": 1840,
+  "eventCount": 74,
+  "sha256": "a4de9b91ff021d547dd716166b21722e51109746f9460292ff780d97495e213a"
 }

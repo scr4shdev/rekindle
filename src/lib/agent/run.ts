@@ -53,6 +53,8 @@ export interface Run {
   startedAt: number;
   /** Set once Qloo failed; later Qloo work is skipped. */
   qlooDown: boolean;
+  /** Domains where a proposed anchor failed verification (not found, or outside the lifetime). Feeds compose coverage reporting. */
+  unverifiedDomains: Set<TasteDomain>;
   deadlineHit: () => boolean;
   /** The caller's own signal aborted (e.g. the client disconnected), as opposed to the deadline. */
   clientAborted: () => boolean;
@@ -77,6 +79,7 @@ export function createRun(deps: AgentDeps, ctx: CallContext, forbiddenTerms: rea
     promptVersions: {},
     startedAt: deps.now().getTime(),
     qlooDown: false,
+    unverifiedDomains: new Set(),
     deadlineHit: () => deadline.signal.aborted,
     clientAborted: () => Boolean(ctx.signal?.aborted),
     dispose: () => timers.forEach(clearTimeout),

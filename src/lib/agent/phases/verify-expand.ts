@@ -240,6 +240,7 @@ export async function* verifyPhase(run: Run, anchors: Anchors, candidates: Candi
       const lifetimeFail = lifetimeViolation(anchors, { releaseYear: entity.releaseYear, bornYear: bornYearOf(outcome.entity) });
       if (lifetimeFail) {
         notFound++;
+        run.unverifiedDomains.add(candidate.domain);
         run.stats.rejected++;
         yield { type: "rejected", item: { label: entity.name, reason: lifetimeFail, kind: "anachronism", phase: "verify", domain: candidate.domain, refId: candidate.id, catchSource: "qloo" } };
         continue;
@@ -250,6 +251,7 @@ export async function* verifyPhase(run: Run, anchors: Anchors, candidates: Candi
       materials.push(entityMaterial(entity, outcome.entity, candidate));
     } else {
       notFound++;
+      run.unverifiedDomains.add(candidate.domain);
       run.stats.rejected++;
       yield {
         type: "rejected",

@@ -5,13 +5,13 @@
  */
 import { z } from "zod";
 
-import { LifePhaseLabel, StepKind } from "@/lib/domain/types";
-import type { Anchors, DementiaStage } from "@/lib/domain/types";
+import { FallbackReason, LifePhaseLabel, StepKind } from "@/lib/domain/types";
+import type { Anchors, DementiaStage, TasteDomain } from "@/lib/domain/types";
 import type { PromptDefinition } from "@/lib/ports/llm";
 import { AGGREGATE_GUIDANCE, dataBlock, DATA_NOTICE, DEMENTIA_FRIENDLY_GUIDANCE, lines, ROLE } from "@/lib/prompts/shared";
 
 export const ID = "compose-session";
-export const VERSION = "1.5.0";
+export const VERSION = "1.6.0";
 
 /** English source of the non-medical disclaimer; the model translates it to the caregiver language. */
 export const DISCLAIMER_EN =
@@ -32,6 +32,14 @@ export interface ComposeMaterial {
   lifePhase?: z.infer<typeof LifePhaseLabel>;
 }
 
+/** One stage-minimum domain count, passed in from the agent's stage policy (never hardcoded here). */
+export interface ComposeStageMinimum {
+  domain: TasteDomain;
+  minSteps: number;
+  /** Step kinds that count toward the minimum. */
+  stepKinds: readonly StepKind[];
+}
+
 export interface ComposeSessionInput {
   /** How to address the person (from the caregiver), if given. */
   displayName?: string;
@@ -46,6 +54,8 @@ export interface ComposeSessionInput {
    * early-stage defaults.
    */
   stage?: DementiaStage;
+  /** Minimum steps per domain for this stage, from the agent's stage policy. */
+  stageMinimums: ComposeStageMinimum[];
   disclaimerEnglish: string;
   materials: ComposeMaterial[];
 }
@@ -68,10 +78,26 @@ export const ModelStep = z.object({
 });
 export type ModelStep = z.infer<typeof ModelStep>;
 
+/**
+ * "none" is the sentinel for "this step is on its primary anchor"; strict
+ * provider schemas need every property present, so the field is not optional.
+ * Code maps "none" to an absent domain field.
+ */
+export const ModelFallbackReason = z.enum(["none", ...FallbackReason.options]);
+
+/** A compose step: the shared model step plus an honest fallback marker. */
+export const ComposeStep = ModelStep.extend({
+  fallbackReason: ModelFallbackReason.describe(
+    "'none' when the step sits on the primary verified anchor of its domain. 'primary_not_verified' when the primary anchor was missing or weak and this step uses the next-best verified entity of the same domain. 'no_viable_alternative' when no verified entity of the domain is left and this step is generic (materialRef empty).",
+  ),
+});
+export type ComposeStep = z.infer<typeof ComposeStep>;
+
 export const schema = z.object({
   title: z.string().describe("Warm session title in the session language."),
   disclaimer: z.string().describe("The disclaimer translated faithfully into the caregiver language."),
-  steps: z.array(ModelStep).min(3).max(15),
+  // No .max(): Gemini via OpenAI-compat answers 400 for this step shape with maxItems; code caps steps at maxSteps.
+  steps: z.array(ComposeStep).min(3),
 });
 export type ComposeSessionOutput = z.infer<typeof schema>;
 
@@ -105,13 +131,22 @@ export const system = lines(
   ].join("\n"),
   [
     "Music primacy (required):",
-    "At least two steps must be music (kind 'listen' or 'move'). Music has the strongest evidence base for engagement in dementia, especially where speech recall has declined (Abraha 2017 BMJ Open umbrella review: pooled SMD -0.49 for agitation and -0.64 for anxiety; Säkämö 2014: singing lifted memory, thinking and orientation in mild-dementia under-80s). Prefer music steps as anchors around which other steps hang. Do not stack them all adjacent; distribute them across the session so the person gets a music anchor near the start, in the middle and near the close.",
+    "The minimum number of music steps (kind 'listen' or 'move') is given in `stage_minimums`; never fall below it. Music has the strongest evidence base for engagement in dementia, especially where speech recall has declined (Abraha 2017 BMJ Open umbrella review: pooled SMD -0.49 for agitation and -0.64 for anxiety; Säkämö 2014: singing lifted memory, thinking and orientation in mild-dementia under-80s). Prefer music steps as anchors around which other steps hang. Do not stack them all adjacent; distribute them across the session so the person gets a music anchor near the start, in the middle and near the close.",
+  ].join("\n"),
+  [
+    "Stage minimums and fallback (required):",
+    "- `stage_minimums` lists, per domain, the fewest steps the plan must contain (`minSteps`) and which step kinds count (`stepKinds`). Meeting every minimum comes before variety.",
+    "- Each required step is built on the primary verified anchor of its domain: the material that best matches the person's stated loves, if one is in `materials`.",
+    "- If the primary verified anchor for a required domain is missing or weak (not in `materials`, or a poor fit), build the step on the next-best verified entity of that SAME domain from `materials` (read the structured `domain` field, never guess from the name) and set fallbackReason to 'primary_not_verified'.",
+    "- If no material of that domain is left, still emit the required step as a generic, era-appropriate one: materialRef empty, a category and era instead of a specific title (for example a dance tune of the person's youth), and set fallbackReason to 'no_viable_alternative'.",
+    "- Steps on a primary anchor, and every opening and closing step, use fallbackReason 'none'. Never use a fallback marker to excuse omitting a required step.",
+    "- Worked example. stage_minimums: music >= 2 (listen, move). The person loves showband music, but no showband artist is in `materials`; the list holds one verified Irish folk artist (domain: music). RIGHT: one listen step on that folk artist with fallbackReason 'primary_not_verified', plus a second generic listen step (materialRef empty, 'a dance-hall tune from the 1960s') with fallbackReason 'no_viable_alternative'. WRONG: a plan with no listen or move step.",
   ].join("\n"),
   [
     "Stage tuning (follow the stage carried in `session.stage`, when present):",
-    "- early (default when stage is absent): 6 to 8 steps, 2 to 3 minutes each, at least two music steps, follow-ups allowed. Evidence is strongest in mild dementia (Cochrane 2018 reminiscence review, Säkämö 2014 singing RCT), so the plan can span the fuller arc: a greeting, five or six anchors, a close.",
-    "- mid: 5 to 6 steps, 2 to 4 minutes each, at least three music or sensory anchors, keep follow-ups to one short line and drop them when the material already carries the moment. The upper bound widens to 4 minutes because the session normalizer scales step durations to the chosen session length; at 20 minutes with a 6-step mid plan, interior steps land near 4 minutes even when the raw target is 3. Attention narrows at mid-stage, so lean on music, familiar images and smells, and let the caregiver sit in each anchor longer rather than reaching for a seventh step.",
-    "- late: 4 to 5 steps, about 90 seconds each (round to 1 or 2 minutes in `durationMin`; the server also clips any late-stage body step to 2 minutes), at least four music or sensory anchors, no follow-ups, no complex questions. In late-stage dementia speech recall often fails and NICE NG97's wellbeing bracket, not the cognition bracket, is what applies: prompts must be yes-no or presence invitations ('Shall we listen together?', 'This is Oum Kalthoum.'), never 'Who was that?' or 'Do you remember?'. Keep every prompt short and present-tense.",
+    "- early (default when stage is absent): 6 to 8 steps, 2 to 3 minutes each, meet every minimum in `stage_minimums`, follow-ups allowed. Evidence is strongest in mild dementia (Cochrane 2018 reminiscence review, Säkämö 2014 singing RCT), so the plan can span the fuller arc: a greeting, five or six anchors, a close.",
+    "- mid: 5 to 6 steps, 2 to 4 minutes each, meet every minimum in `stage_minimums` and lean on sensory anchors beyond that, keep follow-ups to one short line and drop them when the material already carries the moment. The upper bound widens to 4 minutes because the session normalizer scales step durations to the chosen session length; at 20 minutes with a 6-step mid plan, interior steps land near 4 minutes even when the raw target is 3. Attention narrows at mid-stage, so lean on music, familiar images and smells, and let the caregiver sit in each anchor longer rather than reaching for a seventh step.",
+    "- late: 4 to 5 steps, about 90 seconds each (round to 1 or 2 minutes in `durationMin`; the server also clips any late-stage body step to 2 minutes), meet every minimum in `stage_minimums`, no follow-ups, no complex questions. In late-stage dementia speech recall often fails and NICE NG97's wellbeing bracket, not the cognition bracket, is what applies: prompts must be yes-no or presence invitations ('Shall we listen together?', 'This is Oum Kalthoum.'), never 'Who was that?' or 'Do you remember?'. Keep every prompt short and present-tense.",
     "- Worked example (late stage prompt register). Material: {label: 'Edmund Fitzgerald hymn', domain: 'music'}. WRONG: {kind: 'listen', durationMin: 4, prompt: 'What does this bring up for you?', followUps: ['Who sang it with you?']}. RIGHT: {kind: 'listen', durationMin: 2, prompt: 'This is your hymn. Let us listen together.', followUps: []}. The acceptable prompt is a short presence invitation; the duration is clipped to 2 minutes; follow-ups are empty.",
   ].join("\n"),
   [
@@ -155,6 +190,7 @@ export function render(input: ComposeSessionInput): string {
       maxSteps: input.maxSteps,
       stage: input.stage ?? "early",
     }),
+    dataBlock("stage_minimums", input.stageMinimums),
     dataBlock("anchors", input.anchors),
     dataBlock("materials", input.materials),
     dataBlock("disclaimer_english", input.disclaimerEnglish),

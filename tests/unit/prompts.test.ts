@@ -96,6 +96,13 @@ describe("prompt modules", () => {
     expect(compose.system).toContain("Let us listen together");
   });
 
+  it("compose-session branches to the next-best verified entity of the same domain and flags the fallback", () => {
+    expect(compose.system).toContain("Stage minimums and fallback");
+    expect(compose.system).toContain("stage_minimums");
+    expect(compose.system).toContain("primary_not_verified");
+    expect(compose.system).toContain("no_viable_alternative");
+  });
+
   it("parse-anchors treats religion in culturalBackground / calmingCues / keyLifeEvents as a positive anchor", () => {
     expect(parse.system).toContain("POSITIVE anchor");
     expect(parse.system).toContain("Pentecostal");
@@ -165,6 +172,7 @@ describe("prompt renders (snapshots)", () => {
         caregiverLanguage: "en",
         sessionMinutes: 20,
         maxSteps: 8,
+        stageMinimums: [{ domain: "music", minSteps: 2, stepKinds: ["listen", "move"] }],
         disclaimerEnglish: compose.DISCLAIMER_EN,
         materials: [{ ref: "m1", label: "Renato Carosone", domain: "music", source: "qloo-verified" }],
       }),

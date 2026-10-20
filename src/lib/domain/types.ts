@@ -393,6 +393,28 @@ export type StepKind = z.infer<typeof StepKind>;
 export const StepProvenance = z.enum(["qloo-grounded", "llm-only"]);
 export type StepProvenance = z.infer<typeof StepProvenance>;
 
+/**
+ * Why a step is not on the primary verified anchor for its domain, or why a
+ * stage minimum could not be met. Additive and optional: absent means the step
+ * sits on its primary anchor.
+ * - `primary_not_verified`: the preferred anchor was not verified (for example
+ *   Qloo returned no match), so the step uses the next-best verified entity.
+ * - `no_viable_alternative`: no verified entity in the domain survived, so the
+ *   step is generic (no specific title) or missing.
+ * - `composer_omitted`: viable entities existed but the composer did not use enough of them.
+ */
+export const FallbackReason = z.enum(["primary_not_verified", "no_viable_alternative", "composer_omitted"]);
+export type FallbackReason = z.infer<typeof FallbackReason>;
+
+/** A stage-minimum domain count the plan did not reach. Shown in the trace, not on the main plan view. */
+export const CoverageGap = z.object({
+  domain: TasteDomain,
+  requiredCount: z.number().int().min(0),
+  actualCount: z.number().int().min(0),
+  reason: FallbackReason,
+});
+export type CoverageGap = z.infer<typeof CoverageGap>;
+
 export const SessionStep = z.object({
   id: Id,
   /** 0-based position in the plan. */
@@ -422,6 +444,8 @@ export const SessionStep = z.object({
    */
   lifePhase: LifePhaseLabel.optional(),
   provenance: StepProvenance,
+  /** Set only when the step is not on its primary verified anchor. Optional and additive. */
+  fallbackReason: FallbackReason.optional(),
 });
 export type SessionStep = z.infer<typeof SessionStep>;
 
@@ -437,6 +461,8 @@ export const SessionPlan = z.object({
   /** Non-medical disclaimer, caregiver language. */
   disclaimer: z.string().min(1).max(600),
   generatedAt: z.iso.datetime(),
+  /** Stage-minimum domain counts the plan did not reach. Absent or empty means every minimum was met. Optional and additive. */
+  coverageGaps: z.array(CoverageGap).max(10).optional(),
   /** Reproducibility metadata: which models, prompts and data modes produced this plan. */
   meta: z.object({
     llmProvider: z.string(),

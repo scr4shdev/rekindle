@@ -7,7 +7,7 @@ import type { AgentEventPayload, Anchors, LifePhaseLabel, PersonInput, SessionMo
 import { LifePhaseLabel as LifePhaseLabelSchema, SessionPlan as SessionPlanSchema, SessionStep as SessionStepSchema } from "@/lib/domain/types";
 import { PortError } from "@/lib/ports";
 import { composeSessionPrompt, critiqueItemsPrompt, culturalCheckPrompt } from "@/lib/prompts";
-import type { ComposeMaterial, ModelStep } from "@/lib/prompts/compose-session";
+import type { ComposeMaterial, ComposeStep, ModelStep } from "@/lib/prompts/compose-session";
 import { DISCLAIMER_EN } from "@/lib/prompts/compose-session";
 import type { CRITIQUE_KINDS, CritiqueItem } from "@/lib/prompts/critique-items";
 import { schema as critiqueSchema } from "@/lib/prompts/critique-items";
@@ -16,6 +16,8 @@ import type { CulturalCheckItem } from "@/lib/prompts/cultural-check";
 import { phaseForYear } from "@/lib/agent/phases/parse-propose";
 import type { Material, Run } from "@/lib/agent/run";
 import { callLlm } from "@/lib/agent/run";
+import type { CoverageStep } from "@/lib/agent/stage-policy";
+import { computeCoverageGaps, stageMinimums } from "@/lib/agent/stage-policy";
 import { clip, isNonWesternOrigin, normalizeDurations } from "@/lib/agent/util";
 
 /** Domain schema limit on steps per plan. */
@@ -240,7 +242,7 @@ export function toComposeMaterial(m: Material, all: Material[], ref: string): Co
 }
 
 /** Build a domain step from a model step. Provenance is decided here: an attached verified entity means qloo-grounded. */
-export function toStep(run: Run, anchors: Anchors, model: ModelStep, material: Material | undefined, order: number, sameLanguage: boolean, grounded: boolean): SessionStep | undefined {
+export function toStep(run: Run, anchors: Anchors, model: ModelStep & { fallbackReason?: ComposeStep["fallbackReason"] }, material: Material | undefined, order: number, sameLanguage: boolean, grounded: boolean): SessionStep | undefined {
   const prompt = clip(model.prompt, 600);
   if (!prompt) return undefined;
   const entity = grounded ? material?.entity : undefined;
@@ -280,6 +282,8 @@ export function toStep(run: Run, anchors: Anchors, model: ModelStep, material: M
     mediaHint: clip(model.mediaHint, 200),
     lifePhase,
     provenance: entity ? "qloo-grounded" : "llm-only",
+    // Only body steps can be fallbacks; "none" (the strict-schema sentinel) maps to absent.
+    fallbackReason: isBody && model.fallbackReason && model.fallbackReason !== "none" ? model.fallbackReason : undefined,
   });
   return parsed.success ? parsed.data : undefined;
 }
@@ -309,6 +313,7 @@ export async function* composePhase(
       sessionMinutes: person.sessionMinutes,
       maxSteps,
       stage: person.stage,
+      stageMinimums: stageMinimums(person.stage),
       disclaimerEnglish: DISCLAIMER_EN,
       materials: kept.map((m, i) => toComposeMaterial(m, kept, materialAlias(i))),
     },
@@ -318,12 +323,16 @@ export async function* composePhase(
   const byRef = new Map(kept.map((m, i) => [materialAlias(i), m]));
   const same = sameLanguage(lang, person.caregiverLanguage);
   const draft: SessionStep[] = [];
+  const coverageSteps: CoverageStep[] = [];
   for (const model of out.steps) {
     if (draft.length >= maxSteps) break;
     // A step built on something critique rejected never reaches the plan.
     if (model.materialRef && rejectedRefs.has(model.materialRef)) continue;
     const step = toStep(run, anchors, model, byRef.get(model.materialRef), draft.length, same, mode === "grounded");
-    if (step) draft.push(step);
+    if (step) {
+      draft.push(step);
+      coverageSteps.push({ kind: step.kind, materialDomain: byRef.get(model.materialRef)?.domain });
+    }
   }
   if (draft.length === 0) throw new PortError("llm", "invalid_response", "The composed session had no usable steps", false);
   const minutes = normalizeDurations(draft.map((s) => s.durationMin), person.sessionMinutes);
@@ -339,6 +348,17 @@ export async function* composePhase(
   });
   for (const step of steps) yield { type: "step", step };
   run.stats.steps += steps.length;
+  // Truthful coverage: derived from the structured kind and material domain of what was
+  // actually composed, never from the model's own claim.
+  const coverageGaps = computeCoverageGaps({
+    stage: person.stage,
+    steps: coverageSteps,
+    availableDomains: kept.map((m) => m.domain),
+    unverifiedDomains: run.unverifiedDomains,
+  });
+  if (coverageGaps.length > 0) {
+    run.ctx.logger.warn({ phase: "compose", gaps: coverageGaps.map((g) => `${g.domain}:${g.actualCount}/${g.requiredCount}:${g.reason}`) }, "stage minimum not met");
+  }
 
   const plan = SessionPlanSchema.parse({
     id: run.deps.newId("plan"),
@@ -350,6 +370,7 @@ export async function* composePhase(
     mode,
     disclaimer: clip(out.disclaimer, 600) ?? DISCLAIMER_EN,
     generatedAt: run.deps.now().toISOString(),
+    ...(coverageGaps.length > 0 ? { coverageGaps } : {}),
     meta: {
       llmProvider: run.deps.llm.provider,
       llmModel: run.deps.llm.model,

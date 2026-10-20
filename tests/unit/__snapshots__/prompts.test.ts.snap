@@ -12,6 +12,19 @@ exports[`prompt renders (snapshots) > compose-session 1`] = `
 }
 </data>
 
+<data name="stage_minimums">
+[
+  {
+    "domain": "music",
+    "minSteps": 2,
+    "stepKinds": [
+      "listen",
+      "move"
+    ]
+  }
+]
+</data>
+
 <data name="anchors">
 {
   "birthYear": 1942,

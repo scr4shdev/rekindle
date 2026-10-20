@@ -139,13 +139,15 @@ export function bornYearOf(entity: TasteEntity): number | undefined {
 
 export function errorFromQloo(error: PortError, phase: AgentPhase): AgentEventPayload {
   const code: ErrorCode = error.code === "rate_limited" ? "rate_limited" : "qloo_unavailable";
-  return {
-    type: "error",
-    code,
-    phase,
-    recoverable: true,
-    message: "Qloo could not be reached, so the rest of this plan uses the language model's ideas only (marked LLM-only).",
-  };
+  // "Could not be reached" is reserved for genuine connection-level failures.
+  // A rate-limited run gets a quieter message so the banner doesn't read as a
+  // DNS/5xx outage (single per-query misses never pass through here — see
+  // isTasteOutage in util.ts).
+  const message =
+    code === "rate_limited"
+      ? "Qloo asked us to slow down, so the rest of this plan uses the language model's ideas only (marked LLM-only)."
+      : "Qloo could not be reached, so the rest of this plan uses the language model's ideas only (marked LLM-only).";
+  return { type: "error", code, phase, recoverable: true, message };
 }
 
 /** Map an unexpected failure to a fatal error event with a safe message. */

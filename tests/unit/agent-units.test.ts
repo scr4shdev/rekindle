@@ -65,10 +65,16 @@ describe("agent util", () => {
     expect(normalizeDurations([0, Number.NaN, 4], 12).reduce((a, b) => a + b)).toBe(12);
   });
 
-  it("only non-bad_request taste errors are outages", () => {
-    expect(isTasteOutage(new PortError("taste", "timeout", "t", true))).toBe(true);
+  it("only service-level taste errors are outages", () => {
+    // Qloo-itself-unusable: full degrade to llm-only, surface the banner.
+    expect(isTasteOutage(new PortError("taste", "unavailable", "u", true))).toBe(true);
+    expect(isTasteOutage(new PortError("taste", "unauthorized", "u", false))).toBe(true);
+    expect(isTasteOutage(new PortError("taste", "rate_limited", "r", true))).toBe(true);
+    // Per-query misses: do not mark the run as Qloo-down.
+    expect(isTasteOutage(new PortError("taste", "timeout", "t", true))).toBe(false);
+    expect(isTasteOutage(new PortError("taste", "invalid_response", "i", false))).toBe(false);
     expect(isTasteOutage(new PortError("taste", "bad_request", "b", false))).toBe(false);
-    expect(isTasteOutage(new PortError("llm", "timeout", "t", true))).toBe(false);
+    expect(isTasteOutage(new PortError("llm", "unavailable", "u", true))).toBe(false);
     expect(isTasteOutage(new Error("x"))).toBe(false);
   });
 });

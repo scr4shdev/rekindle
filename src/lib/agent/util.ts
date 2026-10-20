@@ -47,12 +47,16 @@ export function mapLimit<T, R>(items: readonly T[], limit: number, fn: (item: T,
 }
 
 /**
- * A Qloo failure that means "Qloo is not usable right now" (degrade to
- * llm-only), as opposed to a single rejected query (bad_request: e.g. blocked
- * by the personal-data guard or an unknown name).
+ * A Qloo failure that means "Qloo itself is not usable right now" — the whole
+ * run degrades to llm-only and the banner fires. Narrow on purpose: a single
+ * per-query miss (bad_request from the guard/API, timeout for one slow entity,
+ * invalid_response for one odd reply) is NOT a Qloo outage. Only genuine
+ * service-level failures qualify: unreachable network, bad key, Qloo asking
+ * us to back off across the board.
  */
 export function isTasteOutage(error: unknown): error is PortError {
-  return error instanceof PortError && error.port === "taste" && error.code !== "bad_request";
+  if (!(error instanceof PortError) || error.port !== "taste") return false;
+  return error.code === "unavailable" || error.code === "unauthorized" || error.code === "rate_limited";
 }
 
 /** Qloo's aggregate age bucket for a birth year (never the exact age). */

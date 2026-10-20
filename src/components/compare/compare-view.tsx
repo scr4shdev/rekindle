@@ -133,7 +133,13 @@ export function CompareView() {
   // all count the same list: pre-plan rejections whose kind lands in
   // CAUGHT_KINDS. The invariant is tested in compare-view.spec.ts.
   const groundedCaught = caughtRejections(grounded.view);
-  const headlineReady = b.caught + b.verified > 0;
+  // Discoveries land in the hero too: Qloo-expand surfaces anchors the
+  // caregiver's notes never named, which is the Fatima money shot. The
+  // "brought N" clause in the hero reads from the same discoveries count
+  // the "Taste discoveries from Qloo" score row renders (see metrics()),
+  // so the two surfaces always agree; the parity is asserted in
+  // tests/unit/compare-counts.test.ts.
+  const headlineReady = b.caught + b.verified + b.discoveries > 0;
   const rows: { label: string; llm: string; grounded: string; win: boolean }[] = [
     { label: t.metrics.verified, llm: "", grounded: String(b.verified), win: b.verified > 0 },
     { label: t.metrics.discoveries, llm: String(a.discoveries), grounded: String(b.discoveries), win: b.discoveries > a.discoveries },
@@ -160,11 +166,11 @@ export function CompareView() {
         data-testid="compare-headline"
       >
         {headlineReady ? (
-          b.caught === 0 && b.verified === 0 ? (
+          b.caught === 0 && b.verified === 0 && b.discoveries === 0 ? (
             <p className="font-heading text-3xl leading-tight sm:text-5xl">{t.headlineNone}</p>
           ) : (
             <>
-              <p className="font-heading text-3xl leading-tight sm:text-5xl">{t.headline(b.caught, b.verified)}</p>
+              <p className="font-heading text-3xl leading-tight sm:text-5xl">{t.headline(b.discoveries, b.caught, b.verified, name)}</p>
               {(() => {
                 const breakdown = t.headlineBreakdown(bSources.qloo, bSources["cultural-check"], bSources["critique-llm"]);
                 return breakdown ? (

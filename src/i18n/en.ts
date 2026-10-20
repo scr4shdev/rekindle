@@ -258,12 +258,23 @@ export const en = {
   compare: {
     eyebrow: "Comparison",
     title: (name: string) => `Same notes about ${name}, two planners`,
-    lead: "A language model's plan on its own, and the same model with every idea checked against Qloo. The difference is what you'd otherwise miss.",
+    lead: "On the left: a plan from a language model alone. On the right: the same model, with Qloo's taste graph bringing in the specific songs, films and faces the caregiver's notes could not name, and catching the ones that would not have fit.",
     llmOnly: "Language model alone",
     grounded: "Grounded in Qloo",
     scoreTitle: "What grounding adds",
-    headline: (caught: number, verified: number) =>
-      `The agent caught ${caught} slip${caught === 1 ? "" : "s"} and confirmed ${verified} real match${verified === 1 ? "" : "es"}.`,
+    headline: (brought: number, caught: number, verified: number, name: string) => {
+      if (brought > 0) {
+        const clauses: string[] = [
+          `Qloo brought ${brought} cultural anchor${brought === 1 ? "" : "s"} ${name}'s notes didn't name`,
+        ];
+        if (caught > 0) clauses.push(`caught ${caught} era slip${caught === 1 ? "" : "s"}`);
+        if (verified > 0) clauses.push(`confirmed ${verified} real match${verified === 1 ? "" : "es"}`);
+        if (clauses.length === 1) return `${clauses[0]}.`;
+        if (clauses.length === 2) return `${clauses[0]}, and ${clauses[1]}.`;
+        return `${clauses[0]}, ${clauses[1]}, and ${clauses[2]}.`;
+      }
+      return `The agent caught ${caught} slip${caught === 1 ? "" : "s"} and confirmed ${verified} real match${verified === 1 ? "" : "es"}.`;
+    },
     headlineNone: "No slips caught on this run.",
     headlineBreakdown: (qloo: number, cultural: number, critique: number) => {
       const parts: string[] = [];

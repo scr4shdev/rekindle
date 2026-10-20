@@ -31,12 +31,18 @@ test.describe("compare mode: Fatima tiebreaker", () => {
     await expect(view).toHaveAttribute("data-llm-status", "done", GROUNDED_READY);
     await expect(view).toHaveAttribute("data-grounded-status", "done", GROUNDED_READY);
 
-    // Hero stat callout: "The agent caught 1 slip and confirmed 10 real
-    // matches." Per-guard breakdown lists only Critique caught 1 (Khaled):
+    // Hero stat callout leads with discovery for Fatima: Qloo-expand is
+    // where Qloo earns its spot on this persona (Nass El Ghiwane, Fairuz,
+    // Faten Hamama, Mohammed V, Warda), not the thin single-slip catch.
+    // Headline shape is "Qloo brought N cultural anchors Fatima's notes
+    // didn't name, caught M era slips, and confirmed K real matches."
+    // Per-guard breakdown still lists only Critique caught 1 (Khaled):
     // the lifetime rail is narrow by design and no longer rejects pre-birth
     // canonical content, so Qloo refused is 0 and omitted from the breakdown.
     const headline = page.getByTestId("compare-headline");
-    await expect(headline).toContainText("The agent caught 1 slip and confirmed 10 real matches.");
+    await expect(headline).toContainText("Qloo brought 7 cultural anchors Fatima's notes didn't name");
+    await expect(headline).toContainText("caught 1 era slip");
+    await expect(headline).toContainText("confirmed 10 real matches");
     const breakdown = page.getByTestId("compare-headline-breakdown");
     await expect(breakdown).toContainText("Critique caught 1");
     await expect(breakdown).not.toContainText("Qloo refused");

@@ -68,7 +68,7 @@ const SEAMUS = rows("seamus", [
   ["MOCK-ARTIST-JOHN-MCCORMACK", "John McCormack", A, 0.55, 0.82, { dateOfBirth: "1884-06-14", description: "Athlone tenor; 'Danny Boy' and sentimental ballads carried the pre-war wireless.", tags: ["40s"] }],
   ["MOCK-ARTIST-ROYAL-SHOWBAND", "The Royal Showband", A, 0.42, 0.86, { description: "Waterford showband, one of the biggest of the late 1950s and 60s.", tags: ["50s", "60s"] }],
   ["MOCK-ARTIST-BRENDAN-BOWYER", "Brendan Bowyer", A, 0.4, 0.85, { dateOfBirth: "1938-10-12", description: "Lead singer of the Royal Showband, 'The Hucklebuck' (1965).", tags: ["60s"] }],
-  ["MOCK-ARTIST-DICKIE-ROCK", "Dickie Rock", A, 0.38, 0.89, { dateOfBirth: "1936-10-01", description: "Showband star with the Miami Showband.", tags: ["60s"] }],
+  ["MOCK-ARTIST-DICKIE-ROCK", "Dickie Rock", A, 0.38, 0.89, { dateOfBirth: "1936-10-01", description: "Showband star of the 1960s dance halls.", tags: ["60s"] }],
   ["MOCK-ARTIST-JOE-DOLAN", "Joe Dolan", A, 0.45, 0.87, { dateOfBirth: "1939-10-16", description: "Showband singer from Mullingar, 'Make Me an Island' (1969).", tags: ["60s", "70s"] }],
   ["MOCK-ARTIST-JIM-REEVES", "Jim Reeves", A, 0.6, 0.84, { dateOfBirth: "1923-08-20", description: "Country singer hugely popular in Ireland in the early 1960s.", tags: ["50s", "60s"] }],
   ["MOCK-ARTIST-BRIDIE-GALLAGHER", "Bridie Gallagher", A, 0.3, 0.83, { dateOfBirth: "1924-09-07", description: "Donegal singer of emigrant ballads, 'The Boys from County Armagh'.", tags: ["50s"] }],

@@ -281,7 +281,7 @@ const SEAMUS: PersonaFixture = {
       c("music", "Royal Showband", "urn:entity:artist", 1960, "The showband of the dance halls when he was courting."),
       c("music", "Brendan Bowyer", "urn:entity:artist", 1965, "'The Hucklebuck' filled every dance hall."),
       c("music", "Jim Reeves", "urn:entity:artist", 1962, "Hugely popular on Irish radio in the early 60s."),
-      c("music", "Dickie Rock", "urn:entity:artist", 1966, "The Miami Showband frontman of the Cork dance-hall years."),
+      c("music", "Dickie Rock", "urn:entity:artist", 1966, "A showband frontman of the Cork dance-hall years."),
       c("music", "Bridie Gallagher", "urn:entity:artist", 1956, "The girl from Donegal, a radio favourite."),
       c("music", "U2", "urn:entity:artist", 1980, "Ireland's biggest band."),
       c("film", "The Quiet Man", "urn:entity:movie", 1952, "John Wayne in the west of Ireland, when he was 14."),
@@ -361,11 +361,11 @@ const SEAMUS: PersonaFixture = {
       mediaHint: "Search 'Jim Reeves He'll Have to Go 1960'",
     },
     "Dickie Rock": {
-      kind: "listen", minutes: 4, title: "Dickie Rock and the Miami Showband",
+      kind: "listen", minutes: 4, title: "Dickie Rock, the showband years",
       prompt: "One more from the showbands: Dickie Rock. Shall we listen?",
       translation: "", followUps: [],
       tip: "People who enjoy the Royal Showband also tend to enjoy Dickie Rock. Watch his face: a smile is the answer.",
-      mediaHint: "Search 'Dickie Rock Miami Showband 1960s' on YouTube",
+      mediaHint: "Search 'Dickie Rock 1960s showband' on YouTube",
     },
   },
 };

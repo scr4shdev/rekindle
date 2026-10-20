@@ -48,8 +48,8 @@ export interface AiSdkLlmConfig {
   cacheTtlSeconds: number;
 }
 
-/** Why a failed attempt is worth retrying. Anything else (400, 401, 403, 404, timeouts, aborts) is final. */
-export type RetryReason = "5xx" | "429" | "network" | "empty_output";
+/** Why a failed attempt is worth retrying. Anything else (400, 401, 403, 404, user aborts) is final. */
+export type RetryReason = "5xx" | "429" | "network" | "empty_output" | "timeout";
 
 const JITTER = 0.25;
 const BACKOFF_FACTOR = 4;
@@ -57,10 +57,13 @@ const BACKOFF_FACTOR = 4;
 /**
  * Classify a failed attempt. Returns undefined when retrying cannot help:
  * 400 is our schema being rejected (retrying makes it worse), 401/403/404 are
- * credentials or model config, and timeouts already burned their time budget.
+ * credentials or model config. Per-call timeouts are retried once more: a
+ * cold Gemini call can push past 30s on the free tier, and failing the whole
+ * plan on one slow attempt is worse than spending another 30s window.
  */
 export function classifyRetry(error: unknown, timedOut = false): { reason: RetryReason; status?: number } | undefined {
-  if (timedOut || error instanceof PortError) return undefined;
+  if (error instanceof PortError) return undefined;
+  if (timedOut) return { reason: "timeout" };
   if (APICallError.isInstance(error)) {
     const status = error.statusCode;
     if (status === undefined) return { reason: "network" };

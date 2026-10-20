@@ -101,6 +101,28 @@ describe("LLM retry policy", () => {
     expect(reasons).toEqual(["429", "429"]);
   });
 
+  it("retries a per-call timeout and succeeds on the next attempt", async () => {
+    // Short per-call timeout so the AbortSignal.timeout fires before fetch can resolve.
+    const { llm, waits } = build({ timeoutMs: 15 });
+    fetchMock.mockImplementationOnce(
+      (_url: string, init: { signal: AbortSignal }) =>
+        new Promise((_resolve, reject) => {
+          init.signal.addEventListener("abort", () =>
+            reject(new DOMException("The operation was aborted.", "AbortError")),
+          );
+        }),
+    );
+    fetchMock.mockImplementationOnce(async () => ok());
+
+    const { logger, lines } = recordingLogger();
+    const result = await llm.generateObject(request, testCtx({ logger }));
+    expect(result.object.answer).toBe("ok");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(waits).toEqual([500]);
+    const retryLine = lines.map((l) => JSON.parse(l)).find((l) => l.msg === "llm call retrying");
+    expect(retryLine).toMatchObject({ reason: "timeout" });
+  });
+
   it("retries a network error", async () => {
     queue(new TypeError("fetch failed"), ok());
     const { llm } = build();
@@ -193,7 +215,7 @@ describe("retry helpers", () => {
   });
 
   it("classifies nothing but transient failures as retryable", () => {
-    expect(classifyRetry(new Error("boom"), true)).toBeUndefined();
+    expect(classifyRetry(new Error("boom"), true)).toEqual({ reason: "timeout" });
     expect(classifyRetry(Object.assign(new Error("a"), { name: "AbortError" }))).toBeUndefined();
     expect(classifyRetry(new TypeError("fetch failed"))).toEqual({ reason: "network" });
   });

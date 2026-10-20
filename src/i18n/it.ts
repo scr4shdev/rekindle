@@ -220,6 +220,15 @@ export const it: PartialMessages = {
     cached: "in cache",
     mock: "dati demo",
     live_: "live",
+    coverage: {
+      summary: "Note di copertura",
+      line: (domain: string, actual: number, required: number, reason: string) => `copertura: ${domain} ${actual}/${required} (motivo: ${reason})`,
+      reasons: {
+        primary_not_verified: "ancora principale non verificata",
+        no_viable_alternative: "nessuna alternativa valida",
+        composer_omitted: "non usato nel piano",
+      },
+    },
     params: "Parametri inviati (solo ancore culturali, mai dati personali)",
     rejectedKinds: {
       not_found: "Non trovato in Qloo",

@@ -19,7 +19,7 @@ import { rejectionDisplay } from "@/components/session/rejection-display";
 import type { PhaseView, SessionView, TraceItem } from "@/components/session/view-state";
 import { Button } from "@/components/ui/button";
 import { useMessages } from "@/i18n/provider";
-import type { Candidate, RejectedItem, VerifiedEntity } from "@/lib/domain/types";
+import type { Candidate, CoverageGap, RejectedItem, VerifiedEntity } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
 
 /** "A", "A and B", "A, B and C". */
@@ -89,7 +89,14 @@ export function ReasoningTrace({ view, className, onRetry }: { view: SessionView
       <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5" tabIndex={0} role="region" aria-label={tr.title}>
         <ol className="relative flex flex-col">
           {view.phases.map((phase, i) => (
-            <PhaseRow key={phase.key} phase={phase} last={i === view.phases.length - 1} entities={view.entities} onRetry={onRetry} />
+            <PhaseRow
+              key={phase.key}
+              phase={phase}
+              last={i === view.phases.length - 1}
+              entities={view.entities}
+              onRetry={onRetry}
+              coverageGaps={phase.phase === "compose" ? view.plan?.coverageGaps : undefined}
+            />
           ))}
         </ol>
       </div>
@@ -127,7 +134,19 @@ function PhaseNode({ status }: { status: PhaseView["status"] }) {
   }
 }
 
-function PhaseRow({ phase, last, entities, onRetry }: { phase: PhaseView; last: boolean; entities: SessionView["entities"]; onRetry?: () => void }) {
+function PhaseRow({
+  phase,
+  last,
+  entities,
+  onRetry,
+  coverageGaps,
+}: {
+  phase: PhaseView;
+  last: boolean;
+  entities: SessionView["entities"];
+  onRetry?: () => void;
+  coverageGaps?: CoverageGap[];
+}) {
   const tr = useMessages().trace;
   const pending = phase.status === "pending";
   const candidates = phase.items.filter((i): i is Extract<TraceItem, { kind: "candidate" }> => i.kind === "candidate");
@@ -162,8 +181,25 @@ function PhaseRow({ phase, last, entities, onRetry }: { phase: PhaseView; last: 
             ))}
           </ul>
         )}
+        {coverageGaps && coverageGaps.length > 0 && <CoverageNotes gaps={coverageGaps} />}
       </div>
     </li>
+  );
+}
+
+/** Quiet, collapsed operator detail: which stage minimum was not met and why. Not a caregiver alert. */
+function CoverageNotes({ gaps }: { gaps: CoverageGap[] }) {
+  const messages = useMessages();
+  const c = messages.trace.coverage;
+  return (
+    <details className="text-sm text-muted-foreground" data-testid="trace-coverage">
+      <summary className="cursor-pointer font-semibold">{c.summary}</summary>
+      <ul className="mt-1 flex flex-col gap-1 pl-4">
+        {gaps.map((g) => (
+          <li key={g.domain}>{c.line(messages.domains[g.domain], g.actualCount, g.requiredCount, c.reasons[g.reason])}</li>
+        ))}
+      </ul>
+    </details>
   );
 }
 

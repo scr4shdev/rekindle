@@ -226,6 +226,15 @@ export const fr: PartialMessages = {
     cached: "en cache",
     mock: "données démo",
     live_: "en direct",
+    coverage: {
+      summary: "Notes de couverture",
+      line: (domain: string, actual: number, required: number, reason: string) => `couverture : ${domain} ${actual}/${required} (raison : ${reason})`,
+      reasons: {
+        primary_not_verified: "ancrage principal non vérifié",
+        no_viable_alternative: "aucune alternative viable",
+        composer_omitted: "non utilisé dans le plan",
+      },
+    },
     params: "Paramètres envoyés (ancres culturelles uniquement, jamais de données personnelles)",
     rejectedKinds: {
       not_found: "Introuvable dans Qloo",

@@ -204,6 +204,16 @@ export const en = {
     mock: "demo data",
     live_: "live",
     params: "Parameters sent (cultural anchors only, never personal details)",
+    /** Operator detail, collapsed by default; never shown on the main plan view. */
+    coverage: {
+      summary: "Coverage notes",
+      line: (domain: string, actual: number, required: number, reason: string) => `coverage: ${domain} ${actual}/${required} (reason: ${reason})`,
+      reasons: {
+        primary_not_verified: "primary not verified",
+        no_viable_alternative: "no viable alternative",
+        composer_omitted: "not used in the plan",
+      },
+    },
     rejectedKinds: {
       not_found: "Not found in Qloo",
       anachronism: "Wrong era",

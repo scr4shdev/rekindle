@@ -102,37 +102,43 @@ export function lifespanEraFilter(anchors: Anchors): TasteEraFilter {
 }
 
 /**
- * Hard lifetime safety rail. Returns a short reason when the entity's
- * relevant date sits outside the anchors' lifetime window (birth year
- * through today, inclusive), or undefined when the entity is in bounds or
- * carries no date signal. The caller rejects out-of-bounds entities with
- * kind `anachronism` and this reason, so the trace credits Qloo for the
- * catch rather than silently filtering. Date fields follow the Qloo
- * ERA_FILTER_SUPPORT map: releaseYear for movies/tv/books/videogames,
- * dateOfBirth for persons/artists/brands. Entities without a date (e.g.
- * places with no publication year) are not rejected on lifetime bounds;
- * cultural-check already covers the obvious wrong-culture cases.
+ * Narrow hard rail: only impossible dates. Canonical cultural artifacts
+ * (Lashin for a Moroccan born 1950, Oum Kalthoum for the same, John
+ * McCormack for an Irish man born 1938, Fairuz, Édith Piaf) move across
+ * generations by family, school, religious ritual, cinema reruns and
+ * radio: a plain pre-birth check rejects them as "wrong era" and that is
+ * both wrong and disrespectful to the people who grew up with them. So
+ * this rail now only blocks what is literally impossible: a release dated
+ * in the future, a person born after the subject, or a person born far
+ * enough before the subject that even their grandparents could not have
+ * known them as a living figure (two generations window, roughly 70
+ * years, so a 1884-born figure still clears for a 1938-born subject).
+ * Everything else, including items released well before the subject's
+ * birth, passes here; the compose prompt and the cultural-check phase
+ * judge "is this canonical for this person's world", which an LLM does
+ * far better than a date comparison. Do not tighten this back without
+ * reading the thread that led to the loosening (fix/lifetime-rail-realism,
+ * 2026-10-20): a tighter number silently discards canonical artists.
  */
+const GRANDPARENT_WINDOW_YEARS = 70;
+
 export function lifetimeViolation(
   anchors: Anchors,
   entity: { releaseYear?: number; bornYear?: number },
 ): string | undefined {
   const w = anchors.lifetimeWindow;
   if (!w) return undefined;
-  if (entity.releaseYear !== undefined) {
-    if (entity.releaseYear < w.startYear) {
-      return `Released in ${entity.releaseYear}, before ${w.startYear}: the person had not been born yet.`;
-    }
-    if (entity.releaseYear > w.endYear) {
-      return `Released in ${entity.releaseYear}, after the person's lifetime window (ends ${w.endYear}).`;
-    }
+  const currentYear = w.endYear;
+  if (entity.releaseYear !== undefined && entity.releaseYear > currentYear) {
+    return `Released in ${entity.releaseYear}, in the future.`;
   }
   if (entity.bornYear !== undefined) {
-    if (entity.bornYear > w.endYear) {
-      return `Born in ${entity.bornYear}, after the person's lifetime window (ends ${w.endYear}).`;
+    if (entity.bornYear > currentYear) {
+      return `Born in ${entity.bornYear}, in the future.`;
     }
-    // A person active during someone's lifetime can still be born well before
-    // them, so bornYear < startYear is not itself a violation.
+    if (entity.bornYear < w.startYear - GRANDPARENT_WINDOW_YEARS) {
+      return `Born in ${entity.bornYear}, two generations before them: unlikely to live in family memory either.`;
+    }
   }
   return undefined;
 }

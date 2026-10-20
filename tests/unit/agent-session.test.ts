@@ -78,13 +78,15 @@ describe("runSession (grounded, mock mode)", () => {
     const artistCall = ofType(events, "qloo_call").find((e) => e.call.params["filter.type"] === "urn:entity:artist")!;
     expect(artistCall.call.params["operator.signal.interests.tags"]).toBe("union");
     const movieCall = ofType(events, "qloo_call").find((e) => e.call.params["filter.type"] === "urn:entity:movie")!;
+    // Lifespan EXPAND widens the era filter from the formative window
+    // (1948-1968 for Seamus) to the full span of life phases (birth to today).
     expect(movieCall.call.params).toMatchObject({
-      "filter.release_year.min": 1948,
-      "filter.release_year.max": 1968,
+      "filter.release_year.min": 1938,
       "signal.location.query": "Cork",
       "signal.demographics.age": "55_and_older",
       "bias.trends": "off",
     });
+    expect(movieCall.call.params["filter.release_year.max"]).toBeGreaterThanOrEqual(2000);
   });
 
   it("wraps Qloo with the personal-data guard: the display name and private names never reach Qloo", async () => {

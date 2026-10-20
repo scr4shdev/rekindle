@@ -1,11 +1,11 @@
 {
   "promptVersions": {
     "parse-anchors": "1.0.0",
-    "propose-candidates": "1.1.0",
+    "propose-candidates": "1.2.0",
     "match-entity": "1.1.0",
     "cultural-check": "1.0.0",
     "critique-items": "1.0.0",
-    "compose-session": "1.1.0",
+    "compose-session": "1.2.0",
     "replan-session": "1.1.0"
   },
   "qloo": {
@@ -16,7 +16,7 @@
     "model": "mock-llm"
   },
   "recordedAt": "2026-10-18T19:00:00.000Z",
-  "totalDurationMs": 1960,
-  "eventCount": 80,
-  "sha256": "95e083b3ceed789458c977a0d1cadd18b4be0b6e76a48ced2646ca5906ea8fb7"
+  "totalDurationMs": 1980,
+  "eventCount": 81,
+  "sha256": "1ffbb47b33da629e931d4b38e9cac00b4f49a4a49aa463e28fc7f3f38390d4a5"
 }

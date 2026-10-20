@@ -18,6 +18,22 @@ test.describe("comparison mode", () => {
     await expect(page.getByTestId("compare-llm")).toContainText("Maradona and the 1987 scudetto");
   });
 
+  test("Maria hero still leads with the catch frame (Maradona 1987 is her money shot)", async ({ page }) => {
+    // Maria's grounded trace catches 5 era/culture slips (b.caught = 5)
+    // against her 1954-1967 formative window, the dramatic "would have
+    // slipped" story Qloo earns on this persona. The discovery frame
+    // (brought 11) still leads, but the test locks in that both the
+    // "brought" and "caught" clauses are present in the hero so the
+    // Maria run keeps its catch moment on the Compare page.
+    await page.goto("/compare?persona=maria");
+    const view = page.getByTestId("compare-view");
+    await expect(view).toHaveAttribute("data-grounded-status", "done", { timeout: 25_000 });
+    const headline = page.getByTestId("compare-headline");
+    await expect(headline).toContainText("Qloo brought 11 cultural anchors");
+    await expect(headline).toContainText("caught 5 era slips");
+    await expect(headline).toContainText("confirmed 10 real matches");
+  });
+
   test("sends two parallel API requests with the same person, one per mode", async ({ page }) => {
     const modes: string[] = [];
     await mockStream(page, "/api/session", (body) => {

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { hasVoiceForLang, pickVoice, Speaker, shortLang } from "@/components/session/use-speak";
+import { fetchCloudTts, hasVoiceForLang, pickVoice, Speaker, shortLang } from "@/components/session/use-speak";
 
 /**
  * Minimal shapes that stand in for the browser APIs we rely on. Tests must
@@ -107,5 +107,55 @@ describe("Speaker", () => {
     const sent = synth.spoken[0];
     expect(sent.voice).toBeNull();
     expect(sent.lang).toBe("it-IT");
+  });
+
+  it("setPlaying tracks the cloud playback source and emits to subscribers", () => {
+    const notify = vi.fn();
+    speaker.subscribe(notify);
+    expect(speaker.source).toBeNull();
+    speaker.setPlaying(true, "gemini");
+    expect(speaker.isPlaying).toBe(true);
+    expect(speaker.source).toBe("gemini");
+    expect(notify).toHaveBeenCalled();
+    speaker.setPlaying(false, "gemini");
+    expect(speaker.isPlaying).toBe(false);
+    expect(speaker.source).toBe("gemini");
+  });
+});
+
+describe("fetchCloudTts", () => {
+  it("POSTs {text, lang} to /api/tts and returns the blob on 200", async () => {
+    const audioBlob = new Blob([new Uint8Array([1, 2, 3])], { type: "audio/wav" });
+    const fetcher = vi.fn<typeof fetch>(async () =>
+      new Response(audioBlob, {
+        status: 200,
+        headers: { "content-type": "audio/wav", "x-tts-provider": "gemini" },
+      }),
+    );
+    const result = await fetchCloudTts("مرحبا فاطمة", "ar", fetcher);
+    expect(fetcher).toHaveBeenCalledOnce();
+    const [url, init] = fetcher.mock.calls[0];
+    expect(String(url)).toBe("/api/tts");
+    expect(init?.method).toBe("POST");
+    const body = JSON.parse(String(init?.body));
+    expect(body).toEqual({ text: "مرحبا فاطمة", lang: "ar" });
+    expect(result?.provider).toBe("gemini");
+    expect(result?.blob.size).toBe(3);
+  });
+
+  it("returns null on 503 so the hook can fall back to the browser default voice", async () => {
+    const fetcher = vi.fn<typeof fetch>(async () =>
+      new Response(JSON.stringify({ error: { code: "tts_unavailable" } }), { status: 503 }),
+    );
+    const result = await fetchCloudTts("hi", "en", fetcher);
+    expect(result).toBeNull();
+  });
+
+  it("returns null on a network error", async () => {
+    const fetcher = vi.fn<typeof fetch>(async () => {
+      throw new Error("offline");
+    });
+    const result = await fetchCloudTts("hi", "en", fetcher);
+    expect(result).toBeNull();
   });
 });

@@ -172,7 +172,7 @@ export function CompareView() {
         >
           <h2 className="font-sans text-base font-bold">{t.glanceTitle}</h2>
           <ul className="flex flex-col gap-3">
-            {groundedCaught.slice(0, 3).map((item) => {
+            {groundedCaught.map((item) => {
               const display = rejectionDisplay(item);
               return (
                 <li key={`glance-${item.label}-${item.kind}`} className="flex flex-col gap-1">

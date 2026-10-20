@@ -71,10 +71,10 @@ test.describe("compare mode: Fatima tiebreaker", () => {
     await expect(view).toHaveAttribute("data-grounded-status", "done", GROUNDED_READY);
     const glance = page.getByTestId("compare-glance");
     await expect(glance).toBeVisible();
-    // The strip caps at three items by design. At least one is a Western-drift
-    // catch so the mobile reader sees the Qloo value proposition above the fold.
+    // Every grounded catch surfaces in the mobile strip so a mobile reader
+    // never undercounts what Qloo caught.
     const items = glance.getByRole("listitem");
-    await expect(items).toHaveCount(3);
+    await expect(items).toHaveCount(5);
     await expect(glance).toContainText(/Beatles|Casablanca|Donald Trump|Khaled|Stella/);
     await expect(glance.getByText("Doesn't fit culture").first()).toBeVisible();
   });

@@ -90,7 +90,12 @@ test.describe("keyboard navigation", () => {
   });
 
   test("compare: would-slip badges are focusable and reveal the rejection on focus", async ({ page }) => {
-    await page.goto("/compare?persona=fatima&source=sample&speed=40");
+    // Maria's compare run has a Maradona step in the llm-only column that
+    // matches a grounded anachronism rejection, so a would-slip badge is
+    // guaranteed. Fatima's grounded run no longer catches Western-drift
+    // items (they live only in her llmOnlyBody, by design for respect), so
+    // we use Maria here for the keyboard affordance check.
+    await page.goto("/compare?persona=maria&source=sample&speed=40");
     await expect(page.getByTestId("compare-view")).toHaveAttribute("data-grounded-status", "done");
     const badge = page.getByTestId("would-slip-badge").first();
     await expect(badge).toBeVisible();

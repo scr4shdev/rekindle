@@ -5,6 +5,8 @@ import { rateLimiters } from "@/app/api/_lib/http";
 import { GET as health } from "@/app/api/health/route";
 import { POST as replan } from "@/app/api/session/replan/route";
 import { POST as session, maxDuration } from "@/app/api/session/route";
+import { _resetAgentDepsForTests, getAgentDepsAsync } from "@/lib/composition";
+import { loadConfig } from "@/lib/config";
 import { readEventStream } from "@/lib/domain/ndjson";
 import type { AgentEvent, AgentEventOf } from "@/lib/domain/types";
 import { PERSONAS } from "@/lib/personas";
@@ -31,6 +33,7 @@ const ofType = <K extends AgentEvent["type"]>(list: AgentEvent[], type: K) => li
 
 describe("GET /api/health", () => {
   it("reports mock mode without secrets and without leaking the mock LLM provider", async () => {
+    _resetAgentDepsForTests();
     const res = await health(new Request("http://localhost/api/health"));
     expect(res.status).toBe(200);
     expect(res.headers.get("x-trace-id")).toBeTruthy();
@@ -41,6 +44,39 @@ describe("GET /api/health", () => {
     expect(Object.keys(body.llm)).toEqual(["mode"]);
     expect(JSON.stringify(body)).not.toMatch(/apiKey|token/i);
     expect(JSON.stringify(body)).not.toMatch(/mock-llm|missing_key/i);
+    _resetAgentDepsForTests();
+  });
+
+  it("exposes provider and model when Ollama is the active LLM (not a secret)", async () => {
+    _resetAgentDepsForTests();
+    // Prime the memoized deps with a reachable-Ollama config so the health
+    // handler sees a live Ollama port and reports it accurately. Pre-warm is
+    // stubbed out: unit tests must not touch the network.
+    const ollamaConfig = loadConfig({
+      // REKINDLE_FORCE_MOCK is set by vitest.config.mts; override it so the
+      // live-Ollama branch is exercised.
+      REKINDLE_FORCE_MOCK: "false",
+      LLM_PROVIDER: "ollama",
+      OLLAMA_BASE_URL: "http://127.0.0.1:11434",
+      OLLAMA_MODEL: "qwen3:8b",
+    });
+    await getAgentDepsAsync({
+      config: ollamaConfig,
+      probe: async () => true,
+      prewarm: async () => undefined,
+    });
+    try {
+      const res = await health(new Request("http://localhost/api/health"));
+      const body = await res.json();
+      expect(body).toMatchObject({
+        status: "ok",
+        llm: { mode: "live", provider: "ollama", model: "qwen3:8b" },
+      });
+      // No secrets leak.
+      expect(JSON.stringify(body)).not.toMatch(/apiKey|token/i);
+    } finally {
+      _resetAgentDepsForTests();
+    }
   });
 });
 

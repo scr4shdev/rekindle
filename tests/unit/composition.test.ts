@@ -104,4 +104,57 @@ describe("getAgentDepsAsync (Ollama probe branches)", () => {
     expect(d.llm).toMatchObject({ provider: "groq" });
     _resetAgentDepsForTests();
   });
+
+  it("auto-upgrades to Ollama when no provider is configured but the probe finds it reachable", async () => {
+    _resetAgentDepsForTests();
+    // No LLM_PROVIDER, no hosted key, no REKINDLE_FORCE_MOCK => mockReason "missing_key".
+    const config = loadConfig({ NODE_ENV: "test", OLLAMA_BASE_URL: "http://127.0.0.1:11434" });
+    expect(config.llm).toMatchObject({ mode: "mock", mockReason: "missing_key" });
+    let prewarmed = 0;
+    const d = await getAgentDepsAsync({
+      config,
+      probe: async () => true,
+      prewarm: async () => {
+        prewarmed += 1;
+      },
+    });
+    expect(d.llm).toBeInstanceOf(OllamaLlm);
+    expect(d.llm).toMatchObject({ provider: "ollama", model: "qwen3:8b" });
+    expect(d.config.llm).toMatchObject({ mode: "live", provider: "ollama" });
+    // Prewarm is fire-and-forget; let the microtask run before we assert.
+    await new Promise((r) => setTimeout(r, 0));
+    expect(prewarmed).toBe(1);
+    _resetAgentDepsForTests();
+  });
+
+  it("stays on MockLlm when no provider is configured and Ollama is unreachable", async () => {
+    _resetAgentDepsForTests();
+    const d = await getAgentDepsAsync({
+      config: loadConfig({ NODE_ENV: "test" }),
+      probe: async () => false,
+      prewarm: async () => {
+        throw new Error("prewarm must not be called when Ollama is not active");
+      },
+    });
+    expect(d.llm).toBeInstanceOf(MockLlm);
+    expect(d.config.llm).toMatchObject({ mode: "mock", mockReason: "missing_key" });
+    _resetAgentDepsForTests();
+  });
+
+  it("does not auto-upgrade when REKINDLE_FORCE_MOCK=true (tests, E2E)", async () => {
+    _resetAgentDepsForTests();
+    let probed = 0;
+    const d = await getAgentDepsAsync({
+      config: loadConfig({ NODE_ENV: "test", REKINDLE_FORCE_MOCK: "true" }),
+      probe: async () => {
+        probed += 1;
+        return true;
+      },
+      prewarm: async () => undefined,
+    });
+    expect(probed).toBe(0);
+    expect(d.llm).toBeInstanceOf(MockLlm);
+    expect(d.config.llm).toMatchObject({ mode: "mock", mockReason: "forced" });
+    _resetAgentDepsForTests();
+  });
 });

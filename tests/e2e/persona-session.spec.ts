@@ -13,32 +13,32 @@ test.describe("persona to session", () => {
     await expect(page.getByRole("contentinfo")).toContainText("not medical advice");
   });
 
-  test("tapping Maria falls back to the recorded demo when the API route is missing", async ({ page }) => {
-    await page.route("**/api/session", (route) => route.fulfill({ status: 404 }));
+  test("tapping Maria lands on the recorded replay by default (no live wait)", async ({ page }) => {
+    // Live /api/session is not called at all; the landing card points straight at the fixture replay.
+    let liveCalled = false;
+    await page.route("**/api/session", (route) => {
+      liveCalled = true;
+      return route.fulfill({ status: 404 });
+    });
     await page.goto("/");
     await page.getByTestId("persona-maria").click();
-    await expect(page).toHaveURL(/\/session\?persona=maria/);
-    const trace = page.getByTestId("reasoning-trace");
-    await expect(trace).toBeVisible();
-    // Live: the first phase is working before the plan exists.
-    await expect(trace.locator('[data-phase="parse"]')).toHaveAttribute("data-status", /started|completed/);
-    // Until steps arrive the trace has the full width, with a live count next to the Live pill.
-    // Maria's caregiver is English, so the chrome reads "Qloo request(s)" even though her prompts stay Italian.
-    await expect(page.getByTestId("trace-live-count")).toContainText(/Qloo requests?/);
-    await expect(page.getByTestId("plan-timeline")).toHaveCount(0);
-    await expect(page.getByTestId("plan-timeline")).toBeVisible({ timeout: 25_000 });
+    await expect(page).toHaveURL(/\/session\?persona=maria&source=replay/);
     await expect(page.getByTestId("session-view")).toHaveAttribute("data-status", "done", { timeout: 25_000 });
-    await expect(page.getByText("Recorded demo")).toBeVisible();
+    await expect(page.getByTestId("qloo-mode")).toContainText("Qloo: demo data");
     await expect(page.getByTestId("step-card")).toHaveCount(8);
+    // "Run it live" is the visible escape hatch for a judge who wants the real agent.
+    await expect(page.getByTestId("run-live")).toBeVisible();
+    expect(liveCalled).toBe(false);
   });
 
-  test("tapping Maria uses the live planner when the API answers", async ({ page }) => {
+  test("Run it live navigates to the live source and calls /api/session", async ({ page }) => {
     await mockStream(page, "/api/session", SAMPLE_GROUNDED_EVENTS);
-    await page.goto("/");
-    await page.getByTestId("persona-maria").click();
+    await page.goto("/session?persona=maria&source=replay");
+    await expect(page.getByTestId("run-live")).toBeVisible();
+    await page.getByTestId("run-live").click();
+    await expect(page).toHaveURL(/\/session\?persona=maria(?!.*source=replay)/);
     await expect(page.getByTestId("session-view")).toHaveAttribute("data-status", "done");
     await expect(page.getByText("Live planner")).toBeVisible();
-    await expect(page.getByText("Recorded demo")).toHaveCount(0);
     await expect(page.getByTestId("qloo-mode")).toContainText("Qloo: demo data");
     await expect(page.getByTestId("step-card")).toHaveCount(8);
   });

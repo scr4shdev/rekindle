@@ -110,6 +110,8 @@ export const fr: PartialMessages = {
     compare: "Comparer avec et sans Qloo",
     cancel: "Arrêter",
     retry: "Réessayer",
+    runLive: "Lancer en direct",
+    runLiveHint: "Lancer l'agent contre le modèle en direct, plus lent mais réel",
     tryMaria: "Ouvrir la démo enregistrée de Maria",
     missingCustom:
       "Vos notes ne sont conservées nulle part, donc recharger la page les a effacées. Réécrivez-les, s'il vous plaît.",

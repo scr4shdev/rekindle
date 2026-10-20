@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeftIcon, BotIcon, PlayIcon, PrinterIcon, RotateCcwIcon, ScaleIcon, SquareIcon, TriangleAlertIcon } from "lucide-react";
+import { ArrowLeftIcon, BotIcon, PlayIcon, PrinterIcon, RotateCcwIcon, ScaleIcon, SparklesIcon, SquareIcon, TriangleAlertIcon } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -8,7 +8,7 @@ import { LiveSession } from "@/components/session/live-session";
 import { PlanTimeline } from "@/components/session/plan-timeline";
 import { ReasoningTrace } from "@/components/session/reasoning-trace";
 import { RECORDED_PERSONA, resolveRequest } from "@/components/session/session-request";
-import { parseSourceParam, resolveSource, type SourceKind } from "@/components/session/source";
+import { parseSourceParam, resolveSource, type SourceKind, type SourceParam } from "@/components/session/source";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -180,6 +180,7 @@ export function SessionView() {
         resolved={resolved}
         view={view}
         servedBy={servedBy}
+        sourceParam={sourceParam}
         liveOpen={liveOpen}
         setLiveOpen={setLiveOpen}
         liveIndex={liveIndex}
@@ -216,6 +217,7 @@ function SessionViewBody({
   resolved,
   view,
   servedBy,
+  sourceParam,
   liveOpen,
   setLiveOpen,
   liveIndex,
@@ -228,6 +230,7 @@ function SessionViewBody({
   resolved: ResolvedOk;
   view: ReturnType<typeof useAgentStream>["view"];
   servedBy: ReturnType<typeof useAgentStream>["servedBy"];
+  sourceParam: SourceParam;
   liveOpen: boolean;
   setLiveOpen: (open: boolean) => void;
   liveIndex: number;
@@ -245,6 +248,15 @@ function SessionViewBody({
   const anchors = view.anchors;
   const name = resolved.name ?? t.someone;
   const comparePersona = resolved.persona;
+  const isReplay = sourceParam === "replay";
+  // Build the live URL by stripping `source=replay` and the fallback marker.
+  // Preserve mode and anything else the user picked.
+  const liveHref = (() => {
+    const params = new URLSearchParams();
+    params.set("persona", resolved.persona);
+    if (resolved.request.mode) params.set("mode", resolved.request.mode);
+    return `/session?${params.toString()}`;
+  })();
   // While the agent is still thinking and nothing is composed yet, the trace gets the full width.
   const traceWide = view.status === "streaming" && view.steps.length === 0;
 
@@ -283,18 +295,37 @@ function SessionViewBody({
                 </Badge>
               )}
               {servedBy && <SourceBadge kind={servedBy} />}
-              {plan && plan.meta.qlooMode !== "unused" && (
-                <Tooltip>
-                  <TooltipTrigger render={<Badge variant={plan.meta.qlooMode === "live" ? "sage" : "outline"} className="cursor-help" />} data-testid="qloo-mode">
-                    {plan.meta.qlooMode === "live" ? t.qlooLive : t.qlooMock}
-                    <span className="sr-only">: {plan.meta.qlooMode === "live" ? t.qlooLiveHint : t.qlooMockHint}</span>
-                  </TooltipTrigger>
-                  <TooltipContent>{plan.meta.qlooMode === "live" ? t.qlooLiveHint : t.qlooMockHint}</TooltipContent>
-                </Tooltip>
-              )}
+              {plan && plan.meta.qlooMode !== "unused" && (() => {
+                // On a replay fixture, the recording was taken with mock Qloo
+                // regardless of what the fixture's plan meta says, so the
+                // honest label is "demo data".
+                const effectiveLive = plan.meta.qlooMode === "live" && !isReplay;
+                return (
+                  <Tooltip>
+                    <TooltipTrigger render={<Badge variant={effectiveLive ? "sage" : "outline"} className="cursor-help" />} data-testid="qloo-mode">
+                      {effectiveLive ? t.qlooLive : t.qlooMock}
+                      <span className="sr-only">: {effectiveLive ? t.qlooLiveHint : t.qlooMockHint}</span>
+                    </TooltipTrigger>
+                    <TooltipContent>{effectiveLive ? t.qlooLiveHint : t.qlooMockHint}</TooltipContent>
+                  </Tooltip>
+                );
+              })()}
             </div>
           </div>
           <div className="flex flex-wrap gap-2.5">
+            {isReplay && (
+              <Link
+                href={liveHref}
+                className={cn(buttonVariants({ variant: "outline" }), "focus-visible:ring-2")}
+                data-icon="inline-start"
+                data-testid="run-live"
+                aria-label={t.runLiveHint}
+                title={t.runLiveHint}
+              >
+                <SparklesIcon aria-hidden />
+                {t.runLive}
+              </Link>
+            )}
             {streaming && (
               <Button variant="outline" onClick={onCancel} data-icon="inline-start">
                 <SquareIcon aria-hidden />

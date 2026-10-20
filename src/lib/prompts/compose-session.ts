@@ -11,7 +11,7 @@ import type { PromptDefinition } from "@/lib/ports/llm";
 import { AGGREGATE_GUIDANCE, dataBlock, DATA_NOTICE, DEMENTIA_FRIENDLY_GUIDANCE, lines, ROLE } from "@/lib/prompts/shared";
 
 export const ID = "compose-session";
-export const VERSION = "1.4.2";
+export const VERSION = "1.5.0";
 
 /** English source of the non-medical disclaimer; the model translates it to the caregiver language. */
 export const DISCLAIMER_EN =
@@ -89,6 +89,21 @@ export const system = lines(
     "- For tastes: remind the caregiver to check swallowing and diet guidance.",
   ].join("\n"),
   [
+    "Step kind must match the material (required):",
+    "- A step with kind 'listen' or 'move' must be built on a music or audio material (an artist, song, musical ensemble, or an audible routine like clapping to a familiar tune). A television show, film, book, place, person, dish, team, or object cannot anchor a 'listen' or 'move' step: use 'look' or 'talk' instead, with a mediaHint that fits (an image search for a photograph, YouTube for a film clip).",
+    "- Worked example (TV show miscast as music). Material: {label: 'The Likely Lads', domain: 'television'}. WRONG: {kind: 'listen', prompt: 'This is The Likely Lads, a British television show from the 1970s. What does this music make you think of?', mediaHint: \"Search 'The Likely Lads' on YouTube\"}. RIGHT: {kind: 'look', title: 'The Likely Lads', prompt: 'Here is a still from The Likely Lads, the Tyneside comedy from the early 1970s. What stands out to you here?', mediaHint: \"Search 'The Likely Lads 1970' on IMDb for stills\"}.",
+  ].join("\n"),
+  [
+    "Specific entities belong to verified materials only (required):",
+    "- Only materials listed in `materials` may be named in a prompt, follow-up, title or caregiverTip by their specific entity name (song title, artist, film title, show title, book title, team, named dish, named person). A step not tied to a verified material (materialRef is empty) must stay generic: name a category and era instead of inventing a specific title.",
+    "- Worked example (invented entity in an untied step). WRONG (no material in the list for it): {materialRef: '', kind: 'listen', prompt: 'Let us listen to The Likely Lads, a British sitcom from the 1970s.'}. RIGHT: {materialRef: '', kind: 'look', prompt: 'Let us look at a photograph of a Kingston street in the 1960s. What do you see?'}. Generic categories (\"a sitcom from the 1970s\", \"a photograph from Kingston\", \"a hymn from your church\") are fine; a specific title that is not in the materials list is not.",
+  ].join("\n"),
+  [
+    "Historical names for places and public figures (required):",
+    "- When a place entity (or any entity whose name has changed over time) has had different official names across history, display it to the person by the name they themselves would have used during their formative years (anchors.formativeWindow). The verified material's canonical name may be modern; the step title, prompt and mediaHint use the historical name the person grew up with.",
+    "- Worked example (Saigon rename). Person born 1948 in Saigon, formative window ~1958-1978, called her city Saigon all her life. Material: {label: 'Ho Chi Minh City', domain: 'place'}. WRONG: {title: 'Thành phố Hồ Chí Minh', prompt: 'A photograph of Ho Chi Minh City in the 1960s.'}. RIGHT: {title: 'Saigon', prompt: 'A photograph of Saigon in the 1960s, the city you grew up in.', mediaHint: \"Search 'Saigon 1960s' on Google Images\"}. The rename to Ho Chi Minh City happened in 1976, after her formative years; she would never have called it that. The same principle applies to Leningrad before 1991, Bombay before the 1990s, Peking before 1958, Rangoon before 1989, and any place or figure whose public name shifted during or after the person's lifetime.",
+  ].join("\n"),
+  [
     "Music primacy (required):",
     "At least two steps must be music (kind 'listen' or 'move'). Music has the strongest evidence base for engagement in dementia, especially where speech recall has declined (Abraha 2017 BMJ Open umbrella review: pooled SMD -0.49 for agitation and -0.64 for anxiety; Säkämö 2014: singing lifted memory, thinking and orientation in mild-dementia under-80s). Prefer music steps as anchors around which other steps hang. Do not stack them all adjacent; distribute them across the session so the person gets a music anchor near the start, in the middle and near the close.",
   ].join("\n"),
@@ -96,7 +111,8 @@ export const system = lines(
     "Stage tuning (follow the stage carried in `session.stage`, when present):",
     "- early (default when stage is absent): 6 to 8 steps, 2 to 3 minutes each, at least two music steps, follow-ups allowed. Evidence is strongest in mild dementia (Cochrane 2018 reminiscence review, Säkämö 2014 singing RCT), so the plan can span the fuller arc: a greeting, five or six anchors, a close.",
     "- mid: 5 to 6 steps, 2 to 4 minutes each, at least three music or sensory anchors, keep follow-ups to one short line and drop them when the material already carries the moment. The upper bound widens to 4 minutes because the session normalizer scales step durations to the chosen session length; at 20 minutes with a 6-step mid plan, interior steps land near 4 minutes even when the raw target is 3. Attention narrows at mid-stage, so lean on music, familiar images and smells, and let the caregiver sit in each anchor longer rather than reaching for a seventh step.",
-    "- late: 4 to 5 steps, about 90 seconds each (round to 1 or 2 minutes in `durationMin`), at least four music or sensory anchors, no follow-ups, no complex questions. In late-stage dementia speech recall often fails and NICE NG97's wellbeing bracket, not the cognition bracket, is what applies: prompts must be yes-no or presence invitations ('Shall we listen together?', 'This is Oum Kalthoum.'), never 'Who was that?' or 'Do you remember?'. Keep every prompt short and present-tense.",
+    "- late: 4 to 5 steps, about 90 seconds each (round to 1 or 2 minutes in `durationMin`; the server also clips any late-stage body step to 2 minutes), at least four music or sensory anchors, no follow-ups, no complex questions. In late-stage dementia speech recall often fails and NICE NG97's wellbeing bracket, not the cognition bracket, is what applies: prompts must be yes-no or presence invitations ('Shall we listen together?', 'This is Oum Kalthoum.'), never 'Who was that?' or 'Do you remember?'. Keep every prompt short and present-tense.",
+    "- Worked example (late stage prompt register). Material: {label: 'Edmund Fitzgerald hymn', domain: 'music'}. WRONG: {kind: 'listen', durationMin: 4, prompt: 'What does this bring up for you?', followUps: ['Who sang it with you?']}. RIGHT: {kind: 'listen', durationMin: 2, prompt: 'This is your hymn. Let us listen together.', followUps: []}. The acceptable prompt is a short presence invitation; the duration is clipped to 2 minutes; follow-ups are empty.",
   ].join("\n"),
   [
     "Lifespan coverage (required when anchors.lifePhases is non-empty):",

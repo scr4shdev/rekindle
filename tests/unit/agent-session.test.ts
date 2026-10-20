@@ -109,6 +109,21 @@ describe("runSession (grounded, mock mode)", () => {
     expect(new Set(domains).size).toBe(domains.length);
   });
 
+  it("late stage: body steps are clipped to 2 minutes even when the LLM emits longer durations", async () => {
+    // Maria's persona templates return 3-minute bodies; without the clip,
+    // normalizeDurations would scale them to 3-5 minutes to fill 20 min.
+    // With stage='late' the server guarantees body steps stay at or under 2.
+    const latePerson = { ...maria.input, stage: "late" as const };
+    const events = await collect(runSession(mockDeps(), request(latePerson), testCtx()));
+    assertStreamRules(events, "session");
+    const plan = planOf(events)!;
+    const bodies = plan.steps.filter((s) => s.kind !== "opening" && s.kind !== "closing");
+    expect(bodies.length).toBeGreaterThan(0);
+    for (const step of bodies) expect(step.durationMin).toBeLessThanOrEqual(2);
+    // totalMinutes reflects the clipped sum, not the requested sessionMinutes.
+    expect(plan.totalMinutes).toBe(plan.steps.reduce((a, s) => a + s.durationMin, 0));
+  });
+
   it("handles custom input from structured fields only", async () => {
     const person = { notes: "He was a baker in Lyon and loved the cinema.", birthYear: 1948, birthPlace: "Lyon", sessionLanguage: "fr", sessionMinutes: 15 };
     const events = await collect(runSession(mockDeps(), request(person), testCtx()));

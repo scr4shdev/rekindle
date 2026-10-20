@@ -278,7 +278,16 @@ export async function* composePhase(
   }
   if (draft.length === 0) throw new PortError("llm", "invalid_response", "The composed session had no usable steps", false);
   const minutes = normalizeDurations(draft.map((s) => s.durationMin), person.sessionMinutes);
-  const steps = draft.map((s, i) => ({ ...s, durationMin: minutes[i] }));
+  // Late-stage pace guarantee: NICE NG97 wellbeing bracket at late-stage calls
+  // for short, calm anchors. Local qwen3:8b and hosted models that drift into
+  // 3-4 minute bodies get clipped here. Shape-reshape only (a numeric cap on a
+  // numeric field); semantic prompt judgments stay in the LLM via the compose
+  // system prompt's late-stage worked example.
+  const steps = draft.map((s, i) => {
+    const isBody = s.kind !== "opening" && s.kind !== "closing";
+    const clipped = person.stage === "late" && isBody ? Math.min(minutes[i], 2) : minutes[i];
+    return { ...s, durationMin: clipped };
+  });
   for (const step of steps) yield { type: "step", step };
   run.stats.steps += steps.length;
 
@@ -288,7 +297,7 @@ export async function* composePhase(
     language: lang,
     caregiverLanguage: person.caregiverLanguage,
     steps,
-    totalMinutes: minutes.reduce((a, b) => a + b, 0),
+    totalMinutes: steps.reduce((a, s) => a + s.durationMin, 0),
     mode,
     disclaimer: clip(out.disclaimer, 600) ?? DISCLAIMER_EN,
     generatedAt: run.deps.now().toISOString(),

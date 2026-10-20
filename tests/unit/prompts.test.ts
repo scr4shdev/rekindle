@@ -73,6 +73,34 @@ describe("prompt modules", () => {
     expect(compose.system).toContain("selections reflect");
     expect(compose.system).toContain("Required register");
   });
+
+  it("compose-session guards step kind against entity domain (TV cannot anchor a listen step)", () => {
+    expect(compose.system).toContain("Step kind must match the material");
+    expect(compose.system).toContain("must be built on a music or audio material");
+    expect(compose.system).toContain("The Likely Lads");
+  });
+
+  it("compose-session keeps untied steps generic (no invented specific entity names)", () => {
+    expect(compose.system).toContain("Specific entities belong to verified materials only");
+    expect(compose.system).toContain("Generic categories");
+  });
+
+  it("compose-session shows historical place names during the person's formative years", () => {
+    expect(compose.system).toContain("Historical names for places");
+    expect(compose.system).toContain("Saigon");
+    expect(compose.system).toContain("Ho Chi Minh City");
+  });
+
+  it("compose-session carries a late-stage worked example (yes-no / presence invitation)", () => {
+    expect(compose.system).toContain("late stage prompt register");
+    expect(compose.system).toContain("Let us listen together");
+  });
+
+  it("parse-anchors treats religion in culturalBackground / calmingCues / keyLifeEvents as a positive anchor", () => {
+    expect(parse.system).toContain("POSITIVE anchor");
+    expect(parse.system).toContain("Pentecostal");
+    expect(parse.system).toContain("avoidance verb");
+  });
 });
 
 describe("prompt renders (snapshots)", () => {

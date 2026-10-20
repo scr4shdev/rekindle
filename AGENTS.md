@@ -24,7 +24,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   zod 4, Vercel AI SDK 7, pino 10, vitest 5, Playwright.
 - `.env.local` holds secrets. **Never print, commit, copy or modify it.** Keys may be empty: the app must work fully in mock mode.
 - Local only: do not deploy, push, or create remote repos.
-- **Do not edit `package.json` / `package-lock.json`.** All dependencies are installed. Need one? Add a `BLOCKED:` note in TODO.md.
+- **You may edit `package.json` / `package-lock.json`.** Add or remove dependencies as the architecture needs. Use `npm install <pkg>` so the lockfile stays consistent. Keep adds minimal and in scope.
 
 ## Ownership (who may edit what)
 
@@ -38,9 +38,8 @@ Each worker updates only its own task rows in `TODO.md`.
 
 ### Frozen contracts
 
-`src/lib/domain/**`, `src/lib/ports/**`, `src/lib/config.ts`, `src/lib/logger.ts` are **frozen** after Phase 0.
-Builders must not edit them. If you need a change, add a line under "Contract change requests" in `TODO.md`:
-`BLOCKED: contract change needed: <file> <what and why>`, mark your task `blocked`, and continue with another task.
+`src/lib/domain/**`, `src/lib/ports/**`, `src/lib/config.ts`, `src/lib/logger.ts` are **unfrozen** past Phase 2.
+Edit them when the architecture needs it. Keep changes additive and backward-compatible where possible; a breaking widening still deserves a one-line note in the PR body or the commit message so a reviewer can trace what moved.
 You may define **internal** types in your own area (e.g. LLM-facing output schemas in `src/lib/prompts/`).
 
 ## HARD RULES (Qloo safe use, hackathon email): never break these

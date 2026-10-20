@@ -5,12 +5,12 @@ Everything you need to see Rekindle work and feel the Qloo value in a minute and
 ## Fast path (90 seconds)
 
 1. Open the live demo (or `http://localhost:3000` after `npm run dev`).
-2. On the landing page, tap the **Maria** persona card (Naples, Italian).
-3. Watch the live trace stream for about 5 seconds. The six-phase loop runs top-to-bottom. Each Qloo call narrates in plain English, for example *"Looking for Frank Sinatra"* and *"Checking who else people who enjoy Frank Sinatra, Renato Carosone, Domenico Modugno tend to enjoy, in 1952 to 1972"*. Expand a `qloo_call` row to see the exact endpoint and params that were sent.
+2. On the landing page, tap the **Fatima** persona card (Fès and Brussels, French and Arabic). Fatima is first on purpose: she is the cross-cultural case, where a care aide has no shared culture to lean on, and where Qloo's taste graph is most clearly load-bearing.
+3. Watch the live trace stream for about 5 seconds. The six-phase loop runs top-to-bottom. Each Qloo call narrates in plain English, for example *"Looking for Oum Kalthoum"* and *"Checking who else people who enjoy Oum Kalthoum and Abdelhalim Hafez tend to enjoy."* The extra `cultural-check` LLM pass runs for Fatima and drops Western-drift candidates (Donald Trump, the Beatles) that Qloo's expand step bled through. Expand a `qloo_call` row to see the exact endpoint and params that were sent (cultural anchors only).
 4. When the plan appears, click **Compare** at the top of the page. The LLM-only plan loads on the left, the grounded plan on the right.
 5. Look at the hero callout above both columns: *"Qloo caught N era/culture/risk slips and confirmed M real matches."* Numbers in sage.
-6. Scroll the left (LLM-only) column until you see the rose-outlined step. The badge says **"Would have slipped"**. The step title is *"Maradona and the 1987 scudetto."* That is what the LLM alone would have put in Maria's session. On the right (grounded) column, Qloo caught it with an era-window rejection.
-7. For bonus points: tap **Fatima** on the landing page and run the same path. Fatima is the non-Western persona and triggers the extra `cultural-check` LLM pass that catches Western extrapolations Qloo's filters miss.
+6. Scroll the left (LLM-only) column until you see the rose-outlined steps. The badges say **"Would have slipped"**. These are hallucinated, era-slipped or Western-drift items the LLM alone would have put in a Fès elder's session. On the right (grounded) column, Qloo and the cultural-check LLM caught them.
+7. For a cross-check on a shared-culture persona: tap **Maria** (Napoli, Italian) and watch the same loop run; the Maradona 1987 era catch is the signature moment there.
 
 That is the thesis in one scroll.
 
@@ -19,10 +19,10 @@ That is the thesis in one scroll.
 The hackathon host, the LLM provider, or the network can all have a bad day. There is a judge-stable path that bypasses all three:
 
 ```
-/session?persona=maria&source=replay
+/session?persona=fatima&source=replay
 ```
 
-This streams `tests/fixtures/trace-maria.ndjson` through `GET /api/session/replay?fixture=maria`. It runs in under 15 seconds, makes zero Qloo calls and zero LLM calls, and the output is byte-stable: the file's sha256 is pinned in `tests/fixtures/trace-maria.meta.json` and verified in CI. The three available fixtures are `maria`, `fatima`, `seamus`.
+This streams `tests/fixtures/trace-fatima.ndjson` through `GET /api/session/replay?fixture=fatima`. It runs in under 15 seconds, makes zero Qloo calls and zero LLM calls, and the output is byte-stable: the file's sha256 is pinned in `tests/fixtures/trace-fatima.meta.json` and verified in CI. The three available fixtures are `fatima`, `maria`, `seamus`.
 
 The replay route exists on purpose: the demo keeps working even if Qloo rate-limits, an LLM key goes stale, or Vercel has a cold-start spike. The determinism contract (temperature 0, pinned model IDs, versioned prompts, input-keyed sha256 cache, injected `now` and `newId`) makes this safe to commit.
 

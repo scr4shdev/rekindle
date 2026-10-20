@@ -42,7 +42,10 @@ export function PersonaCards() {
               </EraArt>
               <div className="flex flex-1 flex-col gap-2 p-5">
                 <h3 className="text-2xl font-semibold sm:text-3xl">{card.name}</h3>
-                <p className="text-lg leading-snug text-muted-foreground">{card.tagline}</p>
+                <p className="text-sm font-semibold leading-snug text-sage-ink" data-testid={`persona-scenario-${persona.slug}`}>
+                  {card.scenario}
+                </p>
+                <p className="text-base leading-snug text-muted-foreground sm:text-lg">{card.tagline}</p>
                 <div className="mt-auto flex flex-wrap gap-x-4 gap-y-1 pt-1 text-[0.95rem] text-muted-foreground">
                   <span className="inline-flex items-center gap-1.5">
                     <LanguagesIcon className="size-4" aria-hidden />

@@ -20,6 +20,20 @@ import { clip, isNonWesternOrigin, normalizeDurations } from "@/lib/agent/util";
 export const PLAN_MAX_STEPS = 20;
 
 /**
+ * Per-stage soft caps on step count. Reflects the reminiscence evidence
+ * base: mild-dementia sessions can span the fuller arc (Cochrane 2018,
+ * Säkämö 2014); mid-stage attention narrows (IRISS Scotland); late-stage
+ * benefits from fewer, shorter, sensory anchors (NICE NG97 wellbeing
+ * bracket, not cognition). Absent stage defaults to the early-stage cap.
+ */
+export function stageMaxSteps(stage: PersonInput["stage"], configMax: number): number {
+  const capped = Math.min(configMax, PLAN_MAX_STEPS);
+  if (stage === "mid") return Math.min(capped, 6);
+  if (stage === "late") return Math.min(capped, 5);
+  return Math.min(capped, 8);
+}
+
+/**
  * F2: cultural-mismatch gate for non-Western personas. The Qloo live probe
  * showed that seeds like Oum Kalthoum / Faten Hamama expand to Hollywood or
  * US political entities, and the LLM's own propose step over-reaches to
@@ -234,7 +248,7 @@ export async function* composePhase(
   const started = run.deps.now().getTime();
   const lang = person.sessionLanguage;
   yield { type: "phase", phase: "compose", status: "started", message: `Arranging a gentle ${person.sessionMinutes}-minute session…` };
-  const maxSteps = Math.min(run.deps.config.agent.maxSessionSteps, PLAN_MAX_STEPS);
+  const maxSteps = stageMaxSteps(person.stage, run.deps.config.agent.maxSessionSteps);
   const out = await callLlm(
     run,
     composeSessionPrompt,
@@ -245,6 +259,7 @@ export async function* composePhase(
       caregiverLanguage: person.caregiverLanguage,
       sessionMinutes: person.sessionMinutes,
       maxSteps,
+      stage: person.stage,
       disclaimerEnglish: DISCLAIMER_EN,
       materials: kept.map((m, i) => toComposeMaterial(m, kept, materialAlias(i))),
     },

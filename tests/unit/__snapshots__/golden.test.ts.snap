@@ -3,13 +3,11 @@
 exports[`golden mock run: fatima > grounded: valid, era-correct, sensitivity-safe and stable 1`] = `
 [
   "0. [opening] Tea together | llm-only | 2 min",
-  "1. [listen] Oum Kalthoum, 'Enta Omri' (1964) | qloo-grounded | Oum Kalthoum (llm-proposed-qloo-verified) | 3 min",
-  "2. [move] Sway along: Abdelhalim Hafez | qloo-grounded | Abdelhalim Hafez (llm-proposed-qloo-verified) | 3 min",
-  "3. [listen] Nass El Ghiwane (1972) | qloo-grounded | Nass El Ghiwane (llm-proposed-qloo-verified) | 3 min",
-  "4. [taste] Mint tea, the morning ritual | llm-only | 3 min",
-  "5. [look] Faten Hamama on screen | qloo-grounded | Faten Hamama (llm-proposed-qloo-verified) | 3 min",
-  "6. [look] Mohammed V on the radio (1955) | qloo-grounded | Mohammed V (llm-proposed-qloo-verified) | 2 min",
-  "7. [closing] Thank you, Fatima | llm-only | 1 min",
+  "1. [listen] Oum Kalthoum, 'Enta Omri' (1964) | qloo-grounded | Oum Kalthoum (llm-proposed-qloo-verified) | 4 min",
+  "2. [move] Sway along: Abdelhalim Hafez | qloo-grounded | Abdelhalim Hafez (llm-proposed-qloo-verified) | 4 min",
+  "3. [listen] Nass El Ghiwane (1972) | qloo-grounded | Nass El Ghiwane (llm-proposed-qloo-verified) | 4 min",
+  "4. [taste] Mint tea, the morning ritual | llm-only | 4 min",
+  "5. [closing] Thank you, Fatima | llm-only | 2 min",
 ]
 `;
 

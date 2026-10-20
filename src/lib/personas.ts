@@ -33,6 +33,7 @@ export const PERSONAS: readonly DemoPersona[] = [
       sessionLanguage: "fr",
       caregiverLanguage: "en",
       sessionMinutes: 20,
+      stage: "mid",
       notes:
         "Ma mère Fatima est née à Fès en 1950 et a grandi dans la médina. Elle est arrivée à Bruxelles en 1972 avec mon père, " +
         "qui travaillait dans les mines du Limbourg puis à la STIB. Elle adore Oum Kalthoum, Abdelhalim Hafez et les films égyptiens " +
@@ -56,6 +57,7 @@ export const PERSONAS: readonly DemoPersona[] = [
       sessionLanguage: "it",
       caregiverLanguage: "en",
       sessionMinutes: 20,
+      stage: "early",
       notes:
         "My grandmother Maria was born in 1942 in the Spanish Quarter of Naples and grew up there. " +
         "She worked as a seamstress from age 15 and married my grandfather in 1963. She adores Frank Sinatra " +
@@ -80,6 +82,7 @@ export const PERSONAS: readonly DemoPersona[] = [
       sessionLanguage: "en",
       caregiverLanguage: "en",
       sessionMinutes: 25,
+      stage: "early",
       notes:
         "Dad grew up on the north side of Cork city and worked at the Ford factory on the Marina for over 30 years. " +
         "He was mad about hurling and the Glen Rovers club, and went dancing to the showbands every weekend in the late 50s and 60s, " +

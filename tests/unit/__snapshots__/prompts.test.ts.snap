@@ -7,7 +7,8 @@ exports[`prompt renders (snapshots) > compose-session 1`] = `
   "sessionLanguage": "it",
   "caregiverLanguage": "en",
   "sessionMinutes": 20,
-  "maxSteps": 8
+  "maxSteps": 8,
+  "stage": "early"
 }
 </data>
 

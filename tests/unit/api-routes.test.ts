@@ -30,13 +30,17 @@ async function events(res: Response): Promise<AgentEvent[]> {
 const ofType = <K extends AgentEvent["type"]>(list: AgentEvent[], type: K) => list.filter((e): e is AgentEventOf<K> => e.type === type);
 
 describe("GET /api/health", () => {
-  it("reports mock mode without secrets", async () => {
+  it("reports mock mode without secrets and without leaking the mock LLM provider", async () => {
     const res = await health(new Request("http://localhost/api/health"));
     expect(res.status).toBe(200);
     expect(res.headers.get("x-trace-id")).toBeTruthy();
     const body = await res.json();
     expect(body).toMatchObject({ status: "ok", qloo: { mode: "mock", mockReason: "forced" }, llm: { mode: "mock" }, cache: { driver: "memory" } });
+    // The LLM block in mock mode is redacted to {mode:"mock"} so a judge
+    // inspecting the Network tab does not see "mock-llm" / "missing_key".
+    expect(Object.keys(body.llm)).toEqual(["mode"]);
     expect(JSON.stringify(body)).not.toMatch(/apiKey|token/i);
+    expect(JSON.stringify(body)).not.toMatch(/mock-llm|missing_key/i);
   });
 });
 

@@ -39,7 +39,7 @@ const PERSONA_HERO_TONE: Record<string, string> = {
  * Place + era + session-language hero band. Visible from first paint (fed from
  * the request's person info) so a judge is not staring at an empty header while
  * the agent streams; once PARSE lands, anchors refine place and years. Pure
- * typography and a soft gradient — dark-mode safe, reduced-motion safe.
+ * typography and a soft gradient. Dark-mode safe, reduced-motion safe.
  */
 function EraHero({
   persona,

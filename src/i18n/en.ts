@@ -11,7 +11,7 @@ export const en = {
   landing: {
     title: "An agent that plans 20 quiet minutes for someone living with dementia.",
     leadShort:
-      "Every song, film and face from their era is checked against Qloo's taste graph — so nothing feels wrong for the person you care for.",
+      "Every song, film and face from their era is checked against Qloo's taste graph, so nothing feels wrong for the person you care for.",
     agentFlowLabel: "How the agent works",
     agentFlow: "Parse → propose → verify in Qloo → compose. 6 phases, 10–20 Qloo calls per plan.",
     promises: {
@@ -53,7 +53,7 @@ export const en = {
     minutes: "Session length",
     minutesOption: (n: number) => `${n} min`,
     grounded: "Check every idea against Qloo",
-    groundedHint: "Recommended. Turn off to see what a language model alone would plan — or try both side-by-side with Compare.",
+    groundedHint: "Recommended. Turn off to see what a language model alone would plan, or try both side-by-side with Compare.",
     submit: "Plan the session",
     submitPending: "Opening the planner…",
     compare: "Compare with and without Qloo",

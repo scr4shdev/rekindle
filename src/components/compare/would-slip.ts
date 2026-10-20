@@ -1,7 +1,7 @@
 import type { RejectedItem } from "@/lib/domain/types";
 
 /**
- * Tokens that are too generic — places, invented person names, bare years —
+ * Tokens that are too generic (places, invented person names, bare years)
  * to trigger a slip match on their own. A rejected "Festival di Napoli 1958"
  * must not flag any step whose title merely shares "napoli" or "1958": one
  * of the other tokens (festival) must match too, otherwise a legit grounded
@@ -36,8 +36,8 @@ export function labelTokens(label: string): string[] {
 
 /**
  * True when a step title shares meaningful tokens with a rejected label AND
- * at least one of those shared tokens is specific — not a stop-listed place,
- * demo first-name, or bare year. Prevents a legit grounded entity (e.g.
+ * at least one of those shared tokens is specific (not a stop-listed place,
+ * demo first-name, or bare year). Prevents a legit grounded entity (e.g.
  * "Carosone, 'Napoli Mia Bella'") from being flagged just because it shares
  * "napoli" with a rejected "Festival di Napoli 1958".
  */

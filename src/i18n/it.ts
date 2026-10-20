@@ -84,6 +84,7 @@ export const it: PartialMessages = {
   },
   session: {
     eraBandLabel: "Luogo ed epoca",
+    lifespan: (from: number, to: number) => `Dal ${from} al ${to}, dall'infanzia alla maturità.`,
     planningFor: (name: string) => `Pianifico una sessione per ${name}`,
     planningGeneric: "Pianifico la sessione",
     waitHint: "Di solito servono 15–30 secondi. L'agente racconta mentre lavora.",
@@ -210,6 +211,14 @@ export const it: PartialMessages = {
     llmOnlyHint: "Non verificato con Qloo. Usa il tuo giudizio.",
     changed: "Adattato",
     removed: (label: string) => `Messo da parte per ora: ${label}`,
+    lifePhase: {
+      childhood: "Dall'infanzia",
+      youth: "Dalla giovinezza",
+      early_adulthood: "Dai primi anni adulti",
+      mid_life: "Dalla maturità",
+      later_life: "Dagli anni recenti",
+    },
+    lifePhaseHint: (ageRange: string) => `Un ricordo intorno ai ${ageRange} anni.`,
   },
   live: {
     title: "Modalità sessione",

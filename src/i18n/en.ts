@@ -70,6 +70,7 @@ export const en = {
   },
   session: {
     eraBandLabel: "Place and era",
+    lifespan: (from: number, to: number) => `Spanning ${from} to ${to}, childhood through mid life.`,
     planningFor: (name: string) => `Planning a session for ${name}`,
     planningGeneric: "Planning your session",
     waitHint: "This usually takes 15–30 seconds. The agent will narrate as it works.",
@@ -194,6 +195,14 @@ export const en = {
     llmOnlyHint: "Not checked against Qloo. Use your own judgement.",
     changed: "Adapted",
     removed: (label: string) => `Set aside for now: ${label}`,
+    lifePhase: {
+      childhood: "From childhood",
+      youth: "From youth",
+      early_adulthood: "From early adulthood",
+      mid_life: "From mid life",
+      later_life: "From later life",
+    },
+    lifePhaseHint: (ageRange: string) => `A memory anchored around ages ${ageRange}.`,
   },
   live: {
     title: "Session mode",

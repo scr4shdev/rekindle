@@ -118,6 +118,15 @@ export function StepCard({
             <ProvenanceBadge step={step} />
           </span>
         </div>
+        {step.lifePhase && (
+          <p
+            className="text-xs font-semibold uppercase tracking-wide text-sage-ink"
+            data-testid="step-life-phase"
+            data-life-phase={step.lifePhase}
+          >
+            {t.lifePhase[step.lifePhase]}
+          </p>
+        )}
         <h3 id={`step-${step.id}-title`} className="text-2xl leading-snug font-semibold">
           {step.title}
         </h3>

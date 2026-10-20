@@ -1,16 +1,17 @@
 /**
- * Live LLM adapter on the Vercel AI SDK 7: `generateText` + `Output.object`
- * at temperature 0 with the pinned model from config. Cache-through on an
- * input-keyed sha256 key; `sensitive` requests stay in memory-only caches
- * (enforced by the cache adapters).
+ * Live LLM adapter on the Vercel AI SDK 7: `generateText` + `Output.object` at
+ * temperature 0 with the pinned model from config. We talk to any
+ * OpenAI-compatible chat-completions endpoint; the current repo switches
+ * between Gemini's OpenAI-compat endpoint and local Ollama's by swapping
+ * `baseUrl` and `apiKey` in `AiSdkLlmConfig`. One happy path for both.
+ *
+ * Cache-through on an input-keyed sha256 key; `sensitive` requests stay in
+ * memory-only caches (enforced by the cache adapters).
  */
-import { createAnthropic } from "@ai-sdk/anthropic";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { createGroq } from "@ai-sdk/groq";
+import { createOpenAI } from "@ai-sdk/openai";
 import type { LanguageModel } from "ai";
 import { APICallError, generateText, NoObjectGeneratedError, Output, TypeValidationError } from "ai";
 
-import type { AppConfig, KeyedLlmProviderName } from "@/lib/config";
 import type { CachePort } from "@/lib/ports/cache";
 import { buildCacheKey } from "@/lib/ports/cache";
 import type { CallContext } from "@/lib/ports/common";
@@ -20,18 +21,37 @@ import type { LlmPort, LlmRequest, LlmResult } from "@/lib/ports/llm";
 import type { Sleep } from "@/lib/adapters/shared/backoff";
 import { abortableSleep, backoffMs } from "@/lib/adapters/shared/backoff";
 
-export type LiveLlmConfig = AppConfig["llm"] & { provider: KeyedLlmProviderName };
+/**
+ * The adapter is backend-agnostic: it carries only an OpenAI-compat baseUrl +
+ * api key + model id. The composition root supplies these per backend. Both
+ * Gemini's OpenAI-compat endpoint and Ollama's accept the same chat-completions
+ * schema, so this struct does not branch on provider.
+ */
+export interface AiSdkLlmConfig {
+  /** Short tag used in logs and the `LlmPort.provider` field (e.g. "gemini", "ollama"). */
+  provider: string;
+  /** Model id to pass through to the OpenAI-compat endpoint (e.g. "gemini-3.1-flash-lite", "qwen3:8b"). */
+  model: string;
+  /** OpenAI-compat chat-completions root (no `/chat/completions` suffix: AI SDK appends it). */
+  baseUrl: string;
+  /** API key for `Authorization: Bearer`. Pass `"ollama"` (or any non-empty value) for local Ollama. */
+  apiKey: string;
+  temperature: 0;
+  timeoutMs: number;
+  maxRetries: number;
+  cacheTtlSeconds: number;
+}
 
-/** Build the provider model from config. The API key is passed explicitly (never read from env here). */
-export function createLanguageModel(config: LiveLlmConfig): LanguageModel {
-  switch (config.provider) {
-    case "gemini":
-      return createGoogleGenerativeAI({ apiKey: config.apiKey })(config.model);
-    case "groq":
-      return createGroq({ apiKey: config.apiKey })(config.model);
-    case "anthropic":
-      return createAnthropic({ apiKey: config.apiKey })(config.model);
-  }
+/** Build an AI-SDK LanguageModel against any OpenAI-compat endpoint. */
+export function createLanguageModel(config: AiSdkLlmConfig): LanguageModel {
+  // `name` is the provider label the AI SDK stamps into APICallError / telemetry;
+  // "openai-compat" is explicit about the fact we're not pointing at openai.com.
+  const provider = createOpenAI({
+    name: "openai-compat",
+    baseURL: config.baseUrl,
+    apiKey: config.apiKey,
+  });
+  return provider(config.model);
 }
 
 /** Cache key for one structured call. The prompt id is part of the input so two prompts never collide. */
@@ -42,29 +62,47 @@ export function llmCacheKey(provider: string, model: string, request: LlmRequest
   );
 }
 
+/** Extract just the host from a URL for logging, so we never spill the full path or query. */
+function hostOf(url: string): string {
+  try {
+    return new URL(url).host;
+  } catch {
+    return "unknown";
+  }
+}
+
 export class AiSdkLlm implements LlmPort {
   readonly mode = "live" as const;
   readonly provider: string;
   readonly model: string;
   private readonly languageModel: LanguageModel;
+  private readonly baseUrlHost: string;
   private readonly keyPrefix?: string;
   private readonly sleep: Sleep;
 
   constructor(
-    private readonly config: LiveLlmConfig,
+    private readonly config: AiSdkLlmConfig,
     private readonly cache: CachePort,
     options: { languageModel?: LanguageModel; keyPrefix?: string; sleep?: Sleep } = {},
   ) {
     this.provider = config.provider;
     this.model = config.model;
     this.languageModel = options.languageModel ?? createLanguageModel(config);
+    this.baseUrlHost = hostOf(config.baseUrl);
     this.keyPrefix = options.keyPrefix;
     this.sleep = options.sleep ?? abortableSleep;
   }
 
   async generateObject<T>(request: LlmRequest<T>, ctx: CallContext): Promise<LlmResult<T>> {
     const started = Date.now();
-    const log = ctx.logger.child({ port: "llm", promptId: request.promptId, version: request.version });
+    const log = ctx.logger.child({
+      port: "llm",
+      promptId: request.promptId,
+      version: request.version,
+      // Host only, so logs tell us which backend served the call without
+      // leaking the full endpoint or the API key path.
+      backendHost: this.baseUrlHost,
+    });
     const key = llmCacheKey(this.provider, this.model, request as LlmRequest<unknown>, this.keyPrefix);
 
     const hit = await this.cache.get<unknown>(key);

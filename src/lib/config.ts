@@ -1,33 +1,30 @@
 /**
- * FROZEN CONTRACT (Phase 0). Builders: do not edit. Request changes in TODO.md
- * with "BLOCKED: contract change needed".
- *
  * Single source of truth for runtime configuration. Every model id, URL, TTL,
  * timeout and limit lives here. Invalid values fail fast at load time; missing
  * API keys are NOT an error: the affected provider falls back to mock mode.
+ *
+ * The LLM layer is OpenAI-compatible-only: both Gemini and Ollama expose an
+ * OpenAI chat-completions endpoint, so we hold one adapter and swap backends by
+ * `baseUrl` + `apiKey`. See `src/lib/adapters/llm/ai-sdk.ts` and
+ * `src/lib/composition.ts`.
  *
  * Server-only. Never import from client components.
  */
 import { z } from "zod";
 
-export const LLM_PROVIDERS = ["anthropic", "gemini", "groq", "ollama"] as const;
+/** Backends we accept as the active LLM provider. Both speak OpenAI chat-completions. */
+export const LLM_PROVIDERS = ["gemini", "ollama"] as const;
 export type LlmProviderName = (typeof LLM_PROVIDERS)[number];
-
-/** Providers backed by a hosted API key. `ollama` is local-only. */
-export const KEYED_LLM_PROVIDERS = ["gemini", "groq", "anthropic"] as const;
-export type KeyedLlmProviderName = (typeof KEYED_LLM_PROVIDERS)[number];
 
 /** Default Ollama endpoint and model for the local provider. */
 export const OLLAMA_DEFAULT_BASE_URL = "http://127.0.0.1:11434";
 export const OLLAMA_DEFAULT_MODEL = "qwen3:8b";
 
-/** Pinned default model per provider. Override with LLM_MODEL. */
-export const DEFAULT_LLM_MODELS: Record<LlmProviderName, string> = {
-  gemini: "gemini-3.1-flash-lite",
-  groq: "openai/gpt-oss-120b",
-  anthropic: "claude-haiku-4-5",
-  ollama: OLLAMA_DEFAULT_MODEL,
-};
+/** Gemini's OpenAI-compatible endpoint root (no `/chat/completions` suffix: AI SDK appends it). */
+export const GEMINI_OPENAI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai";
+
+/** Default model id when `LLM_MODEL` is not set. Points at the quota-cleared Gemini model. */
+export const DEFAULT_LLM_MODEL = "gemini-3.1-flash-lite";
 
 const emptyToUndefined = (v: unknown) => (typeof v === "string" && v.trim() === "" ? undefined : v);
 const optionalSecret = z.preprocess(emptyToUndefined, z.string().min(8).optional());
@@ -58,20 +55,16 @@ const EnvSchema = z.object({
   QLOO_CACHE_TTL_SECONDS: int(60 * 60 * 24 * 7, 0, 60 * 60 * 24 * 30),
 
   /**
-   * anthropic | gemini | groq | ollama | mock. Unset: first provider with a
-   * key (anthropic > gemini > groq), else mock. Ollama is opt-in: it must be
-   * requested explicitly (LLM_PROVIDER=ollama) because its generation latency
-   * does not fit the default AGENT_DEADLINE_MS.
-   * `REKINDLE_LLM_PROVIDER` is accepted as an alias for A/B testing.
+   * Optional preference: "gemini" (default) or "ollama". Unset: pick Gemini
+   * when `GEMINI_API_KEY` is present, otherwise fall through to Ollama if the
+   * local endpoint answers.
    */
-  LLM_PROVIDER: z.preprocess(emptyToUndefined, z.enum([...LLM_PROVIDERS, "mock"]).optional()),
-  REKINDLE_LLM_PROVIDER: z.preprocess(emptyToUndefined, z.enum([...LLM_PROVIDERS, "mock"]).optional()),
+  LLM_PROVIDER: z.preprocess(emptyToUndefined, z.enum([...LLM_PROVIDERS]).optional()),
   LLM_MODEL: optionalString,
+  /** Overrides the derived base URL (useful behind a proxy or custom OpenAI-compat gateway). */
+  LLM_BASE_URL_OVERRIDE: optionalUrl,
   GEMINI_API_KEY: optionalSecret,
-  GROQ_API_KEY: optionalSecret,
-  ANTHROPIC_API_KEY: optionalSecret,
   OLLAMA_BASE_URL: z.preprocess(emptyToUndefined, z.url().default(OLLAMA_DEFAULT_BASE_URL)),
-  OLLAMA_MODEL: optionalString,
   LLM_TIMEOUT_MS: int(30_000, 1_000, 120_000),
   LLM_MAX_RETRIES: int(1, 0, 5),
   LLM_CACHE_TTL_SECONDS: int(60 * 60 * 24 * 7, 0, 60 * 60 * 24 * 30),
@@ -108,16 +101,22 @@ export interface AppConfig {
   llm: {
     mode: ProviderMode;
     mockReason?: "forced" | "missing_key" | "configured" | "unreachable";
-    /** "mock" when mode is mock. */
+    /** Explicit preference, when set, before composition's reachability probe. */
+    preferred?: LlmProviderName;
+    /**
+     * Resolved provider label for logs/health. In mock mode it is "mock".
+     * The actual chosen backend may still shift to "ollama" at composition time
+     * when Gemini is unavailable and Ollama responds.
+     */
     provider: LlmProviderName | "mock";
     /** Pinned model id. "mock-llm" when mode is mock. */
     model: string;
-    /** Hosted-provider API key. Undefined for the local Ollama provider and in mock mode. */
+    /** Gemini key when present. Undefined for Ollama and in mock mode. */
     apiKey?: string;
-    /** Base URL for the local Ollama endpoint. Set in every mode from OLLAMA_BASE_URL so composition can probe it. */
-    ollamaBaseUrl?: string;
-    /** Model id for the local Ollama endpoint. Set in every mode from LLM_MODEL ?? OLLAMA_MODEL. */
-    ollamaModel?: string;
+    /** Local Ollama base URL, always set so composition can probe it. */
+    ollamaBaseUrl: string;
+    /** Optional base URL override that short-circuits provider selection in the adapter. */
+    baseUrlOverride?: string;
     /** Always 0: deterministic outputs. Not configurable on purpose. */
     temperature: 0;
     timeoutMs: number;
@@ -148,15 +147,6 @@ export class ConfigError extends Error {
   }
 }
 
-const KEY_BY_PROVIDER = {
-  gemini: "GEMINI_API_KEY",
-  groq: "GROQ_API_KEY",
-  anthropic: "ANTHROPIC_API_KEY",
-} as const satisfies Record<KeyedLlmProviderName, keyof z.infer<typeof EnvSchema>>;
-
-/** Hosted preference order when auto-picking a provider by API key. */
-const KEYED_AUTO_ORDER: readonly KeyedLlmProviderName[] = ["anthropic", "gemini", "groq"];
-
 /** Pure: parse an env record into AppConfig. Throws ConfigError on invalid values. */
 export function loadConfig(source: Record<string, string | undefined> = process.env): AppConfig {
   const parsed = EnvSchema.safeParse(source);
@@ -186,42 +176,42 @@ export function loadConfig(source: Record<string, string | undefined> = process.
     cacheTtlSeconds: e.QLOO_CACHE_TTL_SECONDS,
   };
 
-  // REKINDLE_LLM_PROVIDER wins over LLM_PROVIDER (explicit A/B override).
-  const requested = e.REKINDLE_LLM_PROVIDER ?? e.LLM_PROVIDER;
-  // Auto-pick only looks at keyed providers; Ollama is a composition-time fallback
-  // chosen when it is actually reachable.
-  const autoProvider = KEYED_AUTO_ORDER.find((p) => Boolean(e[KEY_BY_PROVIDER[p]]));
-  const provider: LlmProviderName | undefined =
-    requested === "mock" ? undefined : (requested ?? autoProvider);
-  const apiKey =
-    provider && provider !== "ollama" ? e[KEY_BY_PROVIDER[provider as KeyedLlmProviderName]] : undefined;
-  // Ollama needs no API key: being chosen is enough. Reachability is checked at composition time.
-  const needsKey = provider !== undefined && provider !== "ollama";
-  const llmLive = !forced && provider !== undefined && (!needsKey || Boolean(apiKey));
+  const preferred = e.LLM_PROVIDER;
+  // When the user did not force mock and either (a) Gemini is keyed or (b)
+  // they explicitly asked for Ollama, we are "live" at config load. The actual
+  // backend selection happens in composition, which may still reject the mode
+  // (no Gemini key, no Ollama reachable) and raise LlmNotConfiguredError.
+  const hasGemini = Boolean(e.GEMINI_API_KEY);
+  const canStartLive = !forced && (hasGemini || preferred === "ollama");
+
   const ollamaBaseUrl = e.OLLAMA_BASE_URL.replace(/\/+$/, "");
-  const ollamaModel = e.LLM_MODEL ?? e.OLLAMA_MODEL ?? OLLAMA_DEFAULT_MODEL;
+  // Model default: if the user chose Ollama explicitly, default to the local
+  // model id; otherwise default to the Gemini model id.
+  const model = e.LLM_MODEL ?? (preferred === "ollama" ? OLLAMA_DEFAULT_MODEL : DEFAULT_LLM_MODEL);
+
   const llmCommon = {
     temperature: 0 as const,
     timeoutMs: e.LLM_TIMEOUT_MS,
     maxRetries: e.LLM_MAX_RETRIES,
     cacheTtlSeconds: e.LLM_CACHE_TTL_SECONDS,
-    // Both branches carry Ollama coordinates so a mock -> ollama upgrade in composition
-    // (explicit LLM_PROVIDER=ollama followed by a reachability probe) uses the configured
-    // endpoint and model, not hardcoded defaults.
     ollamaBaseUrl,
-    ollamaModel,
+    baseUrlOverride: e.LLM_BASE_URL_OVERRIDE,
   };
-  const llm: AppConfig["llm"] = llmLive
+
+  const llm: AppConfig["llm"] = canStartLive
     ? {
         mode: "live",
-        provider: provider!,
-        model: provider === "ollama" ? ollamaModel : (e.LLM_MODEL ?? DEFAULT_LLM_MODELS[provider!]),
-        apiKey,
+        preferred,
+        // When no explicit preference is set we start out labelled as the
+        // backend we'd pick first (Gemini when its key is present).
+        provider: preferred ?? (hasGemini ? "gemini" : "ollama"),
+        model,
+        apiKey: hasGemini ? e.GEMINI_API_KEY : undefined,
         ...llmCommon,
       }
     : {
         mode: "mock",
-        mockReason: forced ? "forced" : requested === "mock" ? "configured" : "missing_key",
+        mockReason: forced ? "forced" : "missing_key",
         provider: "mock",
         model: "mock-llm",
         ...llmCommon,

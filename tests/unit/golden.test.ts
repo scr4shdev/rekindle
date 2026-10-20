@@ -26,7 +26,7 @@ const FORBIDDEN_ALWAYS: Record<string, string[]> = {
 const FORBIDDEN_GROUNDED: Record<string, string[]> = {
   maria: ["Maradona", "Pino Daniele", "quattro giornate", "Nino D'Angelo"],
   seamus: ["England", "Bridie Gallagher", "U2"],
-  fatima: ["Stella Artois", "Khaled"],
+  fatima: ["Stella Artois", "Khaled", "Donald Trump", "Beatles", "Casablanca"],
 };
 
 const summary = (plan: SessionPlan) =>

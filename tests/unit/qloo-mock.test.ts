@@ -67,7 +67,7 @@ describe("MockQloo", () => {
 
   it("insights with unknown seeds fall back to the generic catalog, and tag filters apply", async () => {
     const res = await qloo.insights({ type: "urn:entity:artist", seedEntityIds: ["UNKNOWN"], filterTagIds: ["urn:tag:genre:music:60s"] }, ctx);
-    expect(res.items.map((e) => e.name)).toEqual(["The Beatles", "The Rolling Stones"]);
+    expect(res.items.map((e) => e.name)).toEqual(["The Beatles", "The Rolling Stones", "Jacques Brel"]);
   });
 
   it("records the same params as the HTTP adapter, including the tag union operator", async () => {

@@ -56,7 +56,7 @@ exports[`golden mock run: seamus > grounded: valid, era-correct, sensitivity-saf
   "3. [look] 'The Quiet Man' (1952) | qloo-grounded | The Quiet Man (llm-proposed-qloo-verified) | 3 min",
   "4. [talk] Hurling: Christy Ring and the Glen | qloo-grounded | Christy Ring (llm-proposed-qloo-verified) | 4 min",
   "5. [listen] Jim Reeves, 'He'll Have to Go' | qloo-grounded | Jim Reeves (llm-proposed-qloo-verified) | 3 min",
-  "6. [listen] Dickie Rock and the Miami Showband | qloo-grounded | Dickie Rock (llm-proposed-qloo-verified) | 3 min",
+  "6. [listen] Dickie Rock, the showband years | qloo-grounded | Dickie Rock (llm-proposed-qloo-verified) | 3 min",
   "7. [closing] Thanks, Seamus | llm-only | 2 min",
 ]
 `;
@@ -69,7 +69,7 @@ exports[`golden mock run: seamus > llm-only: valid, era-correct, sensitivity-saf
   "3. [look] 'The Quiet Man' (1952) | llm-only | 3 min",
   "4. [talk] Hurling: Christy Ring and the Glen | llm-only | 4 min",
   "5. [listen] Jim Reeves, 'He'll Have to Go' | llm-only | 3 min",
-  "6. [listen] Dickie Rock and the Miami Showband | llm-only | 3 min",
+  "6. [listen] Dickie Rock, the showband years | llm-only | 3 min",
   "7. [closing] Thanks, Seamus | llm-only | 2 min",
 ]
 `;

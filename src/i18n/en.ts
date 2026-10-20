@@ -303,6 +303,7 @@ export const en = {
     caughtNone: "Nothing was set aside.",
     llmCaughtNone: "Nothing is checked, so nothing is caught.",
     llmBlind: "Nothing is cross-checked here. Era, place and emotional risks are not detected.",
+    llmOnlyBanner: "What a language model would suggest alone. Rekindle would never serve these to this person.",
     wouldSlip: "Would have slipped",
     glanceTitle: "At a glance: what Qloo caught",
     openGrounded: "Open the grounded session",

@@ -219,8 +219,7 @@ export const en = {
     lifePhaseHint: (ageRange: string) => `A memory anchored around ages ${ageRange}.`,
     listen: "Listen",
     listenHint: (language: string) => `Listen to the prompt in ${language}`,
-    listenNoVoice: (language: string) => `No ${language} voice installed on this device. Using the default voice.`,
-    listenCloudVoice: (language: string) => `Playing a cloud voice for ${language}.`,
+    listenError: "Voice unavailable right now.",
   },
   live: {
     title: "Session mode",

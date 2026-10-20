@@ -121,14 +121,18 @@ export function SessionView() {
   // Resolved once per URL: custom input is read from memory at that moment.
   const resolved = useMemo(() => resolveRequest(personaParam, modeParam), [personaParam, modeParam]);
   const hasRecording = resolved.ok && resolved.hasRecording;
-  // Chrome follows the person: Maria -> Italian, Fatima -> French. The caregiver
-  // route (landing, compare, error pages) stays English.
+  // Audience split: chrome (headers, phase labels, buttons, trace prose, badges)
+  // speaks the caregiver's language. Only the sentences the caregiver reads
+  // aloud (step prompt + follow-ups, rendered directly from the step payload)
+  // stay in the session language.
   const sessionLanguage = resolved.ok ? (resolved.request.person.sessionLanguage ?? "en") : "en";
+  const caregiverLanguage = resolved.ok ? (resolved.request.person.caregiverLanguage ?? "en") : "en";
   const source = useMemo(
     () => resolveSource(sourceParam, { speed, hasRecording, language: sessionLanguage, personaSlug: personaParam ?? undefined }),
     [sourceParam, speed, hasRecording, sessionLanguage, personaParam],
   );
-  const { view, servedBy, start, replan, cancel } = useAgentStream(source, sessionLanguage);
+  // Failure messages are chrome (the alert the caregiver reads), so they resolve in the caregiver language.
+  const { view, servedBy, start, replan, cancel } = useAgentStream(source, caregiverLanguage);
   const [runId, setRunId] = useState(0);
   const [liveOpen, setLiveOpen] = useState(false);
   const [liveIndex, setLiveIndex] = useState(0);
@@ -163,7 +167,7 @@ export function SessionView() {
   }
 
   return (
-    <MessagesProvider language={sessionLanguage}>
+    <MessagesProvider language={caregiverLanguage}>
       <SessionViewBody
         resolved={resolved}
         view={view}

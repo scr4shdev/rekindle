@@ -31,9 +31,10 @@ export async function mockJsonError(page: Page, path: string, status: number, co
 
 /**
  * Pretend the backend has a live LLM so the custom form stays enabled. The
- * form probes /api/health on mount and disables submit when llm.mode === "mock"
- * (the real deployment demo-trap guard). E2E runs are mock-mode on the server;
- * tests exercising the form must stub health to "live".
+ * form probes /api/health on mount and disables submit when llm.mode is not
+ * "live" (the real deployment demo-trap guard). When the webServer has no
+ * GEMINI_API_KEY, /api/health reports mode "unavailable"; tests exercising
+ * the form must stub it to "live".
  */
 export async function mockLiveHealth(page: Page) {
   await page.route("**/api/health", (route) =>
@@ -43,7 +44,7 @@ export async function mockLiveHealth(page: Page) {
       body: JSON.stringify({
         status: "ok",
         qloo: { mode: "mock", baseUrl: "https://hackathon.api.qloo.com" },
-        llm: { mode: "live", provider: "google", model: "gemini-2.5-flash" },
+        llm: { mode: "live", provider: "gemini", model: "gemini-3.1-flash-lite" },
         cache: { driver: "memory" },
       }),
     }),

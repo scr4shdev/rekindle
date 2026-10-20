@@ -28,11 +28,9 @@ import pino from "pino";
 import { it } from "vitest";
 
 import { MemoryCache } from "@/lib/adapters/cache";
-import { PERSONA_FIXTURES } from "@/lib/adapters/llm/fixtures/personas";
 import { QlooHttp } from "@/lib/adapters/qloo/http";
 import { normalizeName } from "@/lib/adapters/qloo/mock";
 import { loadConfig } from "@/lib/config";
-import type { QlooEntityType } from "@/lib/domain/types";
 
 const OUT_DIR = join(process.cwd(), ".qloo-recordings");
 const run = promisify(execFile);
@@ -111,18 +109,10 @@ it("qloo live probe", { timeout: 300_000 }, async () => {
   }
   report.decadeTags = tags;
 
-  // 9. Coverage of the persona candidates.
-  const coverage: Report = {};
-  for (const [slug, fixture] of Object.entries(PERSONA_FIXTURES)) {
-    const rows: Array<{ name: string; type: string; exact: boolean; top?: string }> = [];
-    for (const c of fixture.propose.candidates) {
-      if (c.qlooType === "none") continue;
-      const res = await http.search({ query: c.name, types: [c.qlooType as QlooEntityType], take: 5 }, ctx);
-      rows.push({ name: c.name, type: c.qlooType, exact: res.items.some((e) => normalizeName(e.name) === normalizeName(c.name)), top: res.items[0]?.name });
-    }
-    coverage[slug] = rows;
-  }
-  report.coverage = coverage;
+  // Section 9 (persona-candidate coverage) was removed with the persona
+  // fixtures; see scripts/qloo-coverage.probe.ts for the equivalent live
+  // coverage sweep driven by real Gemini-recorded traces instead.
+  void normalizeName;
 
   // Parity with the official harness, when available.
   try {

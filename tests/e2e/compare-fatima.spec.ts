@@ -24,7 +24,12 @@ import { expect, test } from "@playwright/test";
 
 const GROUNDED_READY = { timeout: 25_000 };
 
+// The compare page for Fatima defaults to apiSource (no sample recording),
+// so these specs exercise the live /api/session endpoint and require real
+// Gemini + Qloo keys. Without them they would hit the webServer's
+// LlmNotConfiguredError. Skip when GEMINI_API_KEY is not in the env.
 test.describe("compare mode: Fatima tiebreaker", () => {
+  test.skip(() => !process.env.GEMINI_API_KEY, "needs live Gemini key; run in CI with the key set");
   test("hero stat, 1 catch, 3 would-slip badges, respectful content only", async ({ page }) => {
     await page.goto("/compare?persona=fatima");
     const view = page.getByTestId("compare-view");

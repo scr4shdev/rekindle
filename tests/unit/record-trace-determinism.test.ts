@@ -1,77 +1,34 @@
 /**
- * The recorder must be byte-deterministic: temperature 0, injected `now` /
- * `newId`, latencyMs zeroed on both mocks. If this breaks, the committed
- * fixtures stop being reproducible and the hosted replay drifts from source.
+ * The committed trace fixtures are recorded from real Gemini runs now (see
+ * scripts/record-trace.ts). Gemini is not byte-deterministic even at
+ * temperature 0, so the earlier "two runs produce identical NDJSON" assertion
+ * no longer holds. The fixture file IS the demo artifact: the hosted replay
+ * route streams it exactly as committed.
  *
- * This test re-runs the agent twice with the same deterministic deps and
- * hashes the NDJSON output, instead of invoking the recorder script (which
- * writes to disk). The deps-building logic mirrors scripts/record-trace.ts.
+ * This test is a sanity rail: for each persona, the fixture file exists,
+ * every line is a valid AgentEvent, the first event is a `phase: parse
+ * started`, the last is a `done`, and the stream carries at least a plan.
  */
-import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-import pino from "pino";
 import { describe, expect, it } from "vitest";
 
-import { MemoryCache } from "@/lib/adapters/cache";
-import { MockLlm } from "@/lib/adapters/llm/mock";
-import { MockQloo } from "@/lib/adapters/qloo/mock";
-import { runSession } from "@/lib/agent";
-import { loadConfig } from "@/lib/config";
-import type { AgentEvent } from "@/lib/domain/types";
-import { SessionRequest } from "@/lib/domain/types";
+import { AgentEvent } from "@/lib/domain/types";
 import { PERSONAS } from "@/lib/personas";
-import type { AgentDeps } from "@/lib/ports";
 
-const FIXED_START = new Date("2026-10-18T19:00:00.000Z");
-const CLOCK_STEP_MS = 20;
+const FIXTURES_DIR = path.join(process.cwd(), "tests", "fixtures");
+const MIN_EVENTS = 10;
 
-function freshDeps(): AgentDeps {
-  const config = loadConfig({ REKINDLE_FORCE_MOCK: "true", LOG_LEVEL: "silent" });
-  const cache = new MemoryCache();
-  let tick = 0;
-  let idN = 0;
-  return {
-    taste: new MockQloo({ defaultTake: config.qloo.defaultTake, latencyMs: 0 }),
-    llm: new MockLlm({ cache, cacheTtlSeconds: config.llm.cacheTtlSeconds, latencyMs: 0 }),
-    cache,
-    config,
-    now: () => new Date(FIXED_START.getTime() + (tick++) * CLOCK_STEP_MS),
-    newId: (prefix) => `${prefix}_${++idN}`,
-  };
-}
-
-async function record(slug: (typeof PERSONAS)[number]["slug"]): Promise<{ ndjson: string; events: AgentEvent[] }> {
-  const persona = PERSONAS.find((p) => p.slug === slug)!;
-  const deps = freshDeps();
-  const request = SessionRequest.parse({ person: persona.input, mode: "grounded" });
-  const abort = new AbortController();
-  const logger = pino({ level: "silent" });
-  const events: AgentEvent[] = [];
-  for await (const event of runSession(deps, request, { traceId: `fixture-${slug}`, logger, signal: abort.signal })) {
-    events.push(event);
-  }
-  return { ndjson: events.map((e) => `${JSON.stringify(e)}\n`).join(""), events };
-}
-
-const sha = (s: string) => createHash("sha256").update(s).digest("hex");
-
-describe("record-trace determinism", () => {
-  it.each(PERSONAS.map((p) => p.slug))("two runs for %s produce byte-identical NDJSON", async (slug) => {
-    const a = await record(slug);
-    const b = await record(slug);
-    expect(sha(a.ndjson)).toBe(sha(b.ndjson));
-    expect(a.events.length).toBeGreaterThan(0);
+describe("committed persona fixtures", () => {
+  it.each(PERSONAS.map((p) => p.slug))("trace-%s.ndjson parses, has a plan, and ends with done", (slug) => {
+    const raw = readFileSync(path.join(FIXTURES_DIR, `trace-${slug}.ndjson`), "utf-8");
+    const lines = raw.split("\n").filter((l) => l.trim().length > 0);
+    expect(lines.length).toBeGreaterThanOrEqual(MIN_EVENTS);
+    const events = lines.map((line) => AgentEvent.parse(JSON.parse(line)));
+    expect(events[0].type).toBe("phase");
+    expect(events.at(-1)!.type).toBe("done");
+    const planEvents = events.filter((e) => e.type === "plan");
+    expect(planEvents.length).toBe(1);
   });
-
-  it.each(PERSONAS.map((p) => p.slug))(
-    "committed fixture for %s matches a fresh recording (sha256 in the meta file)",
-    async (slug) => {
-      const fresh = await record(slug);
-      const metaPath = path.join(process.cwd(), "tests", "fixtures", `trace-${slug}.meta.json`);
-      const meta = JSON.parse(readFileSync(metaPath, "utf-8")) as { sha256: string };
-      expect(sha(fresh.ndjson)).toBe(meta.sha256);
-    },
-  );
 });

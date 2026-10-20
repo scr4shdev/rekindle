@@ -136,6 +136,12 @@ export async function* parsePhase(run: Run, person: PersonInput): AsyncGenerator
       currentYear: run.deps.now().getUTCFullYear(),
       formativeAgeMin: run.deps.config.agent.formativeAgeMin,
       formativeAgeMax: run.deps.config.agent.formativeAgeMax,
+      culturalBackground: person.culturalBackground,
+      keyLifeEvents: person.keyLifeEvents,
+      calmingCues: person.calmingCues,
+      thingsToAvoid: person.thingsToAvoid,
+      routines: person.routines,
+      stage: person.stage,
     },
     true,
   );

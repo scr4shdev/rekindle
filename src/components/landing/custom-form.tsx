@@ -67,9 +67,10 @@ export function CustomForm() {
   const [thingsToAvoid, setThingsToAvoid] = useState("");
   const [routines, setRoutines] = useState("");
   // Mock-mode gate. Probe /api/health once on mount. When the backend reports
-  // llm.mode === "mock", custom notes would return a generic hard-coded plan
-  // (Beatles, Piaf, Nat King Cole) regardless of what was pasted, so we keep the
-  // form visible but un-submittable and nudge judges to the demo personas.
+  // llm.mode !== "live" (either a legacy "mock" value or the new "unavailable"
+  // state when no GEMINI_API_KEY is set), custom notes cannot be planned, so
+  // we keep the form visible but un-submittable and nudge judges to the demo
+  // personas.
   const [mockMode, setMockMode] = useState(false);
   useEffect(() => {
     let cancelled = false;
@@ -77,7 +78,8 @@ export function CustomForm() {
       .then((r) => (r.ok ? r.json() : null))
       .then((data: { llm?: { mode?: string } } | null) => {
         if (cancelled) return;
-        if (data?.llm?.mode === "mock") setMockMode(true);
+        const mode = data?.llm?.mode;
+        if (mode && mode !== "live") setMockMode(true);
       })
       .catch(() => {
         // Health probe is a hint; if it fails, keep the form enabled.

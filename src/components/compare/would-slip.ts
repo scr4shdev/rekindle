@@ -1,54 +1,46 @@
 import type { RejectedItem } from "@/lib/domain/types";
 
 /**
- * Tokens that are too generic (places, invented person names, bare years)
- * to trigger a slip match on their own. A rejected "Festival di Napoli 1958"
- * must not flag any step whose title merely shares "napoli" or "1958": one
- * of the other tokens (festival) must match too, otherwise a legit grounded
- * entity like "Napoli Mia Bella" gets a false "Would have slipped" badge.
+ * Deterministic shape-only comparison between an LLM-only step title and the
+ * grounded-mode rejection list. Flags a step when it shares two or more
+ * meaningful tokens with a rejected label.
+ *
+ * This file used to carry a hand-authored stop list of place names and demo
+ * first names so a single shared "napoli" or "maria" would not trigger a
+ * false flag. That stop list was a keyword list for semantics (deciding
+ * which tokens are "generic") and AGENTS.md bans those: all meaning goes
+ * through the LLM via schema-validated structured output. The pure-shape
+ * replacement is less sharp (a single rare proper noun no longer flags on
+ * its own) but it is honest: anything stronger needs an LLM-based judgment
+ * on the server side.
  */
-const SLIP_STOP_TOKENS = new Set([
-  "napoli",
-  "naples",
-  "cork",
-  "brussels",
-  "fes",
-  "fès",
-  "fez",
-  "maria",
-  "seamus",
-  "fatima",
-]);
-const SLIP_YEAR_RE = /^\d{4}$/;
 
-function isSlipStopToken(tok: string): boolean {
-  return SLIP_STOP_TOKENS.has(tok) || SLIP_YEAR_RE.test(tok);
-}
-
-/** Significant-word tokens from a rejection label or step title. */
+/** Lower-cased, non-alphanumeric collapsed, length >= 4 tokens. */
 export function labelTokens(label: string): string[] {
   return label
     .toLowerCase()
     .replace(/[^\p{L}\p{N}\s]/gu, " ")
-    .split(/\s+/)
+    .split(/\s+/u)
     .filter((w) => w.length >= 4);
 }
 
+/** Minimum number of distinct shared tokens that triggers a slip match. */
+const MIN_SHARED_TOKENS = 2;
+
 /**
- * True when a step title shares meaningful tokens with a rejected label AND
- * at least one of those shared tokens is specific (not a stop-listed place,
- * demo first-name, or bare year). Prevents a legit grounded entity (e.g.
- * "Carosone, 'Napoli Mia Bella'") from being flagged just because it shares
- * "napoli" with a rejected "Festival di Napoli 1958".
+ * Return the rejected item that shares at least `MIN_SHARED_TOKENS` tokens
+ * with the step title, or undefined. The rule is pure set overlap on the
+ * tokens produced by `labelTokens`.
  */
 export function wouldSlip(stepTitle: string, rejected: RejectedItem[]): RejectedItem | undefined {
   const titleSet = new Set(labelTokens(stepTitle));
   for (const item of rejected) {
-    const tokens = labelTokens(item.label);
-    if (tokens.length === 0) continue;
-    const matched = tokens.filter((tok) => titleSet.has(tok));
-    if (matched.length === 0) continue;
-    if (matched.some((tok) => !isSlipStopToken(tok))) return item;
+    const tokens = new Set(labelTokens(item.label));
+    let shared = 0;
+    for (const tok of tokens) {
+      if (titleSet.has(tok)) shared += 1;
+      if (shared >= MIN_SHARED_TOKENS) return item;
+    }
   }
   return undefined;
 }

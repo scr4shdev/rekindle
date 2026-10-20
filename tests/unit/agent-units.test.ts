@@ -5,7 +5,7 @@ import { MockQloo } from "@/lib/adapters/qloo/mock";
 import { runSession } from "@/lib/agent";
 import { toAnchors, toCandidates } from "@/lib/agent/phases/parse-propose";
 import { createRun } from "@/lib/agent/run";
-import { ageBucket, clip, eraFilter, isTasteOutage, mapLimit, normalizeDurations, normalizeName, primaryPlace } from "@/lib/agent/util";
+import { ageBucket, clip, eraFilter, isTasteOutage, lifetimeViolation, mapLimit, normalizeDurations, normalizeName, primaryPlace } from "@/lib/agent/util";
 import type { AgentEvent, AgentEventOf } from "@/lib/domain/types";
 import { PersonInput, SessionRequest } from "@/lib/domain/types";
 import { SAMPLE_ANCHORS } from "@/lib/domain/sample-events";
@@ -63,6 +63,31 @@ describe("agent util", () => {
     expect(normalizeDurations([5, 5, 5, 5, 5, 5], 5)).toEqual([1, 1, 1, 1, 1, 1]);
     expect(normalizeDurations([1], 60)).toEqual([30]);
     expect(normalizeDurations([0, Number.NaN, 4], 12).reduce((a, b) => a + b)).toBe(12);
+  });
+
+  it("lifetime rail only rejects impossible dates, not pre-birth canonical content", () => {
+    // Fatima: born 1950, lifetime window 1950..2026.
+    const anchors = { ...SAMPLE_ANCHORS, lifetimeWindow: { startYear: 1950, endYear: 2026 } };
+    // Canonical cultural content released BEFORE the person was born must pass:
+    // Lashin (1938 Egyptian film) is exactly what a Moroccan woman born 1950
+    // would have watched on TV reruns in her youth. A 1920s-coded person born
+    // in 1900 can still be the parent's lullaby singer for a 1950 subject.
+    expect(lifetimeViolation(anchors, { releaseYear: 1938 })).toBeUndefined();
+    expect(lifetimeViolation(anchors, { releaseYear: 1900 })).toBeUndefined();
+    expect(lifetimeViolation(anchors, { bornYear: 1910 })).toBeUndefined();
+    expect(lifetimeViolation(anchors, { bornYear: 1898 })).toBeUndefined(); // Oum Kalthoum, 52y before Fatima: within window.
+    expect(lifetimeViolation(anchors, { bornYear: 1884 })).toBeUndefined(); // John McCormack, 66y before: still within.
+    // Future dates are the only release-year violation.
+    expect(lifetimeViolation(anchors, { releaseYear: 2030 })).toMatch(/future/);
+    // Persons born after the subject: impossible as a cultural memory.
+    expect(lifetimeViolation(anchors, { bornYear: 2030 })).toMatch(/future/);
+    // Persons more than ~70 years before the subject's birth: before even grandparents' memory.
+    expect(lifetimeViolation(anchors, { bornYear: 1879 })).toMatch(/two generations/);
+    expect(lifetimeViolation(anchors, { bornYear: 1800 })).toMatch(/two generations/);
+    // No date signal: not our place to reject.
+    expect(lifetimeViolation(anchors, {})).toBeUndefined();
+    // No lifetime window on the anchors: rail disabled entirely.
+    expect(lifetimeViolation({ ...anchors, lifetimeWindow: undefined }, { releaseYear: 1800 })).toBeUndefined();
   });
 
   it("only service-level taste errors are outages", () => {

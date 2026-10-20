@@ -16,7 +16,7 @@
     "model": "mock-llm"
   },
   "recordedAt": "2026-10-18T19:00:00.000Z",
-  "totalDurationMs": 1940,
-  "eventCount": 79,
-  "sha256": "85edd23f0ca02b594058a1d95c2996f335ef42a645875b82833c37a69b9edd2b"
+  "totalDurationMs": 1880,
+  "eventCount": 76,
+  "sha256": "13c8436ec7ffbf750a7ffd56eadfc8a62e1f9365faa551f2899d3769e8ea57f3"
 }

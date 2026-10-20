@@ -411,10 +411,6 @@ const FATIMA: PersonaFixture = {
       c("film", "Al-Khataya", "urn:entity:movie", 1962, "Abdelhalim Hafez on screen, black and white."),
       c("film", "Abi Foq al-Shagara", "urn:entity:movie", 1969, "A huge hit in Moroccan cinemas."),
       c("film", "Doa al-Karawan", "urn:entity:movie", 1959, "Faten Hamama classic."),
-      // Culturally plausible but pre-birth: a canonical Egyptian golden-age
-      // film the LLM might reasonably propose for a Moroccan viewer, which
-      // the Qloo lifetime rail refuses because it was released before 1950.
-      c("film", "Lashin", "urn:entity:movie", 1938, "A classic Egyptian film of the golden age."),
       c("public_figure", "Mohammed V", "urn:entity:person", 1955, "The Sultan then King during her Fès childhood: everyone's radio hero in 1955."),
       c("public_figure", "Faten Hamama", "urn:entity:person", 0, "The star of the Egyptian films she loved."),
       c("public_figure", "Omar Sharif", "urn:entity:person", 0, "Faten Hamama's screen partner."),

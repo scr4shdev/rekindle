@@ -109,11 +109,12 @@ const FATIMA = rows("fatima", [
   ["MOCK-PERSON-FATEN-HAMAMA", "Faten Hamama", P, 0.6, 0.87, { dateOfBirth: "1931-05-27", description: "The lady of the Arab screen." }],
   ["MOCK-PERSON-OMAR-SHARIF", "Omar Sharif", P, 0.8, 0.84, { dateOfBirth: "1932-04-10", description: "Egyptian actor, Faten Hamama's screen partner." }],
   ["MOCK-PERSON-SOAD-HOSNY", "Soad Hosny", P, 0.55, 0.86, { dateOfBirth: "1943-01-26", description: "Cinderella of Egyptian cinema, 1960s-70s." }],
-  // Pre-birth Egyptian golden-age film kept in the catalog so Qloo returns
-  // a confident match and the hard lifetime rail refuses it: released in
-  // 1938, twelve years before Fatima was born. Demonstrates the Qloo-side
-  // anachronism catch for a Moroccan Muslim viewer in a culturally
-  // respectful way (classic Egyptian cinema, not Western drift).
+  // Classic Egyptian golden-age film left in the catalog so Qloo returns
+  // a confident match if the LLM proposes it. The lifetime rail no longer
+  // treats pre-birth canonical cultural artifacts as violations (a 1938
+  // Egyptian film can genuinely be part of a Moroccan 1950-born viewer's
+  // family and TV-rerun memory); whether it belongs in this specific
+  // session is a compose/critique judgment, not a date comparison.
   ["MOCK-MOVIE-LASHIN", "Lashin", M, 0.4, 0.6, { releaseYear: 1938, description: "A classic Egyptian film of the golden age.", disambiguation: "1938, Fritz Kramp" }],
 ]);
 

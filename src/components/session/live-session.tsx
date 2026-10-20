@@ -278,7 +278,7 @@ export function LiveSession({
                   >
                     {step.prompt}
                   </DialogPrimitive.Description>
-                  {step.prompt && (step.kind === "listen" || step.kind === "look" || step.kind === "talk" || step.kind === "move") && (
+                  {step.prompt && (
                     <ListenButton text={step.prompt} promptLang={plan.language} caregiverLang={plan.caregiverLanguage} size="lg" />
                   )}
                 </div>
@@ -290,8 +290,9 @@ export function LiveSession({
                 {step.followUps.length > 0 && (
                   <ul className="flex flex-col gap-2 text-xl" lang={plan.language} aria-label={ts.followUps}>
                     {step.followUps.map((f) => (
-                      <li key={f} className="before:mr-2 before:text-primary before:content-['›']">
-                        {f}
+                      <li key={f} className="flex items-start gap-2 before:mt-1 before:text-primary before:content-['›']">
+                        <span className="min-w-0 flex-1">{f}</span>
+                        <ListenButton text={f} promptLang={plan.language} caregiverLang={plan.caregiverLanguage} />
                       </li>
                     ))}
                   </ul>

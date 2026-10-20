@@ -35,15 +35,15 @@ export function ListenButton({
   text: string;
   promptLang: string;
   caregiverLang: string;
-  size?: "md" | "lg";
+  size?: "sm" | "md" | "lg";
 }) {
   const t = useMessages().step;
   const { speak, stop, isPlaying, isLoading, error } = useSpeak();
   const human = useMemo(() => languageName(promptLang, caregiverLang), [promptLang, caregiverLang]);
   if (!text) return null;
   const label = t.listenHint(human);
-  const sizeClass = size === "lg" ? "size-12" : "size-9";
-  const iconClass = size === "lg" ? "size-5" : "size-4";
+  const sizeClass = size === "lg" ? "size-12" : size === "sm" ? "size-7" : "size-9";
+  const iconClass = size === "lg" ? "size-5" : size === "sm" ? "size-3.5" : "size-4";
 
   const Icon = isLoading ? Loader2Icon : isPlaying ? Volume1Icon : error ? VolumeXIcon : Volume2Icon;
 

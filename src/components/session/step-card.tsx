@@ -195,7 +195,7 @@ export function StepCard({
                 </p>
               )}
             </blockquote>
-            {step.prompt && (step.kind === "listen" || step.kind === "look" || step.kind === "talk" || step.kind === "move") && (
+            {step.prompt && (
               <div className="shrink-0 print:hidden">
                 <ListenButton text={step.prompt} promptLang={language} caregiverLang={caregiverLanguage} />
               </div>
@@ -207,8 +207,11 @@ export function StepCard({
             <p className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">{t.followUps}</p>
             <ul className="mt-1 flex flex-col gap-1" lang={language}>
               {step.followUps.map((f) => (
-                <li key={f} className="before:mr-2 before:text-primary before:content-['›']">
-                  {f}
+                <li key={f} className="flex items-start gap-2 before:mt-0.5 before:text-primary before:content-['›']">
+                  <span className="min-w-0 flex-1">{f}</span>
+                  <span className="shrink-0 print:hidden">
+                    <ListenButton text={f} promptLang={language} caregiverLang={caregiverLanguage} size="sm" />
+                  </span>
                 </li>
               ))}
             </ul>

@@ -5,7 +5,7 @@
  */
 import { z } from "zod";
 
-import type { AgentEventPayload, AgentPhase, Candidate, ErrorCode, TasteDomain, VerifiedEntity } from "@/lib/domain/types";
+import type { AgentEventPayload, AgentPhase, Candidate, ErrorCode, LifePhaseLabel, TasteDomain, VerifiedEntity } from "@/lib/domain/types";
 import { VerifiedEntity as VerifiedEntitySchema, Year } from "@/lib/domain/types";
 import type { AgentDeps, CallContext, PromptDefinition, TasteEntity, TastePort, TasteResponse } from "@/lib/ports";
 import { buildLlmRequest, PortError, withPersonalDataGuard } from "@/lib/ports";
@@ -36,6 +36,8 @@ export interface Material {
   source: "qloo-verified" | "qloo-affinity" | "llm-idea";
   entity?: VerifiedEntity;
   candidate?: Candidate;
+  /** Life phase this material is anchored in (if the candidate carried one). */
+  lifePhase?: LifePhaseLabel;
 }
 
 export interface Run {

@@ -5,13 +5,13 @@
  */
 import { z } from "zod";
 
-import { StepKind } from "@/lib/domain/types";
+import { LifePhaseLabel, StepKind } from "@/lib/domain/types";
 import type { Anchors } from "@/lib/domain/types";
 import type { PromptDefinition } from "@/lib/ports/llm";
 import { AGGREGATE_GUIDANCE, dataBlock, DATA_NOTICE, DEMENTIA_FRIENDLY_GUIDANCE, lines, ROLE } from "@/lib/prompts/shared";
 
 export const ID = "compose-session";
-export const VERSION = "1.1.0";
+export const VERSION = "1.2.0";
 
 /** English source of the non-medical disclaimer; the model translates it to the caregiver language. */
 export const DISCLAIMER_EN =
@@ -28,6 +28,8 @@ export interface ComposeMaterial {
   source: "qloo-verified" | "qloo-affinity" | "llm-idea";
   /** For affinity items: names of the seeds it came from. */
   becauseOf?: string[];
+  /** Life phase this material is anchored in, when known. */
+  lifePhase?: z.infer<typeof LifePhaseLabel>;
 }
 
 export interface ComposeSessionInput {
@@ -53,6 +55,10 @@ export const ModelStep = z.object({
   caregiverTip: z.string().describe("One practical tip in the caregiver language."),
   durationMin: z.number().int().describe("Minutes for this step (1-10)."),
   mediaHint: z.string().describe("How to find the song, film still or photo (e.g. a search phrase); empty if none."),
+  lifePhase: z
+    .enum([...LifePhaseLabel.options, "none"])
+    .default("none")
+    .describe("Which of the person's life phases this step is anchored in. Must match the material's phase when the material has one. 'none' only for opening and closing."),
 });
 export type ModelStep = z.infer<typeof ModelStep>;
 
@@ -75,6 +81,12 @@ export const system = lines(
     "- Durations are whole minutes and should add up to the session length.",
     "- Respect every sensitivity: 'avoid' topics never appear; 'handle_gently' topics get a caregiver tip.",
     "- For tastes: remind the caregiver to check swallowing and diet guidance.",
+  ].join("\n"),
+  [
+    "Lifespan coverage (required when anchors.lifePhases is non-empty):",
+    "- Across the plan's body steps (not counting opening and closing), use materials from at least three different life phases. Aim for one childhood or youth step, one early_adulthood or mid_life step, and the remainder wherever the materials sit most richly. The reminiscence bump stays the richest zone; it should not be the only one.",
+    "- Set each body step's lifePhase to its material's lifePhase. If the material has none, pick the phase whose window the material's year falls in. For opening and closing, set lifePhase to 'none'.",
+    "- When writing the caregiverTip, name the phase in human terms ('from her childhood home', 'from his twenties in Cork', 'from the years she raised her children'); do not emit the raw enum tag.",
   ].join("\n"),
   [
     "Specificity (required, every step except opening and closing):",

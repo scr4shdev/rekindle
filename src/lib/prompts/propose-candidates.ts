@@ -4,13 +4,13 @@
  */
 import { z } from "zod";
 
-import { QLOO_ENTITY_TYPES, TASTE_DOMAINS } from "@/lib/domain/types";
+import { LifePhaseLabel, QLOO_ENTITY_TYPES, TASTE_DOMAINS } from "@/lib/domain/types";
 import type { Anchors, TasteDomain } from "@/lib/domain/types";
 import type { PromptDefinition } from "@/lib/ports/llm";
 import { dataBlock, DATA_NOTICE, lines, ROLE } from "@/lib/prompts/shared";
 
 export const ID = "propose-candidates";
-export const VERSION = "1.1.0";
+export const VERSION = "1.2.0";
 
 export interface ProposeCandidatesInput {
   anchors: Anchors;
@@ -28,6 +28,10 @@ export const schema = z.object({
         name: z.string().describe("The canonical public name (original title for films and songs' artists)."),
         qlooType: z.enum([...QLOO_ENTITY_TYPES, "none"]).describe("One of the domain's Qloo types, or 'none' if not groundable."),
         year: z.number().int().describe("Year it was released or most popular for this person; 0 if not applicable."),
+        lifePhase: z
+          .enum([...LifePhaseLabel.options, "none"])
+          .default("none")
+          .describe("Which of the person's life phases (from the lifePhases list) this item is anchored in, or 'none' if unclear."),
         rationale: z.string().describe("One short sentence in the caregiver language: why it fits this person."),
       }),
     )
@@ -38,11 +42,12 @@ export type ProposeCandidatesOutput = z.infer<typeof schema>;
 
 export const system = lines(
   ROLE,
-  "Task: propose concrete cultural items from the person's formative years and places, to be checked against Qloo's taste graph.",
+  "Task: propose concrete cultural items from across the person's life (childhood through later life) in their places, to be checked against Qloo's taste graph.",
   [
     "Rules:",
-    "- Start from the stated loves, then add what was popular where they lived during their formative window.",
-    "- Era: prefer items released or popular inside the formative window; a stated love is always included.",
+    "- Start from the stated loves, then add what was popular where they lived.",
+    "- Lifespan coverage, not just formative years: aim for at least one strong candidate per non-empty life phase in the anchors.lifePhases list (childhood lullabies and games, youth-first-love music, early-parenting television, mid-life public figures, songs they played for their own children). The formative window is the richest zone, not the only one.",
+    "- Tag every candidate with its lifePhase: pick the phase whose window the year falls in (phase start inclusive, phase end inclusive). If the item spans two phases, pick the earlier one. Use 'none' only when no phase in the input fits.",
     "- Locale: local and national culture of their places first, then international stars that reached that place.",
     "- Respect sensitivities: do not propose items centred on a topic marked 'avoid'.",
     "- For music propose artists (Qloo has no songs). Athletes and actors are persons. Dishes stay qlooType 'none'.",

@@ -70,9 +70,8 @@ export function ageBucket(birthYear: number, currentYear: number): QlooAgeBucket
   return "24_and_younger";
 }
 
-/** Era filter for the person's formative window. The adapter sends only the one the type supports. */
-export function eraFilter(anchors: Anchors): TasteEraFilter {
-  const { startYear, endYear } = anchors.formativeWindow;
+/** Era filter for an arbitrary year window. The adapter sends only the one the type supports. */
+export function eraFilterForWindow(startYear: number, endYear: number): TasteEraFilter {
   const pad = (y: number) => String(Math.max(0, y)).padStart(4, "0");
   return {
     releaseYear: { min: startYear, max: endYear },
@@ -80,6 +79,26 @@ export function eraFilter(anchors: Anchors): TasteEraFilter {
     // Public figures who were famous during the window: born up to ~70 years before it, and at least ~15 before it ended.
     dateOfBirth: { min: `${pad(startYear - 70)}-01-01`, max: `${pad(endYear - 15)}-12-31` },
   };
+}
+
+/** Era filter for the person's formative window. Default when no finer phase is known. */
+export function eraFilter(anchors: Anchors): TasteEraFilter {
+  const { startYear, endYear } = anchors.formativeWindow;
+  return eraFilterForWindow(startYear, endYear);
+}
+
+/**
+ * Era filter spanning every life phase in the anchors (childhood through
+ * later_life). Used by cross-era EXPAND so Qloo affinity can return items
+ * from any phase, not only the formative bump; the caller then re-partitions
+ * returns to lifePhase labels in code.
+ */
+export function lifespanEraFilter(anchors: Anchors): TasteEraFilter {
+  const phases = anchors.lifePhases;
+  if (!phases || phases.length === 0) return eraFilter(anchors);
+  const start = Math.min(...phases.map((p) => p.startYear));
+  const end = Math.max(...phases.map((p) => p.endYear));
+  return eraFilterForWindow(start, end);
 }
 
 /**

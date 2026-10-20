@@ -4,7 +4,7 @@
  * with bounded concurrency; events are emitted in input order so the trace
  * and ids are deterministic. A Qloo outage degrades to llm-only material.
  */
-import type { AgentEventPayload, Anchors, Candidate, QlooInsightsType, VerifiedEntity } from "@/lib/domain/types";
+import type { AgentEventPayload, Anchors, Candidate, LifePhaseLabel, QlooInsightsType, VerifiedEntity } from "@/lib/domain/types";
 import { QLOO_INSIGHTS_TYPES } from "@/lib/domain/types";
 import type { TasteEntity } from "@/lib/ports";
 import { PortError } from "@/lib/ports";
@@ -12,7 +12,8 @@ import { matchEntityPrompt } from "@/lib/prompts";
 
 import type { Material, Run } from "@/lib/agent/run";
 import { bornYearOf, callLlm, callTaste, errorFromQloo, qlooCallEvent, toVerifiedEntity } from "@/lib/agent/run";
-import { ageBucket, clip, DOMAIN_OF_TYPE, eraFilter, EXPAND_TARGET, isTasteOutage, mapLimit, normalizeName, primaryPlace } from "@/lib/agent/util";
+import { ageBucket, clip, DOMAIN_OF_TYPE, EXPAND_TARGET, isTasteOutage, lifespanEraFilter, mapLimit, normalizeName, primaryPlace } from "@/lib/agent/util";
+import { phaseForYear } from "@/lib/agent/phases/parse-propose";
 
 /** Parallel Qloo searches in VERIFY (bounded to stay polite to the API, HARD RULE 6). */
 export const VERIFY_CONCURRENCY = 4;
@@ -26,10 +27,18 @@ export const DECADE_TAG_TAKE = 3;
 const TARGET_PRIORITY: QlooInsightsType[] = ["urn:entity:artist", "urn:entity:movie", "urn:entity:person", "urn:entity:tv_show", "urn:entity:book"];
 
 export function ideaMaterial(candidate: Candidate): Material {
-  return { ref: candidate.id, label: candidate.name, domain: candidate.domain, year: candidate.year, source: "llm-idea", candidate };
+  return {
+    ref: candidate.id,
+    label: candidate.name,
+    domain: candidate.domain,
+    year: candidate.year,
+    source: "llm-idea",
+    candidate,
+    lifePhase: candidate.lifePhase,
+  };
 }
 
-export function entityMaterial(entity: VerifiedEntity, raw: TasteEntity, candidate?: Candidate): Material {
+export function entityMaterial(entity: VerifiedEntity, raw: TasteEntity, candidate?: Candidate, phase?: LifePhaseLabel): Material {
   return {
     ref: entity.id,
     label: entity.name,
@@ -40,6 +49,7 @@ export function entityMaterial(entity: VerifiedEntity, raw: TasteEntity, candida
     source: entity.provenance === "qloo-affinity" ? "qloo-affinity" : "qloo-verified",
     entity,
     candidate,
+    lifePhase: phase ?? candidate?.lifePhase,
   };
 }
 
@@ -268,15 +278,27 @@ export async function* expandPhase(run: Run, anchors: Anchors, materials: Materi
     return [];
   }
   const started = run.deps.now().getTime();
-  const { startYear, endYear } = anchors.formativeWindow;
-  yield { type: "phase", phase: "expand", status: "started", message: `Asking Qloo what else people with these tastes love, around ${startYear}–${endYear}…` };
+  const phases = anchors.lifePhases ?? [];
+  const spanStart = phases.length ? Math.min(...phases.map((p) => p.startYear)) : anchors.formativeWindow.startYear;
+  const spanEnd = phases.length ? Math.max(...phases.map((p) => p.endYear)) : anchors.formativeWindow.endYear;
+  yield {
+    type: "phase",
+    phase: "expand",
+    status: "started",
+    message: phases.length
+      ? `Asking Qloo what else people with these tastes love, across ${spanStart}–${spanEnd}…`
+      : `Asking Qloo what else people with these tastes love, around ${spanStart}–${spanEnd}…`,
+  };
 
   const targets = TARGET_PRIORITY.filter((t) => seeds.some((m) => EXPAND_TARGET[m.domain] === t)).slice(0, EXPAND_MAX_TARGETS);
   const known = new Set(seeds.map((m) => m.entity!.qlooId));
   const knownNames = new Set(materials.map((m) => normalizeName(m.label)));
   const location = primaryPlace(anchors);
   const bucket = ageBucket(anchors.birthYear, run.deps.now().getUTCFullYear());
-  const era = eraFilter(anchors);
+  // Lifespan window so the EXPAND phase can return cross-era items (childhood
+  // songs, mid-life television) rather than only the reminiscence bump. The
+  // compose phase then arranges them per lifePhase.
+  const era = lifespanEraFilter(anchors);
   const found: Material[] = [];
   let calls = 0;
 
@@ -284,7 +306,7 @@ export async function* expandPhase(run: Run, anchors: Anchors, materials: Materi
   const tagIds: string[] = [];
   if (targets.includes("urn:entity:artist")) {
     const decades: number[] = [];
-    for (let d = Math.floor(startYear / 10) * 10; d <= endYear && decades.length < 3; d += 10) decades.push(d);
+    for (let d = Math.floor(spanStart / 10) * 10; d <= spanEnd && decades.length < 3; d += 10) decades.push(d);
     for (const decade of decades) {
       const label = `${String(decade % 100).padStart(2, "0")}s`;
       try {
@@ -349,14 +371,15 @@ export async function* expandPhase(run: Run, anchors: Anchors, materials: Materi
     for (const raw of res.value.items) {
       if (added >= max) break;
       if (known.has(raw.qlooId) || knownNames.has(normalizeName(raw.name)) || !QLOO_INSIGHTS_TYPES.includes(raw.type as QlooInsightsType)) continue;
-      if (hasYear && raw.releaseYear !== undefined && (raw.releaseYear < startYear || raw.releaseYear > endYear)) continue;
+      if (hasYear && raw.releaseYear !== undefined && (raw.releaseYear < spanStart || raw.releaseYear > spanEnd)) continue;
       known.add(raw.qlooId);
       knownNames.add(normalizeName(raw.name));
       const entity = toVerifiedEntity(run, raw, DOMAIN_OF_TYPE[type] ?? "public_figure", { provenance: "qloo-affinity", seedQlooIds: seedIds });
       run.stats.verified++;
       added++;
       yield { type: "verified", entity };
-      found.push(entityMaterial(entity, raw));
+      const phase = raw.releaseYear !== undefined ? phaseForYear(phases, raw.releaseYear) : undefined;
+      found.push(entityMaterial(entity, raw, undefined, phase));
     }
   }
 

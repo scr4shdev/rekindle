@@ -48,7 +48,7 @@ type VerifyOutcome =
   | { kind: "not_found"; events: AgentEventPayload[]; reason: string }
   | { kind: "outage"; error: PortError };
 
-async function verifyOne(run: Run, candidate: Candidate): Promise<VerifyOutcome> {
+async function verifyOne(run: Run, anchors: Anchors, candidate: Candidate): Promise<VerifyOutcome> {
   const type = candidate.qlooType!;
   let response;
   try {
@@ -87,6 +87,13 @@ async function verifyOne(run: Run, candidate: Candidate): Promise<VerifyOutcome>
         matchEntityPrompt,
         {
           candidate: { name: candidate.name, domain: candidate.domain, qlooType: type, year: candidate.year },
+          origin: {
+            primaryPlace: anchors.places[0]?.name,
+            primaryCountryCode: anchors.places[0]?.countryCode,
+            culturalBackground: anchors.culturalBackground,
+            languages: anchors.languages.map((l) => l.tag),
+            formativeWindow: anchors.formativeWindow,
+          },
           results: shortlist.map((e, index) => ({
             index,
             name: e.name,
@@ -192,7 +199,7 @@ export async function* verifyPhase(run: Run, anchors: Anchors, candidates: Candi
       foodDecision = "drop";
     }
   }
-  const outcomes = mapLimit(groundable, VERIFY_CONCURRENCY, (c) => verifyOne(run, c));
+  const outcomes = mapLimit(groundable, VERIFY_CONCURRENCY, (c) => verifyOne(run, anchors, c));
   // If one outcome throws, the rest are never awaited: keep their rejections handled.
   for (const outcome of outcomes) outcome.catch(() => undefined);
   const materials: Material[] = [];

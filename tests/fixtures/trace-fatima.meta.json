@@ -1,11 +1,11 @@
 {
   "promptVersions": {
     "parse-anchors": "1.0.0",
-    "propose-candidates": "1.0.0",
-    "match-entity": "1.0.0",
+    "propose-candidates": "1.1.0",
+    "match-entity": "1.1.0",
     "cultural-check": "1.0.0",
     "critique-items": "1.0.0",
-    "compose-session": "1.0.0",
+    "compose-session": "1.1.0",
     "replan-session": "1.1.0"
   },
   "qloo": {
@@ -18,5 +18,5 @@
   "recordedAt": "2026-10-18T19:00:00.000Z",
   "totalDurationMs": 2040,
   "eventCount": 84,
-  "sha256": "1e8946bc76d38ed0dd0fec21ae6d2a8a142d5f11b1fe237d94f3a4ce07fa8327"
+  "sha256": "afaced5bfc26fd045338dba07ae4a11a25a6853d2ecd4575d00dee06ccc50e67"
 }

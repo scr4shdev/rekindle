@@ -107,6 +107,14 @@ function EraHero({
           {languageLabel}
         </p>
       </div>
+      {anchors?.lifePhases && anchors.lifePhases.length > 0 && (
+        <p
+          className="mt-2 text-sm text-muted-foreground sm:text-base"
+          data-testid="era-hero-lifespan"
+        >
+          {t.lifespan(anchors.lifePhases[0].startYear, anchors.lifePhases[anchors.lifePhases.length - 1].endYear)}
+        </p>
+      )}
     </section>
   );
 }

@@ -5,13 +5,13 @@
  */
 import { z } from "zod";
 
-import { StepKind } from "@/lib/domain/types";
+import { LifePhaseLabel, StepKind } from "@/lib/domain/types";
 import type { Anchors } from "@/lib/domain/types";
 import type { PromptDefinition } from "@/lib/ports/llm";
 import { AGGREGATE_GUIDANCE, dataBlock, DATA_NOTICE, DEMENTIA_FRIENDLY_GUIDANCE, lines, ROLE } from "@/lib/prompts/shared";
 
 export const ID = "compose-session";
-export const VERSION = "1.1.0";
+export const VERSION = "1.3.0";
 
 /** English source of the non-medical disclaimer; the model translates it to the caregiver language. */
 export const DISCLAIMER_EN =
@@ -28,6 +28,8 @@ export interface ComposeMaterial {
   source: "qloo-verified" | "qloo-affinity" | "llm-idea";
   /** For affinity items: names of the seeds it came from. */
   becauseOf?: string[];
+  /** Life phase this material is anchored in, when known. */
+  lifePhase?: z.infer<typeof LifePhaseLabel>;
 }
 
 export interface ComposeSessionInput {
@@ -53,6 +55,10 @@ export const ModelStep = z.object({
   caregiverTip: z.string().describe("One practical tip in the caregiver language."),
   durationMin: z.number().int().describe("Minutes for this step (1-10)."),
   mediaHint: z.string().describe("How to find the song, film still or photo (e.g. a search phrase); empty if none."),
+  lifePhase: z
+    .enum([...LifePhaseLabel.options, "none"])
+    .default("none")
+    .describe("Which of the person's life phases this step is anchored in. Must match the material's phase when the material has one. 'none' only for opening and closing."),
 });
 export type ModelStep = z.infer<typeof ModelStep>;
 
@@ -77,11 +83,29 @@ export const system = lines(
     "- For tastes: remind the caregiver to check swallowing and diet guidance.",
   ].join("\n"),
   [
+    "Lifespan coverage (required when anchors.lifePhases is non-empty):",
+    "- Across the plan's body steps (not counting opening and closing), use materials from at least three different life phases. Aim for one childhood or youth step, one early_adulthood or mid_life step, and the remainder wherever the materials sit most richly. The reminiscence bump stays the richest zone; it should not be the only one.",
+    "- Set each body step's lifePhase to its material's lifePhase. If the material has none, pick the phase whose window the material's year falls in. For opening and closing, set lifePhase to 'none'.",
+    "- When writing the caregiverTip, name the phase in human terms ('from her childhood home', 'from his twenties in Cork', 'from the years she raised her children'); do not emit the raw enum tag.",
+  ].join("\n"),
+  [
     "Specificity (required, every step except opening and closing):",
     "- Every prompt names the specific grounded material it is built on (the entity's name as given in materials), and at least one specific year or decade drawn from the person's formative window.",
     "- Every caregiverTip gives a concrete reason this material fits THIS person: name the material and a specific place or decade from the anchors. No generic reassurance ('they may enjoy this'), no boilerplate ('if they seem to enjoy it...'), no hedging about 'exposure' or 'background in general'.",
     "- Forbidden register (never emit any variant): 'selections reflect X's Y background', 'international exposure', 'cultural heritage shaped them', 'this piece speaks to their roots', 'a classic from their era'. These sentences hide the fact that no concrete anchor was used.",
     "- Required register: name the entity, name a year or decade, tie it to a place from anchors. Example for a 1954-born Moroccan who grew up in Rabat: prompt 'Khaled's 1980s rai still lifts a room. What does this song bring up for you?'; caregiverTip 'Cheb Khaled was everywhere in the Rabat of the 1980s; expect foot-tapping or humming along.' Example for a 1942-born Neapolitan: caregiverTip 'Carosone was the soundtrack of 1950s Naples; many families danced to this at home.'",
+    "- Lifetime bounds (hard): never reference an entity, event, or person outside the person's lifetime bounds (anchors.lifetimeWindow). A song released after they died, a film from before they were born, a public figure born after them: none of these go in a prompt, follow-up or tip. The verify phase enforces this on grounded materials; the same rule applies to anything the compose step adds in prose.",
+  ].join("\n"),
+  [
+    "Media hint (per step kind):",
+    "- listen (music): \"Search '<Artist Title Year>' on YouTube\" or \"...on Spotify\". Both work for a song.",
+    "- look at a photograph of a place or face: \"Search '<Place Year>' on Google Images\" or \"...on Wikimedia Commons\".",
+    "- look at a film: \"Search '<Film Year>' on YouTube\" when a full film or clip is available; otherwise \"...on IMDb\" for a trailer or stills.",
+    "- move (gentle movement to music): \"Search '<song or routine>' on YouTube\".",
+    "- talk, opening, closing: omit mediaHint (empty string). The step either has no media to show or is a greeting/close.",
+    "- taste: omit mediaHint unless a specific recipe or image is useful.",
+    "- Never say 'search on YouTube' for a photograph. Pick the source that actually fits the step kind.",
+    "- If the material already has an entity.imageUrl (surfaced by Qloo), the UI shows it directly; the mediaHint is the fallback.",
   ].join("\n"),
   DEMENTIA_FRIENDLY_GUIDANCE,
   AGGREGATE_GUIDANCE,

@@ -44,10 +44,12 @@ test.describe("compare mode: Fatima tiebreaker", () => {
       await expect(grounded.getByText(label, { exact: true })).toBeVisible();
     }
 
-    // Three "Doesn't fit culture" badges live on the Western-drift items.
-    await expect(grounded.getByText("Doesn't fit culture")).toHaveCount(3);
-    // The pre-existing anachronism and alcohol catches must stay rendered.
-    await expect(grounded.getByText("Wrong era")).toHaveCount(1);
+    // Beatles and Trump keep the "Doesn't fit culture" badge from the
+    // cultural-check gate. Casablanca now trips the hard lifetime rail at
+    // verify (released 1942, before Fatima's 1950 birth), so it joins
+    // Khaled under "Wrong era". Alcohol stays as the emotional-risk one.
+    await expect(grounded.getByText("Doesn't fit culture")).toHaveCount(2);
+    await expect(grounded.getByText("Wrong era")).toHaveCount(2);
     await expect(grounded.getByText("Could upset")).toHaveCount(1);
 
     // LLM-only column: at least three steps are flagged as "Would have

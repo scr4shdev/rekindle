@@ -160,12 +160,45 @@ export const Sensitivity = z.object({
 });
 export type Sensitivity = z.infer<typeof Sensitivity>;
 
+/**
+ * Life-phase labels used for cross-era retrieval. Ordered childhood through
+ * later_life so a plan can span a lifespan rather than just the formative
+ * window. Phase windows come from the birth year with hand-picked bounds,
+ * see parse-propose::deriveLifePhases.
+ */
+export const LifePhaseLabel = z.enum(["childhood", "youth", "early_adulthood", "mid_life", "later_life"]);
+export type LifePhaseLabel = z.infer<typeof LifePhaseLabel>;
+
+export const LifePhase = z.object({
+  label: LifePhaseLabel,
+  startYear: Year,
+  endYear: Year,
+  /** Age range for this phase, as a short string ("8-21"). Caregiver-facing. */
+  ageRange: z.string().min(1).max(16),
+});
+export type LifePhase = z.infer<typeof LifePhase>;
+
 /** Structured anchors the agent reasons over. Produced by the PARSE phase. */
 export const Anchors = z.object({
   birthYear: Year,
   birthYearSource: z.enum(["stated", "inferred"]),
   /** Years the person was ~10-30 (configurable): the reminiscence bump. */
   formativeWindow: z.object({ startYear: Year, endYear: Year }),
+  /**
+   * Full-lifespan windows (childhood through later_life) so the agent can
+   * surface memories outside the formative bump: childhood lullabies, mid-life
+   * television, songs they played for their own children. Optional for
+   * backward compatibility; absent means fall back to formativeWindow.
+   */
+  lifePhases: z.array(LifePhase).max(5).optional(),
+  /**
+   * Hard outer bounds the person could possibly have experienced:
+   * [birthYear, min(deathYear ?? currentYear, currentYear)]. Used by
+   * verify-expand as a lifetime-safety rail: entities whose relevant date
+   * sits outside this window are rejected with a specific reason. Optional
+   * and additive; absent (no birthYear) means the check is skipped.
+   */
+  lifetimeWindow: z.object({ startYear: Year, endYear: Year }).optional(),
   places: z.array(Place).max(8),
   languages: z.array(z.object({ tag: LanguageTag, name: z.string().min(1).max(60) })).min(1).max(5),
   loves: z.array(Love).max(20),
@@ -190,6 +223,13 @@ export const Candidate = z.object({
   qlooType: QlooEntityType.optional(),
   /** Year it was popular / released, as the LLM believes. */
   year: Year.optional(),
+  /**
+   * Which life phase of the person this candidate is anchored in. Optional;
+   * when present the verify/expand phases use the phase window as the era
+   * filter instead of the global formative window, so a childhood lullaby
+   * and a mid-life sitcom can coexist in one plan.
+   */
+  lifePhase: LifePhaseLabel.optional(),
   /** Why it fits this person (era, place, stated love). */
   rationale: z.string().min(1).max(400),
 });
@@ -297,6 +337,13 @@ export const SessionStep = z.object({
   mediaUrl: z.url().optional(),
   /** Hint for finding the media, e.g. "Search 'Modugno Volare 1958' on YouTube". */
   mediaHint: z.string().max(200).optional(),
+  /**
+   * Life phase this step is anchored in (childhood, youth, early_adulthood,
+   * mid_life, later_life). Optional and additive: when present the UI shows
+   * a soft phase badge so the caregiver sees the lifespan the session is
+   * spanning. Absent on fallback or legacy plans.
+   */
+  lifePhase: LifePhaseLabel.optional(),
   provenance: StepProvenance,
 });
 export type SessionStep = z.infer<typeof SessionStep>;

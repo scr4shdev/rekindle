@@ -203,7 +203,10 @@ describe("degraded paths", () => {
     };
     const events = await collect(runSession(mockDeps({ taste }), SessionRequest.parse({ person: maria.input }), testCtx()));
     const artist = ofType(events, "qloo_call").find((e) => e.call.params["filter.type"] === "urn:entity:artist")!;
-    expect(artist.call.params["signal.interests.tags"]).toEqual(["urn:tag:genre:music:50s", "urn:tag:genre:music:60s", "urn:tag:genre:music:70s"]);
+    // Lifespan EXPAND spans childhood through later_life for a 1942-born person,
+    // so decades start at the 1940s and the ranking signal uses the first three
+    // decades (40s/50s/60s) rather than only the formative window's.
+    expect(artist.call.params["signal.interests.tags"]).toEqual(["urn:tag:genre:music:40s", "urn:tag:genre:music:50s", "urn:tag:genre:music:60s"]);
     const decadeCall = ofType(events, "qloo_call").find(
       (e) => e.call.endpoint === "/v2/tags" && (e.call.params["filter.tag.types"] as string[] | undefined)?.includes("urn:tag:genre:music"),
     )!;

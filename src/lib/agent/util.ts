@@ -70,9 +70,8 @@ export function ageBucket(birthYear: number, currentYear: number): QlooAgeBucket
   return "24_and_younger";
 }
 
-/** Era filter for the person's formative window. The adapter sends only the one the type supports. */
-export function eraFilter(anchors: Anchors): TasteEraFilter {
-  const { startYear, endYear } = anchors.formativeWindow;
+/** Era filter for an arbitrary year window. The adapter sends only the one the type supports. */
+export function eraFilterForWindow(startYear: number, endYear: number): TasteEraFilter {
   const pad = (y: number) => String(Math.max(0, y)).padStart(4, "0");
   return {
     releaseYear: { min: startYear, max: endYear },
@@ -80,6 +79,62 @@ export function eraFilter(anchors: Anchors): TasteEraFilter {
     // Public figures who were famous during the window: born up to ~70 years before it, and at least ~15 before it ended.
     dateOfBirth: { min: `${pad(startYear - 70)}-01-01`, max: `${pad(endYear - 15)}-12-31` },
   };
+}
+
+/** Era filter for the person's formative window. Default when no finer phase is known. */
+export function eraFilter(anchors: Anchors): TasteEraFilter {
+  const { startYear, endYear } = anchors.formativeWindow;
+  return eraFilterForWindow(startYear, endYear);
+}
+
+/**
+ * Era filter spanning every life phase in the anchors (childhood through
+ * later_life). Used by cross-era EXPAND so Qloo affinity can return items
+ * from any phase, not only the formative bump; the caller then re-partitions
+ * returns to lifePhase labels in code.
+ */
+export function lifespanEraFilter(anchors: Anchors): TasteEraFilter {
+  const phases = anchors.lifePhases;
+  if (!phases || phases.length === 0) return eraFilter(anchors);
+  const start = Math.min(...phases.map((p) => p.startYear));
+  const end = Math.max(...phases.map((p) => p.endYear));
+  return eraFilterForWindow(start, end);
+}
+
+/**
+ * Hard lifetime safety rail. Returns a short reason when the entity's
+ * relevant date sits outside the anchors' lifetime window (birth year
+ * through today, inclusive), or undefined when the entity is in bounds or
+ * carries no date signal. The caller rejects out-of-bounds entities with
+ * kind `anachronism` and this reason, so the trace credits Qloo for the
+ * catch rather than silently filtering. Date fields follow the Qloo
+ * ERA_FILTER_SUPPORT map: releaseYear for movies/tv/books/videogames,
+ * dateOfBirth for persons/artists/brands. Entities without a date (e.g.
+ * places with no publication year) are not rejected on lifetime bounds;
+ * cultural-check already covers the obvious wrong-culture cases.
+ */
+export function lifetimeViolation(
+  anchors: Anchors,
+  entity: { releaseYear?: number; bornYear?: number },
+): string | undefined {
+  const w = anchors.lifetimeWindow;
+  if (!w) return undefined;
+  if (entity.releaseYear !== undefined) {
+    if (entity.releaseYear < w.startYear) {
+      return `Released in ${entity.releaseYear}, before ${w.startYear}: the person had not been born yet.`;
+    }
+    if (entity.releaseYear > w.endYear) {
+      return `Released in ${entity.releaseYear}, after the person's lifetime window (ends ${w.endYear}).`;
+    }
+  }
+  if (entity.bornYear !== undefined) {
+    if (entity.bornYear > w.endYear) {
+      return `Born in ${entity.bornYear}, after the person's lifetime window (ends ${w.endYear}).`;
+    }
+    // A person active during someone's lifetime can still be born well before
+    // them, so bornYear < startYear is not itself a violation.
+  }
+  return undefined;
 }
 
 /**

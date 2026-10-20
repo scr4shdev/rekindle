@@ -96,7 +96,7 @@ function proposeCandidates(input: ProposeCandidatesInput): ProposeCandidatesOutp
   return {
     candidates: [
       ...picked.map((c) => ({ ...c, rationale: `Widely popular around ${c.year}, during the formative years.` })),
-      { domain: "food", name: "A favourite family dish", qlooType: "none", year: 0, rationale: "Ask the family which dish was a ritual at home." },
+      { domain: "food", name: "A favourite family dish", qlooType: "none", year: 0, lifePhase: "none", rationale: "Ask the family which dish was a ritual at home." },
     ],
     notes: [`Demo mode: internationally known names from ${startYear}-${endYear}.`],
   };
@@ -158,7 +158,7 @@ function critiqueItems(input: CritiqueItemsInput): CritiqueItemsOutput {
 
 const DOMAIN_KIND: Record<string, "listen" | "look" | "talk" | "taste"> = { music: "listen", sport: "talk", food: "taste" };
 
-function genericStep(material: Pick<ComposeMaterial, "label" | "domain" | "ref">, sessionLanguage: string, caregiverLanguage: string, who: string): ModelStep {
+function genericStep(material: Pick<ComposeMaterial, "label" | "domain" | "ref" | "lifePhase">, sessionLanguage: string, caregiverLanguage: string, who: string): ModelStep {
   const kind = DOMAIN_KIND[material.domain] ?? "look";
   const s = GENERIC_TEXT[genericLang(sessionLanguage)][kind];
   const c = GENERIC_TEXT[genericLang(caregiverLanguage)][kind];
@@ -172,12 +172,18 @@ function genericStep(material: Pick<ComposeMaterial, "label" | "domain" | "ref">
     followUps: [],
     caregiverTip: c.tip,
     durationMin: 3,
-    mediaHint: kind === "listen" || kind === "look" ? `Search '${material.label}'` : "",
+    mediaHint:
+      kind === "listen"
+        ? `Search '${material.label}' on YouTube`
+        : kind === "look"
+          ? `Search '${material.label}' on Google Images`
+          : "",
+    lifePhase: material.lifePhase ?? "none",
   };
 }
 
-function fromTemplate(t: Omit<StepTemplate, "kind" | "minutes">, kind: ModelStep["kind"], minutes: number, ref: string): ModelStep {
-  return { kind, title: t.title, materialRef: ref, prompt: t.prompt, promptTranslation: t.translation, followUps: t.followUps, caregiverTip: t.tip, durationMin: minutes, mediaHint: t.mediaHint };
+function fromTemplate(t: Omit<StepTemplate, "kind" | "minutes">, kind: ModelStep["kind"], minutes: number, ref: string, lifePhase: ModelStep["lifePhase"] = "none"): ModelStep {
+  return { kind, title: t.title, materialRef: ref, prompt: t.prompt, promptTranslation: t.translation, followUps: t.followUps, caregiverTip: t.tip, durationMin: minutes, mediaHint: t.mediaHint, lifePhase };
 }
 
 function bookend(kind: "opening" | "closing" | "calm", persona: PersonaFixture | undefined, input: { sessionLanguage: string; caregiverLanguage: string }, who: string): ModelStep {
@@ -190,6 +196,7 @@ function bookend(kind: "opening" | "closing" | "calm", persona: PersonaFixture |
     kind: stepKind, title: c.title, materialRef: "", prompt: fill(s.prompt),
     promptTranslation: sameLang(input.sessionLanguage, input.caregiverLanguage) ? "" : fill(c.prompt),
     followUps: [], caregiverTip: c.tip, durationMin: kind === "calm" ? 3 : 2, mediaHint: "",
+    lifePhase: "none",
   };
 }
 
@@ -233,10 +240,10 @@ function composeSession(input: ComposeSessionInput): ComposeSessionOutput {
   }
   const body = chosen.slice(0, slots).map((m) => {
     const t = persona ? lookup(persona.steps, m.label) : undefined;
-    return t ? fromTemplate(t, t.kind, t.minutes, m.ref) : genericStep(m, input.sessionLanguage, input.caregiverLanguage, who);
+    return t ? fromTemplate(t, t.kind, t.minutes, m.ref, m.lifePhase ?? "none") : genericStep(m, input.sessionLanguage, input.caregiverLanguage, who);
   });
   // The schema needs at least one middle step: talk about the old days when nothing survived critique.
-  if (body.length === 0) body.push(genericStep({ label: input.anchors.loves[0]?.label ?? "the old days", domain: "sport", ref: "" }, input.sessionLanguage, input.caregiverLanguage, who));
+  if (body.length === 0) body.push(genericStep({ label: input.anchors.loves[0]?.label ?? "the old days", domain: "sport", ref: "", lifePhase: undefined }, input.sessionLanguage, input.caregiverLanguage, who));
   // The plan title is caregiver-facing (shown at the top of the plan, printed
   // on the hand-off sheet), so it reads in the caregiver's language even when
   // the session itself runs in the person's language.
@@ -248,7 +255,7 @@ function composeSession(input: ComposeSessionInput): ComposeSessionOutput {
   };
 }
 
-const KEEP_PLACEHOLDER: ModelStep = { kind: "talk", title: "", materialRef: "", prompt: "", promptTranslation: "", followUps: [], caregiverTip: "", durationMin: 1, mediaHint: "" };
+const KEEP_PLACEHOLDER: ModelStep = { kind: "talk", title: "", materialRef: "", prompt: "", promptTranslation: "", followUps: [], caregiverTip: "", durationMin: 1, mediaHint: "", lifePhase: "none" };
 
 /**
  * Replan narration localized to the caregiver's reading language. Keys match

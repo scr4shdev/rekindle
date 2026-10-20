@@ -2,8 +2,8 @@
  * PARSE (notes -> anchors) and PROPOSE (anchors -> candidates). Both go
  * through the LLM; code only validates, clips and caps the structured output.
  */
-import type { AgentEventPayload, Anchors, Candidate, PersonInput, TasteDomain } from "@/lib/domain/types";
-import { Anchors as AnchorsSchema, Candidate as CandidateSchema, LanguageTag, TASTE_DOMAIN_QLOO_TYPES, TASTE_DOMAINS, Year } from "@/lib/domain/types";
+import type { AgentEventPayload, Anchors, Candidate, LifePhase, LifePhaseLabel, PersonInput, TasteDomain } from "@/lib/domain/types";
+import { Anchors as AnchorsSchema, Candidate as CandidateSchema, LanguageTag, LifePhaseLabel as LifePhaseLabelSchema, TASTE_DOMAIN_QLOO_TYPES, TASTE_DOMAINS, Year } from "@/lib/domain/types";
 import { parseAnchorsPrompt, proposeCandidatesPrompt } from "@/lib/prompts";
 import type { ParseAnchorsOutput } from "@/lib/prompts/parse-anchors";
 import type { ProposeCandidatesOutput } from "@/lib/prompts/propose-candidates";
@@ -17,6 +17,54 @@ const year = (v: number | undefined) => {
   return parsed.success && v !== 0 ? parsed.data : undefined;
 };
 
+/**
+ * Default phase ranges from the person's birth year. Deterministic: no notes
+ * are read here, these are the five canonical reminiscence phases. Each
+ * window is clipped to [birthYear, currentYear] so phases that have not
+ * happened yet (a 72-year-old has not reached later_life, which starts at
+ * 78) are dropped. The windows overlap on purpose: a childhood tune may
+ * still have been playing in youth, and the formative bump (12-25) crosses
+ * youth into early_adulthood.
+ */
+const PHASE_BOUNDS: Array<{ label: LifePhaseLabel; from: number; to: number }> = [
+  { label: "childhood", from: 0, to: 8 },
+  { label: "youth", from: 8, to: 21 },
+  { label: "early_adulthood", from: 21, to: 36 },
+  { label: "mid_life", from: 36, to: 58 },
+  { label: "later_life", from: 58, to: 78 },
+];
+
+export function deriveLifePhases(birthYear: number, currentYear: number): LifePhase[] {
+  const out: LifePhase[] = [];
+  for (const { label, from, to } of PHASE_BOUNDS) {
+    const start = birthYear + from;
+    const end = birthYear + to;
+    if (start > currentYear) break;
+    const clippedEnd = Math.min(end, currentYear);
+    if (clippedEnd <= start) continue;
+    out.push({ label, startYear: start, endYear: clippedEnd, ageRange: `${from}-${to}` });
+  }
+  return out;
+}
+
+/** Pick the phase whose window covers `year`, or the nearest one by distance. */
+export function phaseForYear(phases: readonly LifePhase[], year: number): LifePhaseLabel | undefined {
+  if (phases.length === 0) return undefined;
+  const covering = phases.find((p) => year >= p.startYear && year <= p.endYear);
+  if (covering) return covering.label;
+  // Nearest by edge distance; stable on ties by walking phases in order.
+  let best = phases[0];
+  let bestD = Math.min(Math.abs(year - best.startYear), Math.abs(year - best.endYear));
+  for (const p of phases.slice(1)) {
+    const d = Math.min(Math.abs(year - p.startYear), Math.abs(year - p.endYear));
+    if (d < bestD) {
+      best = p;
+      bestD = d;
+    }
+  }
+  return best.label;
+}
+
 export function toAnchors(out: ParseAnchorsOutput, person: PersonInput, run: Run): Anchors {
   const { formativeAgeMin, formativeAgeMax } = run.deps.config.agent;
   const currentYear = run.deps.now().getUTCFullYear();
@@ -26,6 +74,11 @@ export function toAnchors(out: ParseAnchorsOutput, person: PersonInput, run: Run
   const birthYearSource = person.birthYear ? "stated" : modelYear !== undefined ? out.birthYearSource : "inferred";
   const startYear = Math.min(birthYear + formativeAgeMin, currentYear);
   const endYear = Math.min(birthYear + formativeAgeMax, currentYear);
+  const lifePhases = deriveLifePhases(birthYear, currentYear);
+  // Hard lifetime bounds. deathYear is not in PersonInput today, so the end
+  // is pinned to the current year; a future contract widening can carry
+  // deathYear and tighten the upper bound.
+  const lifetimeWindow = { startYear: birthYear, endYear: currentYear };
 
   const places = out.places
     .map((p) => ({
@@ -49,6 +102,8 @@ export function toAnchors(out: ParseAnchorsOutput, person: PersonInput, run: Run
     birthYear,
     birthYearSource,
     formativeWindow: { startYear, endYear },
+    lifePhases: lifePhases.length ? lifePhases : undefined,
+    lifetimeWindow,
     places,
     languages,
     loves: out.loves
@@ -105,10 +160,11 @@ export async function* parsePhase(run: Run, person: PersonInput): AsyncGenerator
   return { anchors, privateNames: out.privateNames.map((n) => n.trim()).filter(Boolean) };
 }
 
-export function toCandidates(out: ProposeCandidatesOutput, run: Run): Candidate[] {
+export function toCandidates(out: ProposeCandidatesOutput, run: Run, anchors?: Anchors): Candidate[] {
   const perDomain = new Map<TasteDomain, number>();
   const seen = new Set<string>();
   const max = run.deps.config.agent.maxCandidatesPerDomain;
+  const phases = anchors?.lifePhases ?? [];
   const result: Candidate[] = [];
   for (const c of out.candidates) {
     const name = clip(c.name, 160);
@@ -129,12 +185,24 @@ export function toCandidates(out: ProposeCandidatesOutput, run: Run): Candidate[
           : allowed.includes(c.qlooType)
             ? c.qlooType
             : allowed[0];
+    const candidateYear = year(c.year);
+    const emitted = c.lifePhase && c.lifePhase !== "none" ? LifePhaseLabelSchema.safeParse(c.lifePhase) : undefined;
+    // Year-derived phase wins when the year is known: the LLM (especially
+    // qwen3:8b) tends to over-label everything as "childhood"; the candidate's
+    // year is a fact we can project onto the person's actual phase bounds.
+    const lifePhase =
+      candidateYear !== undefined && phases.length > 0
+        ? phaseForYear(phases, candidateYear)
+        : emitted?.success
+          ? emitted.data
+          : undefined;
     const parsed = CandidateSchema.safeParse({
       id: run.deps.newId("c"),
       domain: c.domain,
       name,
       qlooType,
-      year: year(c.year),
+      year: candidateYear,
+      lifePhase,
       rationale: clip(c.rationale, 400) ?? "Fits the era and places in the notes.",
     });
     if (!parsed.success) continue;
@@ -165,7 +233,7 @@ export async function* proposePhase(run: Run, anchors: Anchors, person: PersonIn
     },
     true,
   );
-  const candidates = toCandidates(out, run);
+  const candidates = toCandidates(out, run, anchors);
   for (const text of out.notes) {
     const t = clip(text, 400);
     if (t) yield { type: "note", phase: "propose", text: t };

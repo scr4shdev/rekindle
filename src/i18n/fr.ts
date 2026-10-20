@@ -88,6 +88,7 @@ export const fr: PartialMessages = {
   },
   session: {
     eraBandLabel: "Lieu et époque",
+    lifespan: (from: number, to: number) => `De ${from} à ${to}, de l'enfance à l'âge mûr.`,
     planningFor: (name: string) => `Je prépare une séance pour ${name}`,
     planningGeneric: "Je prépare votre séance",
     waitHint: "Cela prend d'habitude 15 à 30 secondes. L'agent raconte au fil de son travail.",
@@ -217,6 +218,14 @@ export const fr: PartialMessages = {
     llmOnlyHint: "Non vérifié avec Qloo. Faites confiance à votre jugement.",
     changed: "Adapté",
     removed: (label: string) => `Mis de côté pour l'instant : ${label}`,
+    lifePhase: {
+      childhood: "De l'enfance",
+      youth: "De la jeunesse",
+      early_adulthood: "Du début de l'âge adulte",
+      mid_life: "De l'âge mûr",
+      later_life: "Des années récentes",
+    },
+    lifePhaseHint: (ageRange: string) => `Un souvenir autour de ${ageRange} ans.`,
   },
   live: {
     title: "Mode séance",

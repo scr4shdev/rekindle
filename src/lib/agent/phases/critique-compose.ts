@@ -3,8 +3,8 @@
  * (LLM writes the timed session). Code decides provenance, attaches
  * entities, enforces limits and makes durations add up.
  */
-import type { AgentEventPayload, Anchors, PersonInput, SessionMode, SessionPlan, SessionStep } from "@/lib/domain/types";
-import { SessionPlan as SessionPlanSchema, SessionStep as SessionStepSchema } from "@/lib/domain/types";
+import type { AgentEventPayload, Anchors, LifePhaseLabel, PersonInput, SessionMode, SessionPlan, SessionStep } from "@/lib/domain/types";
+import { LifePhaseLabel as LifePhaseLabelSchema, SessionPlan as SessionPlanSchema, SessionStep as SessionStepSchema } from "@/lib/domain/types";
 import { PortError } from "@/lib/ports";
 import { composeSessionPrompt, critiqueItemsPrompt, culturalCheckPrompt } from "@/lib/prompts";
 import type { ComposeMaterial, ModelStep } from "@/lib/prompts/compose-session";
@@ -168,6 +168,7 @@ export function toComposeMaterial(m: Material, all: Material[], ref: string): Co
     description: clip(m.description, 200),
     source: m.source,
     ...(seedNames?.length ? { becauseOf: seedNames } : {}),
+    ...(m.lifePhase ? { lifePhase: m.lifePhase } : {}),
   };
 }
 
@@ -176,6 +177,12 @@ export function toStep(run: Run, model: ModelStep, material: Material | undefine
   const prompt = clip(model.prompt, 600);
   if (!prompt) return undefined;
   const entity = grounded ? material?.entity : undefined;
+  // Phase precedence: a material-attached phase wins over what the model
+  // emitted (the material's phase was derived from the candidate / propose
+  // call, closer to the source of truth). Fall back to the model's choice,
+  // then to undefined. 'none' sentinels mean "no phase" and are dropped.
+  const modelPhase = model.lifePhase && model.lifePhase !== "none" ? LifePhaseLabelSchema.safeParse(model.lifePhase) : undefined;
+  const lifePhase: LifePhaseLabel | undefined = material?.lifePhase ?? (modelPhase?.success ? modelPhase.data : undefined);
   const parsed = SessionStepSchema.safeParse({
     id: run.deps.newId("s"),
     order,
@@ -189,6 +196,7 @@ export function toStep(run: Run, model: ModelStep, material: Material | undefine
     durationMin: Math.min(30, Math.max(1, Math.round(model.durationMin) || 1)),
     mediaUrl: entity?.imageUrl,
     mediaHint: clip(model.mediaHint, 200),
+    lifePhase,
     provenance: entity ? "qloo-grounded" : "llm-only",
   });
   return parsed.success ? parsed.data : undefined;

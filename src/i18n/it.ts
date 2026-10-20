@@ -262,8 +262,19 @@ export const it: PartialMessages = {
     grounded: "Ancorato in Qloo",
     scoreTitle: "Cosa aggiunge l'ancoraggio",
     headline: (caught: number, verified: number) =>
-      `Qloo ha intercettato ${caught} svist${caught === 1 ? "a" : "e"} di epoca/cultura/rischio e confermato ${verified} ${verified === 1 ? "corrispondenza reale" : "corrispondenze reali"}.`,
+      `L'agente ha intercettato ${caught} svist${caught === 1 ? "a" : "e"} e confermato ${verified} ${verified === 1 ? "corrispondenza reale" : "corrispondenze reali"}.`,
+    headlineNone: "Nessuna svista intercettata in questa esecuzione.",
+    headlineBreakdown: (qloo: number, cultural: number, critique: number) => {
+      const parts: string[] = [];
+      if (qloo > 0) parts.push(`Qloo ne ha respint${qloo === 1 ? "a" : "e"} ${qloo}`);
+      if (cultural > 0) parts.push(`L'ancoraggio culturale ne ha intercettat${cultural === 1 ? "a" : "e"} ${cultural}`);
+      if (critique > 0) parts.push(`La critica ne ha intercettat${critique === 1 ? "a" : "e"} ${critique}`);
+      return parts.length ? `${parts.join(". ")}.` : "";
+    },
     headlineWorking: "Verifico ogni idea con Qloo…",
+    viaQloo: "da Qloo",
+    viaCultural: "da ancoraggio culturale",
+    viaCritique: "da critica",
     metrics: {
       verified: "Canzoni, film e volti confermati reali",
       discoveries: "Scoperte di gusto da Qloo",

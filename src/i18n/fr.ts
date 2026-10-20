@@ -270,8 +270,19 @@ export const fr: PartialMessages = {
     grounded: "Ancré dans Qloo",
     scoreTitle: "Ce que l'ancrage apporte",
     headline: (caught: number, verified: number) =>
-      `Qloo a rattrapé ${caught} erreur${caught === 1 ? "" : "s"} d'époque/culture/risque et confirmé ${verified} correspondance${verified === 1 ? "" : "s"} réelle${verified === 1 ? "" : "s"}.`,
+      `L'agent a rattrapé ${caught} erreur${caught === 1 ? "" : "s"} et confirmé ${verified} correspondance${verified === 1 ? "" : "s"} réelle${verified === 1 ? "" : "s"}.`,
+    headlineNone: "Aucune erreur rattrapée pour cette exécution.",
+    headlineBreakdown: (qloo: number, cultural: number, critique: number) => {
+      const parts: string[] = [];
+      if (qloo > 0) parts.push(`Qloo en a refusé ${qloo}`);
+      if (cultural > 0) parts.push(`L'ancrage culturel en a rattrapé ${cultural}`);
+      if (critique > 0) parts.push(`La critique en a rattrapé ${critique}`);
+      return parts.length ? `${parts.join(". ")}.` : "";
+    },
     headlineWorking: "Je vérifie chaque idée avec Qloo…",
+    viaQloo: "via Qloo",
+    viaCultural: "via l'ancrage culturel",
+    viaCritique: "via la critique",
     metrics: {
       verified: "Chansons, films et visages confirmés réels",
       discoveries: "Découvertes de goût venues de Qloo",

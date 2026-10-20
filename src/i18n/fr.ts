@@ -13,7 +13,7 @@ export const fr: PartialMessages = {
   landing: {
     title: "Un agent qui prépare 20 minutes paisibles avec une personne qui vit avec la démence.",
     leadShort:
-      "Chaque chanson, film et visage de leur époque est vérifié dans le graphe des goûts de Qloo, pour que rien ne sonne faux pour la personne dont vous prenez soin.",
+      "Chaque chanson, film et visage de leur époque est confronté au graphe des goûts de Qloo, et les absences apparaissent dans la trace plutôt que d'être masquées, pour que rien ne sonne faux pour la personne dont vous prenez soin.",
     agentFlowLabel: "Comment travaille l'agent",
     agentFlow:
       "Lire → imaginer → vérifier avec Qloo → composer. 6 phases, 10 à 20 requêtes à Qloo par plan.",

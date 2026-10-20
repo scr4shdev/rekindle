@@ -13,15 +13,19 @@ export function SiteHeader() {
       >
         {t.skipToContent}
       </a>
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
-        <Link href="/" className="group flex items-center gap-3 rounded-full pr-3" aria-label={`${t.name}, ${t.nav.home}`}>
-          <LogoMark className="size-10 transition-transform duration-300 group-hover:-rotate-6" />
-          <span className="font-heading text-2xl font-semibold tracking-tight">{t.name}</span>
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-4 py-4 sm:gap-4 sm:px-8">
+        <Link
+          href="/"
+          className="group flex min-w-0 items-center gap-2 rounded-full pr-2 sm:gap-3 sm:pr-3"
+          aria-label={`${t.name}, ${t.nav.home}`}
+        >
+          <LogoMark className="size-9 shrink-0 transition-transform duration-300 group-hover:-rotate-6 sm:size-10" />
+          <span className="truncate font-heading text-xl font-semibold tracking-tight sm:text-2xl">{t.name}</span>
         </Link>
-        <nav className="flex items-center gap-1" aria-label={t.nav.label}>
+        <nav className="flex shrink-0 items-center gap-1" aria-label={t.nav.label}>
           <Link
             href="/compare?persona=maria"
-            className="inline-flex h-11 items-center rounded-full px-3 font-semibold text-muted-foreground hover:bg-muted hover:text-foreground sm:px-4"
+            className="inline-flex h-11 items-center rounded-full px-2.5 font-semibold text-muted-foreground hover:bg-muted hover:text-foreground sm:px-4"
           >
             {t.nav.compare}
           </Link>

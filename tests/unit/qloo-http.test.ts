@@ -204,4 +204,54 @@ describe("QlooHttp", () => {
     expect(retryAfterMs(new Date(10_000).toUTCString(), 9_000)).toBe(1000);
     expect(retryAfterMs("soon")).toBeUndefined();
   });
+
+  it("alias map rescues canonical non-Western artists when live /search returns 0", async () => {
+    // First call: /search returns zero results for "Abdelhalim Hafez".
+    // Second call: /entities?entity_ids=<known-id> returns the real entity.
+    const hafezEntity = {
+      results: [
+        {
+          entity_id: "96AFCEF0-B1D3-42B9-9425-8E5FF0FFF460",
+          name: "Abdel Halim Hafez",
+          types: ["urn:entity:artist"],
+          properties: { image: { url: "https://images.qloo.com/x.jpg" } },
+          popularity: 0.88,
+          disambiguation: "Egyptian singer",
+          tags: [],
+        },
+      ],
+    };
+    const { fn, sent } = fakeFetch([json({ results: [] }), json(hafezEntity)]);
+    const qloo = new QlooHttp(config, new MemoryCache(), { fetch: fn, sleep: noSleep });
+    const res = await qloo.search({ query: "Abdelhalim Hafez", types: ["urn:entity:artist"] }, testCtx());
+    expect(sent[0].url.pathname).toBe("/search");
+    expect(sent[1].url.pathname).toBe("/entities");
+    expect(sent[1].url.searchParams.get("entity_ids")).toBe("96AFCEF0-B1D3-42B9-9425-8E5FF0FFF460");
+    expect(res.items.map((e) => e.name)).toEqual(["Abdel Halim Hafez"]);
+    // Preserve the original /search record (one call, 0 raw results) so the trace is honest.
+    expect(res.request.endpoint).toBe("/search");
+  });
+
+  it("alias map is only consulted when /search returns 0 and types include artist", async () => {
+    // /search returns a result, so the alias fallback does not fire.
+    const hit = {
+      results: [
+        { entity_id: "00000000-0000-4000-8000-000000000099", name: "Random Artist", types: ["urn:entity:artist"], tags: [] },
+      ],
+    };
+    const { fn, sent } = fakeFetch([json(hit)]);
+    const qloo = new QlooHttp(config, new MemoryCache(), { fetch: fn, sleep: noSleep });
+    const res = await qloo.search({ query: "Oum Kalthoum", types: ["urn:entity:artist"] }, testCtx());
+    expect(sent).toHaveLength(1);
+    expect(sent[0].url.pathname).toBe("/search");
+    expect(res.items.map((e) => e.name)).toEqual(["Random Artist"]);
+  });
+
+  it("alias map does not fire when types does not include artist", async () => {
+    const { fn, sent } = fakeFetch([json({ results: [] })]);
+    const qloo = new QlooHttp(config, new MemoryCache(), { fetch: fn, sleep: noSleep });
+    const res = await qloo.search({ query: "Oum Kalthoum", types: ["urn:entity:movie"] }, testCtx());
+    expect(sent).toHaveLength(1);
+    expect(res.items).toEqual([]);
+  });
 });

@@ -330,6 +330,8 @@ export const fr: PartialMessages = {
     llmCaughtNone: "Rien n'est vérifié, donc rien n'est rattrapé.",
     llmBlind:
       "Ici rien n'est croisé. Les risques d'époque, de lieu et d'émotion ne sont pas repérés.",
+    llmOnlyBanner:
+      "Ce qu'un modèle de langage proposerait seul. Rekindle ne les proposerait jamais à cette personne.",
     wouldSlip: "Serait passé",
     glanceTitle: "D'un coup d'œil : ce que Qloo a rattrapé",
     openGrounded: "Ouvrir la séance ancrée",

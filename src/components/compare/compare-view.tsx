@@ -253,8 +253,8 @@ export function CompareView() {
       )}
 
       <div className="grid items-start gap-6 lg:grid-cols-2">
-        <ComparePlan title={t.llmOnly} icon="llm" view={llm.view} groundedRejected={groundedRejected} />
-        <ComparePlan title={t.grounded} icon="grounded" view={grounded.view} groundedRejected={groundedRejected} />
+        <ComparePlan title={t.llmOnly} icon="llm" view={llm.view} groundedRejected={groundedRejected} personaSlug={resolved.persona} />
+        <ComparePlan title={t.grounded} icon="grounded" view={grounded.view} groundedRejected={groundedRejected} personaSlug={resolved.persona} />
       </div>
 
       <Link href={`/session?persona=${resolved.persona}`} className={cn(buttonVariants({ size: "lg" }), "h-auto min-h-14 w-fit shrink py-3 whitespace-normal")} data-icon="inline-end">
@@ -270,11 +270,13 @@ function ComparePlan({
   icon,
   view,
   groundedRejected,
+  personaSlug,
 }: {
   title: string;
   icon: "llm" | "grounded";
   view: SessionView;
   groundedRejected: RejectedItem[];
+  personaSlug: string;
 }) {
   const t = getMessages().compare;
   const tr = getMessages().trace;
@@ -293,6 +295,14 @@ function ComparePlan({
         </span>
         <h2 className="text-2xl font-semibold">{title}</h2>
       </div>
+      {icon === "llm" && personaSlug === "fatima" && (
+        <p
+          className="rounded-xl border border-clay-ink/20 bg-clay-soft/30 px-3 py-2 text-sm text-clay-ink"
+          data-testid="compare-llm-only-banner"
+        >
+          {t.llmOnlyBanner}
+        </p>
+      )}
       <ol className="flex flex-wrap gap-1.5" aria-label={getMessages().trace.title}>
         {SESSION_PHASES.map((phase) => {
           const status = view.phases.find((p) => p.key === phase)?.status ?? "pending";

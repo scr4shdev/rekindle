@@ -322,6 +322,8 @@ export const it: PartialMessages = {
     llmCaughtNone: "Niente è verificato, quindi niente viene intercettato.",
     llmBlind:
       "Qui niente viene incrociato. I rischi di epoca, luogo e emotivi non vengono rilevati.",
+    llmOnlyBanner:
+      "Cosa suggerirebbe da solo un modello linguistico. Rekindle non li proporrebbe mai a questa persona.",
     wouldSlip: "Sarebbe sfuggito",
     glanceTitle: "A colpo d'occhio: cosa ha intercettato Qloo",
     openGrounded: "Apri la sessione ancorata",

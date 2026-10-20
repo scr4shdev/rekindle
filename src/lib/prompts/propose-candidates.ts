@@ -21,21 +21,19 @@ export interface ProposeCandidatesInput {
 }
 
 export const schema = z.object({
-  candidates: z
-    .array(
-      z.object({
-        domain: z.enum(TASTE_DOMAINS),
-        name: z.string().describe("The canonical public name (original title for films and songs' artists)."),
-        qlooType: z.enum([...QLOO_ENTITY_TYPES, "none"]).describe("One of the domain's Qloo types, or 'none' if not groundable."),
-        year: z.number().int().describe("Year it was released or most popular for this person; 0 if not applicable."),
-        lifePhase: z
-          .enum([...LifePhaseLabel.options, "none"])
-          .describe("Which of the person's life phases (from the lifePhases list) this item is anchored in. Emit 'none' when unclear or when the input has no lifePhases."),
-        rationale: z.string().describe("One short sentence in the caregiver language: why it fits this person."),
-      }),
-    )
-    .max(60),
-  notes: z.array(z.string()).max(3).describe("Up to 3 short narration lines in the caregiver language."),
+  candidates: z.array(
+    z.object({
+      domain: z.enum(TASTE_DOMAINS),
+      name: z.string().describe("The canonical public name (original title for films and songs' artists)."),
+      qlooType: z.enum([...QLOO_ENTITY_TYPES, "none"]).describe("One of the domain's Qloo types, or 'none' if not groundable."),
+      year: z.number().int().describe("Year it was released or most popular for this person; 0 if not applicable."),
+      lifePhase: z
+        .enum([...LifePhaseLabel.options, "none"])
+        .describe("Which of the person's life phases (from the lifePhases list) this item is anchored in. Emit 'none' when unclear or when the input has no lifePhases."),
+      rationale: z.string().describe("One short sentence in the caregiver language: why it fits this person."),
+    }),
+  ),
+  notes: z.array(z.string()).describe("Up to 3 short narration lines in the caregiver language."),
 });
 export type ProposeCandidatesOutput = z.infer<typeof schema>;
 

@@ -217,6 +217,9 @@ export const en = {
       later_life: "From later life",
     },
     lifePhaseHint: (ageRange: string) => `A memory anchored around ages ${ageRange}.`,
+    listen: "Listen",
+    listenHint: (language: string) => `Listen to the prompt in ${language}`,
+    listenNoVoice: (language: string) => `No ${language} voice installed on this device. Using the default voice.`,
   },
   live: {
     title: "Session mode",

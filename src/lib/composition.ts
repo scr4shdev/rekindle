@@ -14,10 +14,12 @@ import type { Fetcher, LiveOllamaConfig } from "@/lib/adapters/llm/ollama";
 import { isOllamaReachable, OllamaLlm } from "@/lib/adapters/llm/ollama";
 import { QlooHttp } from "@/lib/adapters/qloo/http";
 import { MockQloo } from "@/lib/adapters/qloo/mock";
+import { GEMINI_TTS_MODEL, GeminiTts } from "@/lib/adapters/tts/gemini";
+import { MockTts } from "@/lib/adapters/tts/mock";
 import type { AppConfig } from "@/lib/config";
 import { getConfig, OLLAMA_DEFAULT_BASE_URL, OLLAMA_DEFAULT_MODEL } from "@/lib/config";
 import { getLogger } from "@/lib/logger";
-import type { AgentDeps, CachePort, LlmPort, TastePort } from "@/lib/ports";
+import type { AgentDeps, CachePort, LlmPort, TastePort, TtsPort } from "@/lib/ports";
 
 /**
  * Below this agent deadline we warn when Ollama is the active LLM: local
@@ -68,6 +70,33 @@ export function buildLlmPort(config: AppConfig, cache: CachePort, testing: boole
   });
 }
 
+export function buildTtsPort(config: AppConfig, cache: CachePort): TtsPort {
+  // TTS rides on the Gemini key when present; mock mode (and REKINDLE_FORCE_MOCK)
+  // yields a no-op port whose /api/tts returns 503 so the client falls back to
+  // the browser's own Web Speech API.
+  //
+  // Why read process.env directly here rather than through config.ts: adding a
+  // dedicated TTS key field would mean editing the frozen config contract,
+  // and TTS is a demo-side fallback that must work regardless of
+  // LLM_PROVIDER (the local demo pins LLM_PROVIDER=ollama, so
+  // config.llm.apiKey is undefined even when the Gemini key is set). We skip
+  // the port in forced-mock mode so tests and E2E stay deterministic.
+  if (config.llm.mode === "mock" && config.llm.mockReason === "forced") return new MockTts();
+  const key = process.env.GEMINI_API_KEY?.trim();
+  if (!key || key.length < 8) return new MockTts();
+  return new GeminiTts(
+    {
+      apiKey: key,
+      model: GEMINI_TTS_MODEL,
+      timeoutMs: config.llm.timeoutMs,
+      maxRetries: config.llm.maxRetries,
+      cacheTtlSeconds: config.llm.cacheTtlSeconds,
+    },
+    cache,
+    { keyPrefix: config.cache.keyPrefix },
+  );
+}
+
 export function buildAgentDeps(config: AppConfig, cache: CachePort = buildCache(config)): AgentDeps {
   const testing = config.env === "test";
   const taste: TastePort =
@@ -75,10 +104,12 @@ export function buildAgentDeps(config: AppConfig, cache: CachePort = buildCache(
       ? new QlooHttp(config.qloo, cache, { keyPrefix: config.cache.keyPrefix })
       : new MockQloo({ defaultTake: config.qloo.defaultTake, latencyMs: testing ? 0 : MOCK_LATENCY_MS.qloo });
   const llm = buildLlmPort(config, cache, testing);
+  const tts = buildTtsPort(config, cache);
   return {
     taste,
     llm,
     cache,
+    tts,
     config,
     now: () => new Date(),
     newId: (prefix) => `${prefix}_${nanoid(10)}`,

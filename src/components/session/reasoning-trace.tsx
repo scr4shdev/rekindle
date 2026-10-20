@@ -252,9 +252,7 @@ function VerifiedRow({ entity, entities }: { entity: VerifiedEntity; entities: S
       <Icon className="size-4 shrink-0 opacity-70" aria-hidden />
       <span className="font-semibold">{entity.name}</span>
       {entity.releaseYear && <span className="text-sm tabular-nums">{entity.releaseYear}</span>}
-      <span className="ml-auto truncate font-mono text-xs opacity-80" title={entity.qlooId}>
-        {entity.qlooType.replace("urn:entity:", "")}
-      </span>
+      <span className="ml-auto truncate text-xs opacity-80">{entity.qlooType.replace("urn:entity:", "")}</span>
     </div>
   );
 }

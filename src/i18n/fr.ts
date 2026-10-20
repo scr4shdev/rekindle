@@ -164,13 +164,13 @@ export const fr: PartialMessages = {
       `Je regarde ce qu'aiment aussi les personnes qui aiment ${seeds}, jusqu'à aujourd'hui`,
     narrationInsightsNoYears: (seeds: string) =>
       `Je regarde ce qu'aiment aussi les personnes qui aiment ${seeds}`,
-    narrationTags: (query: string) => `Je résous « ${query} » comme étiquette`,
+    narrationTags: (query: string) => `Je cherche ${query} dans le graphe des goûts de Qloo`,
     replanStarted: {
       lit_up: "Je m'appuie sur ce fil…",
       neutral: "J'essaie autre chose…",
       upset: "Elle a l'air bouleversée. Je ralentis avec quelque chose de calme et familier…",
     },
-    results: (n: number) => (n === 1 ? "1 résultat" : `${n} résultats`),
+    results: (n: number) => (n === 0 ? "rien de correspondant" : n === 1 ? "1 trouvé" : `${n} trouvés`),
     cached: "en cache",
     mock: "données démo",
     live_: "en direct",

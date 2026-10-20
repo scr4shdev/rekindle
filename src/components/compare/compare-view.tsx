@@ -14,6 +14,7 @@ import { ProvenanceBadge } from "@/components/session/step-card";
 import { SESSION_PHASES, type SessionView } from "@/components/session/view-state";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAgentStream } from "@/hooks/use-agent-stream";
 import { getMessages } from "@/i18n";
 import type { CatchSource, RejectedItem, RejectionKind, SessionRequestDraft } from "@/lib/domain/types";
@@ -361,17 +362,52 @@ function ComparePlan({
                 </div>
                 <span className="flex flex-wrap items-center gap-2 pl-8">
                   <ProvenanceBadge step={step} />
-                  {slip && (
-                    <span className="inline-flex flex-wrap items-center gap-1.5">
-                      <TriangleAlertIcon className="size-4 text-rose" aria-hidden />
-                      <Badge variant="rose">{t.wouldSlip}</Badge>
-                      {slip.catchSource && (
-                        <span className="text-xs font-semibold text-sage-ink" data-testid="slip-via" data-via={slip.catchSource}>
-                          {slip.catchSource === "qloo" ? t.viaQloo : slip.catchSource === "cultural-check" ? t.viaCultural : t.viaCritique}
-                        </span>
-                      )}
-                    </span>
-                  )}
+                  {slip && (() => {
+                    const slipDisplay = rejectionDisplay(slip);
+                    const viaText =
+                      slip.catchSource === "qloo"
+                        ? t.viaQloo
+                        : slip.catchSource === "cultural-check"
+                          ? t.viaCultural
+                          : slip.catchSource === "critique-llm"
+                            ? t.viaCritique
+                            : null;
+                    return (
+                      <span className="inline-flex flex-wrap items-center gap-1.5">
+                        <TriangleAlertIcon className="size-4 text-rose" aria-hidden />
+                        <Tooltip>
+                          <TooltipTrigger
+                            render={
+                              <Badge
+                                variant="rose"
+                                tabIndex={0}
+                                className="cursor-help focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                data-testid="would-slip-badge"
+                              />
+                            }
+                          >
+                            {t.wouldSlip}
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs" data-testid="would-slip-tooltip">
+                            <span className="flex flex-col gap-1 text-left">
+                              <span className="font-semibold">{slipDisplay.label}</span>
+                              <span className="opacity-90">{slipDisplay.reason}</span>
+                              {viaText && (
+                                <span className="text-xs opacity-80" data-via={slip.catchSource}>
+                                  {viaText}
+                                </span>
+                              )}
+                            </span>
+                          </TooltipContent>
+                        </Tooltip>
+                        {slip.catchSource && (
+                          <span className="text-xs font-semibold text-sage-ink" data-testid="slip-via" data-via={slip.catchSource}>
+                            {viaText}
+                          </span>
+                        )}
+                      </span>
+                    );
+                  })()}
                 </span>
               </li>
             );

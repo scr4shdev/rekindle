@@ -9,6 +9,8 @@ import { PortError } from "@/lib/ports";
 import { composeSessionPrompt, critiqueItemsPrompt, culturalCheckPrompt } from "@/lib/prompts";
 import type { ComposeMaterial, ModelStep } from "@/lib/prompts/compose-session";
 import { DISCLAIMER_EN } from "@/lib/prompts/compose-session";
+import type { CRITIQUE_KINDS, CritiqueItem } from "@/lib/prompts/critique-items";
+import { schema as critiqueSchema } from "@/lib/prompts/critique-items";
 import type { CulturalCheckItem } from "@/lib/prompts/cultural-check";
 
 import { phaseForYear } from "@/lib/agent/phases/parse-propose";
@@ -111,34 +113,81 @@ async function* culturalMismatchGate(
   return rejected;
 }
 
+/** One validated critique judgment for one input item. */
+type CritiqueKind = (typeof CRITIQUE_KINDS)[number];
+export type CritiqueJudgment = { ref: string; keep: boolean; kind: CritiqueKind; reason: string };
+
+const VerdictSchema = critiqueSchema.shape.verdicts.element;
+
+/**
+ * One batched structured LLM call that judges every item. Returns exactly one
+ * judgment per input ref: a verdict that is missing or malformed in the model
+ * output, or a failed call, degrades to keep (over-including beats crashing a
+ * plan). Aborts (deadline, client disconnect) still propagate.
+ */
+export async function critiqueBatch(
+  run: Run,
+  anchors: Anchors,
+  person: PersonInput,
+  items: CritiqueItem[],
+): Promise<{ judgments: Map<string, CritiqueJudgment>; notes: string[] }> {
+  const judgments = new Map<string, CritiqueJudgment>();
+  const keep = (ref: string): CritiqueJudgment => ({ ref, keep: true, kind: "none", reason: "" });
+  let notes: string[] = [];
+  if (items.length > 0) {
+    try {
+      const out = await callLlm(run, critiqueItemsPrompt, { anchors, caregiverLanguage: person.caregiverLanguage, items }, true);
+      const wanted = new Set(items.map((i) => i.ref));
+      const verdicts: unknown[] = Array.isArray(out?.verdicts) ? out.verdicts : [];
+      for (const raw of verdicts) {
+        const parsed = VerdictSchema.safeParse(raw);
+        if (!parsed.success || !wanted.has(parsed.data.ref) || judgments.has(parsed.data.ref)) continue;
+        const v = parsed.data;
+        judgments.set(v.ref, v.keep || v.kind === "none" ? keep(v.ref) : v);
+      }
+      notes = Array.isArray(out?.notes) ? out.notes.filter((n): n is string => typeof n === "string") : [];
+    } catch (error) {
+      if (run.ctx.signal?.aborted) throw error;
+      run.ctx.logger.warn({ phase: "critique", err: error instanceof Error ? error.name : typeof error }, "critique call failed; keeping all items");
+    }
+  }
+  let defaulted = 0;
+  for (const item of items) {
+    if (!judgments.has(item.ref)) {
+      judgments.set(item.ref, keep(item.ref));
+      defaulted++;
+    }
+  }
+  if (defaulted > 0) run.ctx.logger.warn({ phase: "critique", defaulted, total: items.length }, "critique verdicts missing or malformed; defaulted to keep");
+  return { judgments, notes };
+}
+
 export async function* critiquePhase(run: Run, anchors: Anchors, person: PersonInput, materials: Material[]): AsyncGenerator<AgentEventPayload, Material[]> {
   const started = run.deps.now().getTime();
   yield { type: "phase", phase: "critique", status: "started", message: "Double-checking dates, places and anything that could upset them…" };
-  const culturallyRejected = yield* culturalMismatchGate(run, anchors, person, materials);
-  const forCritique = materials.filter((m) => !culturallyRejected.has(m.ref));
-  const out = await callLlm(
+  // The era/sensitivity batch and the cultural gate are independent: run them
+  // concurrently (the batch also sees gate rejects, which are then skipped).
+  const batch = critiqueBatch(
     run,
-    critiqueItemsPrompt,
-    {
-      anchors,
-      caregiverLanguage: person.caregiverLanguage,
-      items: forCritique.map((m, i) => ({
-        ref: materialAlias(i),
-        label: m.label,
-        domain: m.domain,
-        year: m.year,
-        bornYear: m.bornYear,
-        description: clip(m.description, 200),
-        source: m.source,
-      })),
-    },
-    true,
+    anchors,
+    person,
+    materials.map((m, i) => ({
+      ref: materialAlias(i),
+      label: m.label,
+      domain: m.domain,
+      year: m.year,
+      bornYear: m.bornYear,
+      description: clip(m.description, 200),
+      source: m.source,
+    })),
   );
-  const byRef = new Map(forCritique.map((m, i) => [materialAlias(i), m]));
+  batch.catch(() => undefined);
+  const culturallyRejected = yield* culturalMismatchGate(run, anchors, person, materials);
+  const { judgments, notes } = await batch;
   const rejected = new Set<string>(culturallyRejected);
-  for (const verdict of out.verdicts) {
-    const material = byRef.get(verdict.ref);
-    if (!material || verdict.keep || verdict.kind === "none" || rejected.has(material.ref)) continue;
+  for (const [i, material] of materials.entries()) {
+    const verdict = judgments.get(materialAlias(i));
+    if (!verdict || verdict.keep || rejected.has(material.ref)) continue;
     rejected.add(material.ref);
     run.stats.rejected++;
     yield {
@@ -146,7 +195,7 @@ export async function* critiquePhase(run: Run, anchors: Anchors, person: PersonI
       item: {
         label: clip(material.label, 200)!,
         reason: clip(verdict.reason, 400) ?? "Does not fit this person.",
-        kind: verdict.kind,
+        kind: verdict.kind as Exclude<CritiqueKind, "none">,
         phase: "critique",
         domain: material.domain,
         refId: material.ref,
@@ -154,7 +203,7 @@ export async function* critiquePhase(run: Run, anchors: Anchors, person: PersonI
       },
     };
   }
-  for (const text of out.notes) {
+  for (const text of notes) {
     const t = clip(text, 400);
     if (t) yield { type: "note", phase: "critique", text: t };
   }

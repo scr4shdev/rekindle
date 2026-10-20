@@ -17,6 +17,13 @@ export default function Home() {
           {t.title}
         </h1>
         <p className="animate-rise max-w-4xl text-muted-foreground sm:text-base">{t.leadShort}</p>
+        <p
+          className="animate-rise max-w-4xl text-muted-foreground sm:text-base"
+          data-testid="agent-promise"
+          aria-label={t.agentFlowLabel}
+        >
+          {t.agentFlow}
+        </p>
         <ul className="animate-rise flex flex-wrap items-center gap-2 sm:gap-2.5">
           {promises.map(({ icon: Icon, text, tone }) => (
             <li key={text} className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-[0.85rem] font-semibold sm:px-4 sm:py-1.5 sm:text-[0.95rem] ${tone}`}>
@@ -25,13 +32,6 @@ export default function Home() {
             </li>
           ))}
         </ul>
-        <p
-          className="animate-rise max-w-4xl font-mono text-[0.72rem] leading-snug text-muted-foreground sm:text-[0.8rem]"
-          data-testid="agent-flow"
-          aria-label={t.agentFlowLabel}
-        >
-          {t.agentFlow}
-        </p>
       </section>
 
       <section className="flex flex-col gap-4 sm:gap-5" aria-labelledby="personas-title">

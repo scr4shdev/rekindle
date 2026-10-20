@@ -7,6 +7,7 @@ test.describe("persona to session", () => {
   test("landing shows three one-tap personas, the privacy promise and the form", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1 })).toContainText("20-minute reminiscence session");
+    await expect(page.getByTestId("agent-promise")).toContainText("every idea it suggests gets checked first");
     await expect(page.getByText("Nothing you type is stored").first()).toBeVisible();
     for (const slug of ["maria", "seamus", "fatima"]) await expect(page.getByTestId(`persona-${slug}`)).toBeVisible();
     await expect(page.getByTestId("custom-form")).toBeVisible();

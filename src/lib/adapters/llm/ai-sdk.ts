@@ -51,7 +51,10 @@ export function createLanguageModel(config: AiSdkLlmConfig): LanguageModel {
     baseURL: config.baseUrl,
     apiKey: config.apiKey,
   });
-  return provider(config.model);
+  // `provider(id)` defaults to the OpenAI Responses API; third-party
+  // OpenAI-compat endpoints (Gemini, Ollama, most gateways) only ship the
+  // chat-completions path, so we pin to `.chat()`.
+  return provider.chat(config.model);
 }
 
 /** Cache key for one structured call. The prompt id is part of the input so two prompts never collide. */
@@ -140,7 +143,12 @@ export class AiSdkLlm implements LlmPort {
         return { object, cached: false, provider: this.provider, model: this.model, latencyMs, usage };
       } catch (error) {
         lastError = toPortError(error, timeout.aborted && !ctx.signal?.aborted);
-        log.warn({ attempt, code: lastError.code, retryable: lastError.retryable }, "llm call failed");
+        // Status is the only extra signal worth logging: it tells us whether
+        // Gemini / Ollama rejected the schema (400), the key (401), the model
+        // (404) or is just overloaded (429/5xx). The response body may echo
+        // request content, so we never log it.
+        const status = APICallError.isInstance(error) ? error.statusCode : undefined;
+        log.warn({ attempt, code: lastError.code, retryable: lastError.retryable, status }, "llm call failed");
         if (!lastError.retryable || ctx.signal?.aborted) break;
         if (attempt < attempts) await this.sleep(backoffMs(attempt), ctx.signal);
       }

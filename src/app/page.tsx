@@ -25,6 +25,13 @@ export default function Home() {
             </li>
           ))}
         </ul>
+        <p
+          className="animate-rise max-w-4xl rounded-2xl border border-border bg-sage-soft/50 px-4 py-2.5 font-mono text-[0.8rem] leading-snug text-sage-ink sm:text-[0.95rem]"
+          data-testid="agent-flow"
+          aria-label={t.agentFlowLabel}
+        >
+          {t.agentFlow}
+        </p>
       </section>
 
       <section className="flex flex-col gap-4 sm:gap-5" aria-labelledby="personas-title">

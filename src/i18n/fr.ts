@@ -11,14 +11,20 @@ export const fr: PartialMessages = {
     theme: { toggle: "Choisir le thème clair ou sombre", light: "Clair", dark: "Sombre" },
   },
   landing: {
-    title: "Faire revenir les chansons, les films et les visages de leur jeunesse.",
+    title: "Un agent qui prépare 20 minutes paisibles avec une personne qui vit avec la démence.",
     leadShort:
-      "Écrivez quelques lignes sur elle. On prépare 20 minutes paisibles ensemble — chansons, photos, une question ou deux — issues de son époque.",
+      "Il propose des chansons, des films et des visages de leur époque, puis vérifie chacun dans le graphe des goûts de Qloo — pour que rien ne sonne faux pour la personne dont vous prenez soin.",
+    agentFlowLabel: "Comment travaille l'agent",
+    agentFlow:
+      "Lire → imaginer → vérifier avec Qloo → élargir → critiquer → composer. Six phases, 10 à 20 requêtes à Qloo par plan.",
     promises: {
       stored: "Rien de ce que vous écrivez n'est conservé",
       activity: "Une activité partagée, pas une thérapie",
       grounded: "Des idées vérifiées auprès de Qloo",
     },
+    mockGateTitle: "La saisie libre en direct est désactivée dans cette démo",
+    mockGateBody:
+      "La saisie libre en direct a besoin d'une clé LLM que cette démo n'a pas. Touchez Maria, Fatima ou Seamus ci-dessous pour voir l'agent tourner en entier.",
     personasTitle: "À essayer en un geste",
     personasLead:
       "Trois personnes inventées, de trois lieux et trois époques. Choisissez-en une pour voir ce que donnerait une séance pensée pour elle.",
@@ -81,6 +87,7 @@ export const fr: PartialMessages = {
       "Gardé uniquement dans la mémoire de cet onglet. Recharger la page efface tout. Seul cet onglet garde votre brouillon.",
   },
   session: {
+    eraBandLabel: "Lieu et époque",
     planningFor: (name: string) => `Je prépare une séance pour ${name}`,
     planningGeneric: "Je prépare votre séance",
     waitHint: "Cela prend d'habitude 15 à 30 secondes. L'agent raconte au fil de son travail.",

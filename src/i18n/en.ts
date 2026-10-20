@@ -184,7 +184,7 @@ export const en = {
     followUps: "If they engage",
     tip: "Tip",
     media: "Find it",
-    searchMedia: "Search on YouTube",
+    searchMedia: "Search online",
     opensInNewTab: "(opens in a new tab)",
     verified: "Verified in Qloo",
     verifiedHint: "The language model suggested it and Qloo confirmed it exists, with its year and metadata.",

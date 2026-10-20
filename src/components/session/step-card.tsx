@@ -74,6 +74,39 @@ export function StepMedia({ step, className, large = false }: { step: SessionSte
 function youtubeSearch(query: string) {
   return `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
 }
+function googleImagesSearch(query: string) {
+  return `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`;
+}
+function spotifySearch(query: string) {
+  return `https://open.spotify.com/search/${encodeURIComponent(query)}`;
+}
+function wikimediaSearch(query: string) {
+  return `https://commons.wikimedia.org/w/index.php?search=${encodeURIComponent(query)}`;
+}
+function imdbSearch(query: string) {
+  return `https://www.imdb.com/find/?q=${encodeURIComponent(query)}`;
+}
+
+/**
+ * Pick the destination for the step's "search media" link. The agent emits a
+ * mediaHint shaped like "Search '<query>' on <host>" per kind: honour the
+ * host when present. For body steps without a host hint, use the sensible
+ * default for that step kind. Talk, opening and closing have no outside
+ * media to look up, so they return undefined and the link is hidden.
+ */
+export function mediaUrl(step: SessionStep): string | undefined {
+  if (step.kind === "talk" || step.kind === "opening" || step.kind === "closing") return undefined;
+  const hint = step.mediaHint ?? "";
+  const q = step.title;
+  if (hint.includes("Google Images")) return googleImagesSearch(q);
+  if (hint.includes("Wikimedia Commons")) return wikimediaSearch(q);
+  if (hint.includes("Spotify")) return spotifySearch(q);
+  if (hint.includes("IMDb")) return imdbSearch(q);
+  if (hint.includes("YouTube")) return youtubeSearch(q);
+  if (step.kind === "listen" || step.kind === "move") return youtubeSearch(q);
+  if (step.kind === "look") return googleImagesSearch(q);
+  return undefined;
+}
 
 export function StepCard({
   step,
@@ -89,7 +122,8 @@ export function StepCard({
   const messages = useMessages();
   const t = messages.step;
   const Icon = STEP_ICON[step.kind];
-  const searchable = step.kind === "listen" || step.kind === "look" || Boolean(step.mediaHint);
+  const url = mediaUrl(step);
+  const searchable = Boolean(url) || Boolean(step.mediaHint && step.kind !== "talk" && step.kind !== "opening" && step.kind !== "closing");
   return (
     <article
       className={cn(
@@ -183,16 +217,18 @@ export function StepCard({
                 {step.mediaHint}
               </span>
             )}
-            <a
-              href={youtubeSearch(step.title)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center gap-1.5 rounded-full font-semibold text-primary underline-offset-4 hover:underline"
-            >
-              {t.searchMedia}
-              <ExternalLinkIcon className="size-4" aria-hidden />
-              <span className="sr-only">{t.opensInNewTab}</span>
-            </a>
+            {url && (
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-full font-semibold text-primary underline-offset-4 hover:underline"
+              >
+                {t.searchMedia}
+                <ExternalLinkIcon className="size-4" aria-hidden />
+                <span className="sr-only">{t.opensInNewTab}</span>
+              </a>
+            )}
           </div>
         )}
       </div>

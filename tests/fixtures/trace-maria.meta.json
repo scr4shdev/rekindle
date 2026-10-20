@@ -1,0 +1,22 @@
+{
+  "promptVersions": {
+    "parse-anchors": "1.0.0",
+    "propose-candidates": "1.0.0",
+    "match-entity": "1.0.0",
+    "cultural-check": "1.0.0",
+    "critique-items": "1.0.0",
+    "compose-session": "1.0.0",
+    "replan-session": "1.1.0"
+  },
+  "qloo": {
+    "mode": "mock"
+  },
+  "llm": {
+    "provider": "mock",
+    "model": "mock-llm"
+  },
+  "recordedAt": "2026-10-18T19:00:00.000Z",
+  "totalDurationMs": 1960,
+  "eventCount": 80,
+  "sha256": "84ab490e16ab79489e17ddbdb62956e1dea533fb1760ecb89e1e7a54b0b0990a"
+}

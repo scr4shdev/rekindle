@@ -1,34 +1,30 @@
 /**
- * Records a deterministic AgentEvent NDJSON fixture for one of the three
- * built-in personas, so the hosted demo can replay the full six-phase run
- * through /api/session/replay even when Qloo rate-limits or an LLM key goes
- * stale. Runs the real agent against the Mock LLM + Mock Qloo adapters, with
- * a fixed clock and a counting id generator so two runs produce byte-
- * identical files.
+ * Records an AgentEvent NDJSON fixture for one of the three built-in personas
+ * from a real Gemini + Qloo run, so the hosted demo can replay the full
+ * six-phase run through /api/session/replay without burning quota on every
+ * judge click.
+ *
+ * The recorder calls the live `/api/session` HTTP endpoint on the configured
+ * server, captures the raw NDJSON byte stream, and validates each line.
+ * This exercises the same path a real deploy would serve.
+ *
+ * Gemini is not byte-deterministic even at temperature 0, so a re-record
+ * will drift. The committed fixture IS the demo artifact.
  *
  * Invocation (vitest is the TS loader; the recorder is one `it()` test):
- *   PERSONA=maria   npx vitest run --config scripts/vitest.record-trace.config.mts
- *   PERSONA=all     npx vitest run --config scripts/vitest.record-trace.config.mts
- *
- * `PERSONA=all` records every built-in persona. Default: maria.
- * `scripts/record-trace.ts` is not part of `npm run check`.
+ *   REKINDLE_RECORD_BASE=http://100.97.114.27:3300 PERSONA=maria \
+ *     npx vitest run --config scripts/vitest.record-trace.config.mts
+ *   REKINDLE_RECORD_BASE=http://localhost:3000 PERSONA=all \
+ *     npx vitest run --config scripts/vitest.record-trace.config.mts
  */
 import { createHash } from "node:crypto";
 import { writeFileSync } from "node:fs";
 import path from "node:path";
 
-import pino from "pino";
 import { it } from "vitest";
 
-import { runSession } from "@/lib/agent";
-import { MemoryCache } from "@/lib/adapters/cache";
-import { MockLlm } from "@/lib/adapters/llm/mock";
-import { MockQloo } from "@/lib/adapters/qloo/mock";
-import { loadConfig } from "@/lib/config";
-import type { AgentEvent, SessionRequest as SessionRequestType } from "@/lib/domain/types";
-import { SessionRequest } from "@/lib/domain/types";
+import { AgentEvent } from "@/lib/domain/types";
 import { PERSONAS, getPersona } from "@/lib/personas";
-import type { AgentDeps } from "@/lib/ports";
 
 import * as composeSessionPrompt from "@/lib/prompts/compose-session";
 import * as critiqueItemsPrompt from "@/lib/prompts/critique-items";
@@ -38,14 +34,18 @@ import * as parseAnchorsPrompt from "@/lib/prompts/parse-anchors";
 import * as proposeCandidatesPrompt from "@/lib/prompts/propose-candidates";
 import * as replanSessionPrompt from "@/lib/prompts/replan-session";
 
-/** Fixed start-of-run clock. Anchoring the clock keeps every recorded `t` reproducible. */
-const FIXED_START = new Date("2026-10-18T19:00:00.000Z");
-/** How much to advance the injected clock per `now()` call. Chosen so phase durations are visible. */
-const CLOCK_STEP_MS = 20;
-/** Output directory for the committed fixtures. Resolves against the worktree root. */
 const FIXTURES_DIR = path.join(process.cwd(), "tests", "fixtures");
+const BASE_URL = process.env.REKINDLE_RECORD_BASE ?? "http://100.97.114.27:3300";
 
-/** Static prompt version map so the fixture meta reflects the exact prompt set. */
+/** Pace between personas to respect Gemini daily quotas. */
+const PACE_MS = 10_000;
+/** Retry budget on 429 or sparse recordings. */
+const RETRIES = 3;
+/** Backoff on 429. */
+const BACKOFF_MS = 60_000;
+/** Minimum sane event count for a plan recording. Below this, we treat it as a failed run and retry. */
+const MIN_EVENTS = 20;
+
 const PROMPT_VERSIONS: Record<string, string> = {
   [parseAnchorsPrompt.ID]: parseAnchorsPrompt.VERSION,
   [proposeCandidatesPrompt.ID]: proposeCandidatesPrompt.VERSION,
@@ -66,59 +66,123 @@ function pickSlugs(): Array<(typeof PERSONAS)[number]["slug"]> {
   return [persona.slug];
 }
 
-/** Build mock-mode deps with an injected monotonic clock and a counting id generator. */
-function buildDeterministicDeps(): AgentDeps {
-  const config = loadConfig({ REKINDLE_FORCE_MOCK: "true", LOG_LEVEL: "silent" });
-  const cache = new MemoryCache();
-  let tick = 0;
-  let idN = 0;
-  return {
-    // latencyMs: 0 keeps qloo_call.durationMs deterministic (no wall-clock).
-    taste: new MockQloo({ defaultTake: config.qloo.defaultTake, latencyMs: 0 }),
-    llm: new MockLlm({ cache, cacheTtlSeconds: config.llm.cacheTtlSeconds, latencyMs: 0 }),
-    cache,
-    config,
-    now: () => new Date(FIXED_START.getTime() + (tick++) * CLOCK_STEP_MS),
-    newId: (prefix) => `${prefix}_${++idN}`,
-  };
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+async function postSessionAndCollect(slug: (typeof PERSONAS)[number]["slug"]): Promise<{
+  events: AgentEvent[];
+  rawLines: string[];
+}> {
+  const persona = getPersona(slug);
+  if (!persona) throw new Error(`Persona not found: ${slug}`);
+  const url = `${BASE_URL.replace(/\/+$/, "")}/api/session`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ person: persona.input, mode: "grounded" }),
+  });
+  if (!res.ok) {
+    throw new Error(`POST ${url} returned ${res.status} ${res.statusText}`);
+  }
+  if (!res.body) throw new Error("Response had no body");
+  const decoder = new TextDecoder();
+  const reader = res.body.getReader();
+  const rawLines: string[] = [];
+  const events: AgentEvent[] = [];
+  let buffer = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    let newlineIndex = buffer.indexOf("\n");
+    while (newlineIndex !== -1) {
+      const line = buffer.slice(0, newlineIndex).trim();
+      buffer = buffer.slice(newlineIndex + 1);
+      if (line.length > 0) {
+        rawLines.push(line);
+        events.push(AgentEvent.parse(JSON.parse(line)));
+      }
+      newlineIndex = buffer.indexOf("\n");
+    }
+  }
+  if (buffer.trim().length > 0) {
+    rawLines.push(buffer.trim());
+    events.push(AgentEvent.parse(JSON.parse(buffer.trim())));
+  }
+  return { events, rawLines };
 }
 
 async function recordOne(slug: (typeof PERSONAS)[number]["slug"]): Promise<void> {
-  const persona = getPersona(slug);
-  if (!persona) throw new Error(`Persona not found: ${slug}`);
-  const deps = buildDeterministicDeps();
-  const request: SessionRequestType = SessionRequest.parse({ person: persona.input, mode: "grounded" });
-
-  const abort = new AbortController();
-  const logger = pino({ level: "silent" });
-  const events: AgentEvent[] = [];
-  for await (const event of runSession(deps, request, { traceId: `fixture-${slug}`, logger, signal: abort.signal })) {
-    events.push(event);
+  let lastError: unknown;
+  let events: AgentEvent[] = [];
+  let rawLines: string[] = [];
+  for (let attempt = 1; attempt <= RETRIES; attempt++) {
+    try {
+      const startedAt = Date.now();
+      const result = await postSessionAndCollect(slug);
+      events = result.events;
+      rawLines = result.rawLines;
+      const hasPlan = events.some((e) => e.type === "plan");
+      const rateLimited = events.some((e) => e.type === "error" && /rate|quota|429/i.test(e.message));
+      if (!hasPlan || events.length < MIN_EVENTS) {
+        const kind = rateLimited ? "rate_limited" : "sparse";
+        process.stdout.write(`attempt ${attempt}/${RETRIES} ${kind} for ${slug}: ${events.length} events, hasPlan=${hasPlan}\n`);
+        if (attempt < RETRIES) {
+          const wait = rateLimited ? BACKOFF_MS : 10_000;
+          process.stdout.write(`backing off ${wait}ms before retry\n`);
+          await sleep(wait);
+          continue;
+        }
+        throw new Error(`Recording for ${slug} did not produce a plan after ${RETRIES} attempts (last events: ${events.length}, ${kind}).`);
+      }
+      process.stdout.write(`recorded ${events.length} events for ${slug} in ${Date.now() - startedAt}ms\n`);
+      lastError = undefined;
+      break;
+    } catch (error) {
+      lastError = error;
+      const message = error instanceof Error ? error.message : String(error);
+      process.stdout.write(`attempt ${attempt}/${RETRIES} failed for ${slug}: ${message}\n`);
+      if (attempt < RETRIES && /429|rate|quota/i.test(message)) {
+        process.stdout.write(`backing off ${BACKOFF_MS}ms before retry\n`);
+        await sleep(BACKOFF_MS);
+      } else if (attempt < RETRIES) {
+        await sleep(5_000);
+      }
+    }
   }
+  if (lastError) throw lastError;
 
-  const ndjson = events.map((e) => `${JSON.stringify(e)}\n`).join("");
+  const ndjson = rawLines.map((l) => `${l}\n`).join("");
   const ndjsonPath = path.join(FIXTURES_DIR, `trace-${slug}.ndjson`);
   writeFileSync(ndjsonPath, ndjson);
 
   const totalDurationMs = events.length ? events[events.length - 1].t : 0;
+  const planEvent = events.find((e) => e.type === "plan");
+  const planMeta = planEvent && planEvent.type === "plan" ? planEvent.plan.meta : undefined;
   const summary = {
     promptVersions: PROMPT_VERSIONS,
-    qloo: { mode: deps.config.qloo.mode },
-    llm: { provider: deps.config.llm.provider, model: deps.config.llm.model },
-    recordedAt: FIXED_START.toISOString(),
+    qloo: { mode: planMeta?.qlooMode ?? "live" },
+    llm: { provider: planMeta?.llmProvider ?? "gemini", model: planMeta?.llmModel ?? "gemini-3.1-flash-lite" },
+    recordedAt: new Date().toISOString(),
     totalDurationMs,
     eventCount: events.length,
-    // Hash of the NDJSON for the determinism unit test to spot regressions.
     sha256: createHash("sha256").update(ndjson).digest("hex"),
+    sourceUrl: `${BASE_URL}/api/session`,
   };
   const metaPath = path.join(FIXTURES_DIR, `trace-${slug}.meta.json`);
   writeFileSync(metaPath, `${JSON.stringify(summary, null, 2)}\n`);
 
-  process.stdout.write(`recorded ${events.length} events for ${slug} -> ${ndjsonPath}\n`);
+  process.stdout.write(`wrote ${ndjsonPath} and ${metaPath}\n`);
 }
 
-it("records trace fixtures for the selected personas", { timeout: 60_000 }, async () => {
-  for (const slug of pickSlugs()) {
-    await recordOne(slug);
+it("records trace fixtures for the selected personas from the live /api/session", { timeout: 600_000 }, async () => {
+  const slugs = pickSlugs();
+  for (let i = 0; i < slugs.length; i++) {
+    if (i > 0) {
+      process.stdout.write(`pacing ${PACE_MS}ms before next persona\n`);
+      await sleep(PACE_MS);
+    }
+    await recordOne(slugs[i]);
   }
 });

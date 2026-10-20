@@ -1,6 +1,7 @@
 /**
- * PARSE: caregiver notes -> structured anchors. Input derives from notes, so
- * the agent calls it with `sensitive: true`.
+ * PARSE: caregiver notes + "This is Me" structured fields -> structured
+ * anchors. Input derives from caregiver-entered strings, so the agent calls it
+ * with `sensitive: true`.
  */
 import { z } from "zod";
 
@@ -9,9 +10,10 @@ import type { PromptDefinition } from "@/lib/ports/llm";
 import { dataBlock, DATA_NOTICE, lines, ROLE } from "@/lib/prompts/shared";
 
 export const ID = "parse-anchors";
-export const VERSION = "1.1.0";
+export const VERSION = "1.2.0";
 
 export interface ParseAnchorsInput {
+  /** Free-text notes blob. Falls back when structured fields are empty. */
   notes: string;
   birthYear?: number;
   birthPlace?: string;
@@ -20,6 +22,13 @@ export interface ParseAnchorsInput {
   currentYear: number;
   formativeAgeMin: number;
   formativeAgeMax: number;
+  /** Alzheimer's Society "This is Me" structured fields. All optional. */
+  culturalBackground?: string;
+  keyLifeEvents?: string;
+  calmingCues?: string;
+  thingsToAvoid?: string;
+  routines?: string;
+  stage?: "early" | "mid" | "late";
 }
 
 export const schema = z.object({
@@ -75,11 +84,12 @@ export const system = lines(
   "Task: read the caregiver's notes about one person and extract structured anchors for planning a reminiscence activity.",
   [
     "Rules:",
-    "- Extract only what the notes state or clearly imply; mark inferences as 'inferred'.",
-    "- Loves: concrete cultural things (artists, songs' artists, films, teams, dishes, places, crafts, communities a person belonged to). Use the closest domain, 'other' if none fits.",
-    "- Sensitivities: a topic is a sensitivity only when the caregiver explicitly places it under things to avoid, uses an avoidance verb for it ('do not mention', 'stays away from', 'triggers her', 'upsets him'), or the context makes clear it caused this person distress (bereavement, war, illness, separation, a specific person who hurt them). The topic itself does not decide: the caregiver's framing does.",
-    "- A religious or community anchor (a church, mosque, temple, synagogue, Bible, Quran, Torah, mass, prayer, hymn, gospel, Pentecostal, Catholic, Baptist, Buddhist, Muslim, Jewish, Hindu, Sikh service, religious holiday) named inside culturalBackground, keyLifeEvents, calmingCues, or alongside stated loves is a POSITIVE anchor (a 'love'), not a sensitivity. It only becomes a sensitivity when the caregiver places it under thingsToAvoid, uses an avoidance verb for it, or describes a specific painful experience tied to it ('she was excluded by the church she grew up in').",
-    "- Worked example (religion as a stated anchor, not a trigger). culturalBackground: 'Pentecostal church was his community for sixty years.' calmingCues: 'her Bible, gospel hymns.' thingsToAvoid: '' (empty). CORRECT: add 'Pentecostal church community' and 'gospel hymns' and 'the Bible' to loves (domain 'other' or 'music' for hymns); do NOT add 'religion', 'Pentecostal' or 'the Bible' to sensitivities. INCORRECT: adding {topic: 'Pentecostal', severity: 'handle_gently'} or {topic: 'religion', severity: 'avoid'} based on the topic alone.",
+    "- Input precedence: structured 'This is Me' fields (cultural_background, key_life_events, calming_cues, things_to_avoid, routines) are the primary signal when provided; the free-text 'notes' is a supplementary hint. When the two conflict, prefer the structured fields.",
+    "- Extract only what the input states or clearly implies; mark inferences as 'inferred'.",
+    "- Loves: concrete cultural things (artists, songs' artists, films, teams, dishes, places, crafts, communities a person belonged to). Prefer entries that appear in cultural_background, key_life_events, calming_cues or routines. Use the closest domain, 'other' if none fits.",
+    "- Sensitivities: a topic is a sensitivity only when the caregiver explicitly places it under things_to_avoid, uses an avoidance verb for it ('do not mention', 'stays away from', 'triggers her', 'upsets him'), or the context makes clear it caused this person distress (bereavement, war, illness, separation, a specific person who hurt them). The topic itself does not decide: the caregiver's framing does.",
+    "- A religious or community anchor (a church, mosque, temple, synagogue, Bible, Quran, Torah, mass, prayer, hymn, gospel, Pentecostal, Catholic, Baptist, Buddhist, Muslim, Jewish, Hindu, Sikh service, religious holiday) named inside cultural_background, key_life_events, calming_cues, or alongside stated loves is a POSITIVE anchor (a 'love'), not a sensitivity. It only becomes a sensitivity when the caregiver places it under things_to_avoid, uses an avoidance verb for it, or describes a specific painful experience tied to it ('she was excluded by the church she grew up in').",
+    "- Worked example (religion as a stated anchor, not a trigger). cultural_background: 'Pentecostal church was his community for sixty years.' calming_cues: 'her Bible, gospel hymns.' things_to_avoid: '' (empty). CORRECT: add 'Pentecostal church community' and 'gospel hymns' and 'the Bible' to loves (domain 'other' or 'music' for hymns); do NOT add 'religion', 'Pentecostal' or 'the Bible' to sensitivities. INCORRECT: adding {topic: 'Pentecostal', severity: 'handle_gently'} or {topic: 'religion', severity: 'avoid'} based on the topic alone.",
     "- privateNames: list every private person's name you see, so it can be kept out of external lookups.",
     "- Places: public names only, never street addresses.",
     "- Write reasons and notes in the caregiver language given in the input.",
@@ -88,7 +98,15 @@ export const system = lines(
 );
 
 export function render(input: ParseAnchorsInput): string {
-  return lines(
+  const thisIsMe: Record<string, string> = {};
+  if (input.culturalBackground) thisIsMe.cultural_background = input.culturalBackground;
+  if (input.keyLifeEvents) thisIsMe.key_life_events = input.keyLifeEvents;
+  if (input.calmingCues) thisIsMe.calming_cues = input.calmingCues;
+  if (input.thingsToAvoid) thisIsMe.things_to_avoid = input.thingsToAvoid;
+  if (input.routines) thisIsMe.routines = input.routines;
+  if (input.stage) thisIsMe.stage = input.stage;
+
+  const blocks = [
     dataBlock("context", {
       currentYear: input.currentYear,
       formativeYears: `ages ${input.formativeAgeMin}-${input.formativeAgeMax}`,
@@ -97,9 +115,13 @@ export function render(input: ParseAnchorsInput): string {
       sessionLanguage: input.sessionLanguage,
       caregiverLanguage: input.caregiverLanguage,
     }),
-    dataBlock("caregiver_notes", input.notes),
-    "Return the anchors as JSON matching the schema.",
-  );
+  ];
+  if (Object.keys(thisIsMe).length > 0) {
+    blocks.push(dataBlock("this_is_me", thisIsMe));
+  }
+  blocks.push(dataBlock("caregiver_notes", input.notes));
+  blocks.push("Return the anchors as JSON matching the schema.");
+  return lines(...blocks);
 }
 
 export const parseAnchorsPrompt: PromptDefinition<ParseAnchorsInput, ParseAnchorsOutput> = {

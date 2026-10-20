@@ -24,7 +24,10 @@ export default defineConfig({
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !isCI,
     timeout: 120_000,
-    // E2E always runs against mock adapters: no keys, no network.
-    env: { REKINDLE_FORCE_MOCK: "true", LOG_LEVEL: "warn" },
+    // The webServer runs the real stack. Tests that exercise /api/session
+    // either intercept with page.route() or rely on the committed replay
+    // fixtures via /api/session/replay. Tests that genuinely need live
+    // Gemini are gated with test.skip when the key is absent.
+    env: { LOG_LEVEL: "warn" },
   },
 });

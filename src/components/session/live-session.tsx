@@ -29,10 +29,25 @@ import { useMessages } from "@/i18n/provider";
 import type { Reaction, SessionPlan } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
 
-const REACTIONS: { value: Reaction; icon: LucideIcon; tone: string }[] = [
-  { value: "lit_up", icon: SunIcon, tone: "data-[selected=true]:bg-ochre-soft data-[selected=true]:border-ochre data-[selected=true]:text-ochre-ink" },
-  { value: "neutral", icon: MehIcon, tone: "data-[selected=true]:bg-clay-soft data-[selected=true]:border-clay-ink data-[selected=true]:text-clay-ink" },
-  { value: "upset", icon: CloudRainIcon, tone: "data-[selected=true]:bg-rose-soft data-[selected=true]:border-rose data-[selected=true]:text-rose-ink" },
+const REACTIONS: { value: Reaction; icon: LucideIcon; tone: string; pulse: string }[] = [
+  {
+    value: "lit_up",
+    icon: SunIcon,
+    tone: "data-[selected=true]:bg-ochre-soft data-[selected=true]:border-ochre data-[selected=true]:text-ochre-ink",
+    pulse: "animate-tap-sage",
+  },
+  {
+    value: "neutral",
+    icon: MehIcon,
+    tone: "data-[selected=true]:bg-clay-soft data-[selected=true]:border-clay-ink data-[selected=true]:text-clay-ink",
+    pulse: "animate-tap-ochre",
+  },
+  {
+    value: "upset",
+    icon: CloudRainIcon,
+    tone: "data-[selected=true]:bg-rose-soft data-[selected=true]:border-rose data-[selected=true]:text-rose-ink",
+    pulse: "animate-tap-rose",
+  },
 ];
 
 function formatTime(seconds: number) {
@@ -129,6 +144,15 @@ export function LiveSession({
   // Manual trigger for the closing moment (the Finish button). The derived `showClosing`
   // below adds the implicit case: timer reached zero on the last step.
   const [closingManual, setClosingManual] = useState(false);
+  // Ephemeral feel-good tap feedback: a one-shot pulse on the tapped button and
+  // a short reassurance line above the step card. `tapKey` reruns the pulse
+  // animation when the same reaction is tapped on a new step.
+  const [tapped, setTapped] = useState<{ reaction: Reaction; stepId: string; tapKey: number } | null>(null);
+  useEffect(() => {
+    if (!tapped) return;
+    const id = setTimeout(() => setTapped(null), 1500);
+    return () => clearTimeout(id);
+  }, [tapped]);
   const go = (n: number) => {
     setSeenReplan(view.replans);
     setClosingManual(false);
@@ -217,7 +241,18 @@ export function LiveSession({
           </div>
 
           {/* The prompt */}
-          <div className="flex-1 overflow-y-auto" tabIndex={0} role="region" aria-label={t.title}>
+          <div className="relative flex-1 overflow-y-auto" tabIndex={0} role="region" aria-label={t.title}>
+            {tapped && (
+              <p
+                key={`${tapped.reaction}-${tapped.tapKey}`}
+                role="status"
+                aria-live="polite"
+                data-testid="live-reassure"
+                className="pointer-events-none absolute top-3 left-1/2 z-10 -translate-x-1/2 animate-reassure rounded-full bg-sage-soft px-4 py-1.5 text-sm font-semibold text-sage-ink shadow-paper sm:text-base"
+              >
+                {t.hearingYou}
+              </p>
+            )}
             <div
               key={step.id}
               className="mx-auto grid w-full max-w-5xl animate-rise gap-5 px-5 py-5 sm:px-8 sm:py-10 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:items-start"
@@ -292,7 +327,7 @@ export function LiveSession({
               <fieldset className="flex flex-col gap-2" disabled={view.replanning}>
                 <legend className="mb-1 text-[0.95rem] font-semibold text-muted-foreground">{t.howDidItGo}</legend>
                 <div className="grid grid-cols-3 gap-2">
-                  {REACTIONS.map(({ value, icon: RIcon, tone }) => (
+                  {REACTIONS.map(({ value, icon: RIcon, tone, pulse }) => (
                     <button
                       key={value}
                       type="button"
@@ -302,11 +337,17 @@ export function LiveSession({
                       onClick={(e) => {
                         // Blur so Space falls through to the timer handler on the dialog.
                         e.currentTarget.blur();
+                        setTapped((prev) => ({
+                          reaction: value,
+                          stepId: step.id,
+                          tapKey: prev && prev.reaction === value && prev.stepId === step.id ? prev.tapKey + 1 : 1,
+                        }));
                         onReact(step.id, value);
                       }}
                       className={cn(
-                        "flex min-h-[5.5rem] min-w-[7rem] cursor-pointer flex-col items-center justify-center gap-1 rounded-[1.375rem] border-2 border-border bg-background px-3 py-2 text-[0.95rem] leading-tight font-semibold transition-colors hover:border-input disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-24 sm:text-lg",
+                        "flex min-h-[5.5rem] min-w-[7rem] cursor-pointer flex-col items-center justify-center gap-1 rounded-[1.375rem] border-2 border-border bg-background px-3 py-2 text-[0.95rem] leading-tight font-semibold transition-transform duration-150 hover:border-input active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none motion-reduce:active:scale-100 sm:min-h-24 sm:text-lg",
                         tone,
+                        tapped && tapped.reaction === value && tapped.stepId === step.id && pulse,
                       )}
                     >
                       <RIcon className="size-6 shrink-0" aria-hidden />

@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { mockLiveHealth } from "./helpers";
 
 async function audit(page: Page) {
   const results = await new AxeBuilder({ page })
@@ -24,6 +25,7 @@ for (const scheme of ["light", "dark"] as const) {
     });
 
     test("landing form with errors", async ({ page }) => {
+      await mockLiveHealth(page);
       await page.goto("/");
       await page.getByRole("button", { name: "Plan the session" }).click();
       await expect(page.getByTestId("custom-form").getByRole("alert")).toBeVisible();

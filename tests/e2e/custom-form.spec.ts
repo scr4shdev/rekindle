@@ -1,11 +1,15 @@
 import { expect, test } from "@playwright/test";
 import { SAMPLE_GROUNDED_EVENTS, SAMPLE_LLM_ONLY_EVENTS } from "@/lib/domain/sample-events";
 import type { SessionRequestDraft } from "@/lib/domain/types";
-import { mockStream } from "./helpers";
+import { mockLiveHealth, mockStream } from "./helpers";
 
 const NOTES = "Dad was born in 1946 in Lyon and worked on the railways. He loved Johnny Hallyday and the Tour de France.";
 
 test.describe("custom person form", () => {
+  test.beforeEach(async ({ page }) => {
+    await mockLiveHealth(page);
+  });
+
   test("shows accessible errors and focuses the first invalid field", async ({ page }) => {
     await page.goto("/");
     const form = page.getByTestId("custom-form");

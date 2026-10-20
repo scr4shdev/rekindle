@@ -28,3 +28,24 @@ export async function mockJsonError(page: Page, path: string, status: number, co
     route.fulfill({ status, contentType: "application/json", body: JSON.stringify({ error: { code, message: "Request body is invalid." } }) }),
   );
 }
+
+/**
+ * Pretend the backend has a live LLM so the custom form stays enabled. The
+ * form probes /api/health on mount and disables submit when llm.mode === "mock"
+ * (the real deployment demo-trap guard). E2E runs are mock-mode on the server;
+ * tests exercising the form must stub health to "live".
+ */
+export async function mockLiveHealth(page: Page) {
+  await page.route("**/api/health", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        status: "ok",
+        qloo: { mode: "mock", baseUrl: "https://hackathon.api.qloo.com" },
+        llm: { mode: "live", provider: "google", model: "gemini-2.5-flash" },
+        cache: { driver: "memory" },
+      }),
+    }),
+  );
+}

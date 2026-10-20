@@ -1,4 +1,5 @@
 import { HeartHandshakeIcon, LockKeyholeIcon } from "lucide-react";
+import Link from "next/link";
 import { getMessages } from "@/i18n";
 
 export function SiteFooter() {
@@ -17,6 +18,15 @@ export function SiteFooter() {
           </p>
           <p className="pl-8">{t.qloo}</p>
           <p className="pl-8">{t.credit}</p>
+          <p className="pl-8">
+            <Link
+              href="/for-operators"
+              className="underline-offset-4 hover:text-foreground hover:underline"
+              data-testid="footer-for-operators"
+            >
+              For care operators
+            </Link>
+          </p>
         </div>
       </div>
     </footer>

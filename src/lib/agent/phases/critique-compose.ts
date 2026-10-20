@@ -86,6 +86,7 @@ async function* culturalMismatchGate(
           phase: "critique",
           domain: entry.m.domain,
           refId: entry.m.ref,
+          catchSource: "cultural-check",
         },
       };
     }
@@ -134,6 +135,7 @@ export async function* critiquePhase(run: Run, anchors: Anchors, person: PersonI
         phase: "critique",
         domain: material.domain,
         refId: material.ref,
+        catchSource: "critique-llm",
       },
     };
   }

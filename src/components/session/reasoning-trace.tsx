@@ -14,6 +14,7 @@ import {
 import { useEffect, useRef } from "react";
 import { QlooCallRow } from "@/components/session/qloo-call-row";
 import { DOMAIN_ICON } from "@/components/session/icons";
+import { qlooCitationForEntity, qlooNotFoundLine } from "@/components/session/qloo-citation";
 import { rejectionDisplay } from "@/components/session/rejection-display";
 import type { PhaseView, SessionView, TraceItem } from "@/components/session/view-state";
 import { Button } from "@/components/ui/button";
@@ -246,13 +247,21 @@ function VerifiedRow({ entity, entities }: { entity: VerifiedEntity; entities: S
       </div>
     );
   }
+  const citation = qlooCitationForEntity(entity);
   return (
-    <div className="flex items-center gap-2 rounded-xl bg-sage-soft/70 px-3 py-1.5 text-sage-ink" data-testid="trace-verified">
-      <BadgeCheckIcon className="size-4 shrink-0" aria-label={tr.verified} />
-      <Icon className="size-4 shrink-0 opacity-70" aria-hidden />
-      <span className="font-semibold">{entity.name}</span>
-      {entity.releaseYear && <span className="text-sm tabular-nums">{entity.releaseYear}</span>}
-      <span className="ml-auto truncate text-xs opacity-80">{entity.qlooType.replace("urn:entity:", "")}</span>
+    <div className="flex flex-col gap-1 rounded-xl bg-sage-soft/70 px-3 py-1.5 text-sage-ink" data-testid="trace-verified">
+      <div className="flex items-center gap-2">
+        <BadgeCheckIcon className="size-4 shrink-0" aria-label={tr.verified} />
+        <Icon className="size-4 shrink-0 opacity-70" aria-hidden />
+        <span className="font-semibold">{entity.name}</span>
+        {entity.releaseYear && <span className="text-sm tabular-nums">{entity.releaseYear}</span>}
+        <span className="ml-auto truncate text-xs opacity-80">{entity.qlooType.replace("urn:entity:", "")}</span>
+      </div>
+      {citation && (
+        <span className="pl-6 text-xs text-sage-ink/80" data-testid="trace-qloo-citation">
+          {citation}
+        </span>
+      )}
     </div>
   );
 }
@@ -260,6 +269,7 @@ function VerifiedRow({ entity, entities }: { entity: VerifiedEntity; entities: S
 function RejectedRow({ item }: { item: RejectedItem }) {
   const messages = useMessages();
   const display = rejectionDisplay(item, messages);
+  const showQlooMiss = item.kind === "not_found" && item.catchSource === "qloo";
   return (
     <div className="flex flex-col gap-1 rounded-xl border border-rose/30 bg-rose-soft/60 px-3 py-2" data-testid="trace-rejected">
       <div className="flex flex-wrap items-center gap-2">
@@ -268,6 +278,11 @@ function RejectedRow({ item }: { item: RejectedItem }) {
         <span className="rounded-full bg-card px-2 py-0.5 text-xs font-semibold text-rose-ink">{display.label}</span>
       </div>
       <p className="text-[0.9rem] leading-snug">{display.reason}</p>
+      {showQlooMiss && (
+        <p className="text-xs text-sage-ink" data-testid="trace-qloo-miss">
+          {qlooNotFoundLine(item.label, item.qlooResultCount)}
+        </p>
+      )}
     </div>
   );
 }

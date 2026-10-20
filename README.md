@@ -1,6 +1,6 @@
 # Rekindle
 
-A tool-using agent that helps a caregiver plan a 20-minute reminiscence activity for someone they love who is living with dementia, with every cultural reference verified against Qloo's taste graph so it fits the person's era, place, and language.
+A tool-using agent that helps a caregiver plan a 20-minute reminiscence activity for someone they love who is living with dementia, with every cultural reference checked against Qloo's taste graph so misses surface in the trace instead of hiding, and only era-and-place-fitting ideas reach the plan.
 
 Built for the Qloo Agentic Hackathon (submission deadline 2026-10-30). Non-medical: an activity planner, not therapy, not treatment, not diagnosis.
 

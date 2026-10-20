@@ -55,7 +55,7 @@ export function entityMaterial(entity: VerifiedEntity, raw: TasteEntity, candida
 
 type VerifyOutcome =
   | { kind: "found"; entity: TasteEntity; events: AgentEventPayload[]; matchedBy: "exact" | "llm" }
-  | { kind: "not_found"; events: AgentEventPayload[]; reason: string }
+  | { kind: "not_found"; events: AgentEventPayload[]; reason: string; qlooResultCount?: number }
   | { kind: "outage"; error: PortError };
 
 async function verifyOne(run: Run, anchors: Anchors, candidate: Candidate): Promise<VerifyOutcome> {
@@ -122,7 +122,7 @@ async function verifyOne(run: Run, anchors: Anchors, candidate: Candidate): Prom
       run.ctx.logger.warn({ phase: "verify", err: error instanceof Error ? error.name : typeof error }, "match-entity failed; treating as not found");
     }
   }
-  return { kind: "not_found", events, reason: "No confident match in Qloo; not used." };
+  return { kind: "not_found", events, reason: "No confident match in Qloo; not used.", qlooResultCount: response.items.length };
 }
 
 /** Qloo tag parent type used to filter cuisine-cultural tags (F3). */
@@ -241,7 +241,7 @@ export async function* verifyPhase(run: Run, anchors: Anchors, candidates: Candi
       if (lifetimeFail) {
         notFound++;
         run.stats.rejected++;
-        yield { type: "rejected", item: { label: entity.name, reason: lifetimeFail, kind: "anachronism", phase: "verify", domain: candidate.domain, refId: candidate.id } };
+        yield { type: "rejected", item: { label: entity.name, reason: lifetimeFail, kind: "anachronism", phase: "verify", domain: candidate.domain, refId: candidate.id, catchSource: "qloo" } };
         continue;
       }
       verified++;
@@ -251,7 +251,19 @@ export async function* verifyPhase(run: Run, anchors: Anchors, candidates: Candi
     } else {
       notFound++;
       run.stats.rejected++;
-      yield { type: "rejected", item: { label: candidate.name, reason: outcome.reason, kind: "not_found", phase: "verify", domain: candidate.domain, refId: candidate.id } };
+      yield {
+        type: "rejected",
+        item: {
+          label: candidate.name,
+          reason: outcome.reason,
+          kind: "not_found",
+          phase: "verify",
+          domain: candidate.domain,
+          refId: candidate.id,
+          catchSource: "qloo",
+          ...(outcome.qlooResultCount !== undefined ? { qlooResultCount: outcome.qlooResultCount } : {}),
+        },
+      };
     }
   }
 
@@ -266,7 +278,7 @@ export async function* verifyPhase(run: Run, anchors: Anchors, candidates: Candi
   }
   for (const c of droppedFood) {
     run.stats.rejected++;
-    yield { type: "rejected", item: { label: c.name, reason: "No matching cuisine in Qloo for this cultural background, so the food step is omitted.", kind: "not_found", phase: "verify", domain: c.domain, refId: c.id } };
+    yield { type: "rejected", item: { label: c.name, reason: "No matching cuisine in Qloo for this cultural background, so the food step is omitted.", kind: "not_found", phase: "verify", domain: c.domain, refId: c.id, catchSource: "qloo" } };
   }
   const checkable = groundable.length - degraded;
   yield {
@@ -392,7 +404,7 @@ export async function* expandPhase(run: Run, anchors: Anchors, materials: Materi
         known.add(raw.qlooId);
         knownNames.add(normalizeName(raw.name));
         run.stats.rejected++;
-        yield { type: "rejected", item: { label: raw.name, reason: lifetimeFail, kind: "anachronism", phase: "verify", domain: DOMAIN_OF_TYPE[type] ?? "public_figure" } };
+        yield { type: "rejected", item: { label: raw.name, reason: lifetimeFail, kind: "anachronism", phase: "verify", domain: DOMAIN_OF_TYPE[type] ?? "public_figure", catchSource: "qloo" } };
         continue;
       }
       known.add(raw.qlooId);

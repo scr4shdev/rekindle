@@ -24,10 +24,16 @@ test.describe("compare mode: Fatima tiebreaker", () => {
     await expect(view).toHaveAttribute("data-llm-status", "done", GROUNDED_READY);
     await expect(view).toHaveAttribute("data-grounded-status", "done", GROUNDED_READY);
 
-    // Hero stat callout: "Qloo caught 5 era/culture/risk slips…" with exact 5.
+    // Hero stat callout now splits by source: "The agent caught 5 slips…"
+    // with the per-guard breakdown underneath (Qloo refused X, Cultural
+    // grounding caught Y, Critique caught Z).
     const headline = page.getByTestId("compare-headline");
-    await expect(headline).toContainText("Qloo caught 5");
+    await expect(headline).toContainText("The agent caught 5");
     await expect(headline).toContainText("slips");
+    const breakdown = page.getByTestId("compare-headline-breakdown");
+    await expect(breakdown).toContainText("Qloo refused 1");
+    await expect(breakdown).toContainText("Cultural grounding caught 2");
+    await expect(breakdown).toContainText("Critique caught 2");
 
     // Score table reports five catches in the grounded column.
     const score = page.getByTestId("compare-score");

@@ -255,6 +255,26 @@ export const VerifiedEntity = z.object({
   /** Qloo popularity percentile (0-1) when provided. */
   popularity: z.number().min(0).max(1).optional(),
   releaseYear: Year.optional(),
+  /**
+   * Birth year parsed from Qloo's properties.date_of_birth (person / artist).
+   * Optional and additive: surfaced on step cards and the trace so the Qloo
+   * citation line can read e.g. "Qloo: born 1898". Absent means Qloo had no
+   * date of birth, which is the common case for non-public_figure types.
+   */
+  bornYear: Year.optional(),
+  /**
+   * Short Qloo disambiguation line ("2022, Daniel Scheinert, Daniel Kwan").
+   * Optional and additive, carried from TasteEntity so the UI citation can
+   * fall back to it when there is no year or author alongside the name.
+   */
+  disambiguation: z.string().max(240).optional(),
+  /**
+   * A tiny sample of Qloo tag names (genre, decade), up to five, used by the
+   * step card to render a citation for domains with no year or country field
+   * (artist, destination, place). Additive and best-effort: an empty or
+   * missing list means degrade and skip the citation.
+   */
+  tagLabels: z.array(z.string().min(1).max(80)).max(5).optional(),
   imageUrl: z.url().optional(),
   description: z.string().max(600).optional(),
   provenance: EntityProvenance,
@@ -280,6 +300,24 @@ export const RejectionKind = z.enum([
 ]);
 export type RejectionKind = z.infer<typeof RejectionKind>;
 
+/**
+ * Which guard caught this item. Additive and optional (frozen contract widened
+ * for the Qloo visibility pass): the compare view credits each source
+ * separately so the Devpost headline stops conflating Qloo refusals with the
+ * LLM cultural-check and the critique-LLM rulings.
+ *
+ * - `qloo`: Qloo /search returned no confident match, or a Qloo-sourced
+ *   lifetime / era filter dropped the item.
+ * - `cultural-check`: the non-Western cultural grounding pass flagged a
+ *   cross-cultural extrapolation.
+ * - `critique-llm`: the critique LLM caught an era, locale, duplicate or
+ *   sensitivity issue not detectable from Qloo alone.
+ *
+ * Absent on legacy events (treated as unknown).
+ */
+export const CatchSource = z.enum(["qloo", "cultural-check", "critique-llm"]);
+export type CatchSource = z.infer<typeof CatchSource>;
+
 export const RejectedItem = z.object({
   label: z.string().min(1).max(200),
   reason: z.string().min(1).max(400),
@@ -288,6 +326,14 @@ export const RejectedItem = z.object({
   domain: TasteDomain.optional(),
   /** Candidate.id or VerifiedEntity.id that was rejected. */
   refId: Id.optional(),
+  /** Which guard caught the item. Optional and additive. */
+  catchSource: CatchSource.optional(),
+  /**
+   * For `kind === "not_found"` catches with `catchSource === "qloo"`: the
+   * number of /search results Qloo returned for the queried name (none of
+   * which were confident matches). Powers the "checked N similar names" line.
+   */
+  qlooResultCount: z.number().int().min(0).optional(),
 });
 export type RejectedItem = z.infer<typeof RejectedItem>;
 

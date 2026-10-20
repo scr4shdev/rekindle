@@ -11,7 +11,7 @@ export const en = {
   landing: {
     title: "A 20-minute reminiscence session a caregiver can run, in any culture.",
     leadShort:
-      "For care aides and families. Rekindle's agent verifies every song, film and face against Qloo's taste graph, so a 1960s Fès childhood is not met with a 1960s Hollywood classic.",
+      "For care aides and families. Rekindle's agent checks every song, film and face against Qloo's taste graph, with misses surfaced in the trace, not hidden, so a 1960s Fès childhood is not met with a 1960s Hollywood classic.",
     agentFlowLabel: "How the agent works",
     agentFlow: "Parse → propose → verify in Qloo → compose. 6 phases, 10–20 Qloo calls per plan.",
     promises: {
@@ -260,8 +260,19 @@ export const en = {
     grounded: "Grounded in Qloo",
     scoreTitle: "What grounding adds",
     headline: (caught: number, verified: number) =>
-      `Qloo caught ${caught} era/culture/risk slip${caught === 1 ? "" : "s"} and confirmed ${verified} real match${verified === 1 ? "" : "es"}.`,
+      `The agent caught ${caught} slip${caught === 1 ? "" : "s"} and confirmed ${verified} real match${verified === 1 ? "" : "es"}.`,
+    headlineNone: "No slips caught on this run.",
+    headlineBreakdown: (qloo: number, cultural: number, critique: number) => {
+      const parts: string[] = [];
+      if (qloo > 0) parts.push(`Qloo refused ${qloo}`);
+      if (cultural > 0) parts.push(`Cultural grounding caught ${cultural}`);
+      if (critique > 0) parts.push(`Critique caught ${critique}`);
+      return parts.length ? `${parts.join(". ")}.` : "";
+    },
     headlineWorking: "Checking every idea against Qloo…",
+    viaQloo: "via Qloo",
+    viaCultural: "via cultural check",
+    viaCritique: "via critique",
     metrics: {
       verified: "Songs, films and faces confirmed real",
       discoveries: "Taste discoveries from Qloo",

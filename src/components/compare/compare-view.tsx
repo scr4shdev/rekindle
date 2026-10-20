@@ -7,6 +7,7 @@ import { useEffect, useMemo } from "react";
 import { wouldSlip } from "@/components/compare/would-slip";
 import { STEP_ICON } from "@/components/session/icons";
 import { RECORDED_PERSONA, resolveRequest } from "@/components/session/session-request";
+import { qlooNotFoundLine } from "@/components/session/qloo-citation";
 import { rejectionDisplay } from "@/components/session/rejection-display";
 import { parseSourceParam, resolveSource } from "@/components/session/source";
 import { ProvenanceBadge } from "@/components/session/step-card";
@@ -15,14 +16,49 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { useAgentStream } from "@/hooks/use-agent-stream";
 import { getMessages } from "@/i18n";
-import type { RejectedItem, SessionRequestDraft } from "@/lib/domain/types";
+import type { CatchSource, RejectedItem, RejectionKind, SessionRequestDraft } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
 
-export const CAUGHT_KINDS = new Set(["anachronism", "wrong_locale", "emotional_risk"]);
+/**
+ * Kinds counted toward "Qloo caught N slips" on the hero and grid. The
+ * baseline is era/culture/risk slips (anachronism, wrong_locale,
+ * emotional_risk). `not_found` is included only when the catch came from
+ * Qloo directly (`catchSource === "qloo"`), see `isCaught`: it credits
+ * Qloo-direct refusals (search misses, lifetime rails, cuisine-tag gates)
+ * while keeping LLM-only artefacts (e.g. a dish that was never groundable)
+ * out of the count.
+ */
+export const CAUGHT_KINDS = new Set<RejectionKind>([
+  "anachronism",
+  "wrong_locale",
+  "emotional_risk",
+  "not_found",
+]);
 
-/** The one rejection set the hero, grid and glance all agree on: pre-plan catches whose kind is in CAUGHT_KINDS. */
+/** Whether this rejection counts toward the "caught slips" tally. */
+export function isCaught(item: RejectedItem): boolean {
+  if (item.phase === "replan") return false;
+  if (item.kind === "not_found") return item.catchSource === "qloo";
+  return CAUGHT_KINDS.has(item.kind);
+}
+
+/** The one rejection set the hero, grid and glance all agree on. */
 export function caughtRejections(view: SessionView) {
-  return view.rejected.filter((r) => r.phase !== "replan" && CAUGHT_KINDS.has(r.kind));
+  return view.rejected.filter(isCaught);
+}
+
+/** Per-source counts of the caught rejections. */
+export function caughtBySource(view: SessionView): Record<CatchSource | "unknown", number> {
+  const counts: Record<CatchSource | "unknown", number> = {
+    qloo: 0,
+    "cultural-check": 0,
+    "critique-llm": 0,
+    unknown: 0,
+  };
+  for (const item of caughtRejections(view)) {
+    counts[item.catchSource ?? "unknown"]++;
+  }
+  return counts;
 }
 
 interface Metrics {
@@ -90,6 +126,7 @@ export function CompareView() {
   const name = resolved.name ?? ts.someone;
   const a = metrics(llm.view);
   const b = metrics(grounded.view);
+  const bSources = caughtBySource(grounded.view);
   const groundedRejected = grounded.view.rejected.filter((r) => r.phase !== "replan");
   // Mobile "At a glance" strip and the hero stat and the grid caught row
   // all count the same list: pre-plan rejections whose kind lands in
@@ -122,7 +159,21 @@ export function CompareView() {
         data-testid="compare-headline"
       >
         {headlineReady ? (
-          <p className="font-heading text-3xl leading-tight sm:text-5xl">{t.headline(b.caught, b.verified)}</p>
+          b.caught === 0 && b.verified === 0 ? (
+            <p className="font-heading text-3xl leading-tight sm:text-5xl">{t.headlineNone}</p>
+          ) : (
+            <>
+              <p className="font-heading text-3xl leading-tight sm:text-5xl">{t.headline(b.caught, b.verified)}</p>
+              {(() => {
+                const breakdown = t.headlineBreakdown(bSources.qloo, bSources["cultural-check"], bSources["critique-llm"]);
+                return breakdown ? (
+                  <p className="mt-2 text-base text-muted-foreground sm:text-lg" data-testid="compare-headline-breakdown">
+                    {breakdown}
+                  </p>
+                ) : null;
+              })()}
+            </>
+          )
         ) : (
           <p className="font-heading text-3xl leading-tight text-muted-foreground sm:text-5xl">{t.headlineWorking}</p>
         )}
@@ -264,6 +315,7 @@ function ComparePlan({
           <ul className="flex flex-col gap-2.5">
             {caught.map((item) => {
               const display = rejectionDisplay(item);
+              const showQlooMiss = item.kind === "not_found" && item.catchSource === "qloo";
               return (
                 <li key={`${item.label}-${item.kind}`} className="flex flex-col gap-0.5">
                   <span className="flex flex-wrap items-center gap-2">
@@ -272,6 +324,11 @@ function ComparePlan({
                     <Badge variant="rose">{display.label}</Badge>
                   </span>
                   <span className="pl-6 text-[0.95rem] text-muted-foreground">{display.reason}</span>
+                  {showQlooMiss && (
+                    <span className="pl-6 text-xs break-words text-sage-ink" data-testid="caught-qloo-miss">
+                      {qlooNotFoundLine(item.label, item.qlooResultCount)}
+                    </span>
+                  )}
                 </li>
               );
             })}
@@ -305,9 +362,14 @@ function ComparePlan({
                 <span className="flex flex-wrap items-center gap-2 pl-8">
                   <ProvenanceBadge step={step} />
                   {slip && (
-                    <span className="inline-flex items-center gap-1.5">
+                    <span className="inline-flex flex-wrap items-center gap-1.5">
                       <TriangleAlertIcon className="size-4 text-rose" aria-hidden />
                       <Badge variant="rose">{t.wouldSlip}</Badge>
+                      {slip.catchSource && (
+                        <span className="text-xs font-semibold text-sage-ink" data-testid="slip-via" data-via={slip.catchSource}>
+                          {slip.catchSource === "qloo" ? t.viaQloo : slip.catchSource === "cultural-check" ? t.viaCultural : t.viaCritique}
+                        </span>
+                      )}
                     </span>
                   )}
                 </span>

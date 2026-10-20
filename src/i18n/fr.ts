@@ -205,7 +205,7 @@ export const fr: PartialMessages = {
     followUps: "Si elle s'ouvre",
     tip: "Astuce",
     media: "Trouvez-le",
-    searchMedia: "Chercher sur YouTube",
+    searchMedia: "Chercher en ligne",
     opensInNewTab: "(s'ouvre dans un nouvel onglet)",
     verified: "Vérifié dans Qloo",
     verifiedHint:

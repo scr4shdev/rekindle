@@ -46,12 +46,17 @@ describe.each(PERSONAS.map((p) => [p.slug, p] as const))("golden mock run: %s", 
       expect(plan.language).toBe(persona.input.sessionLanguage);
       expect(plan.disclaimer).toMatch(/not medical advice or therapy/);
 
-      // Era: every dated entity in the plan is inside the formative window.
-      const { startYear, endYear } = ofType(first, "anchors")[0].anchors.formativeWindow;
+      // Era: every dated entity in the plan is inside the person's lifetime
+      // window. Life phases now cover childhood through mid-life, not only
+      // the formative bump, so a childhood item released before the
+      // formative start is intentional and must still be in-lifetime.
+      const anchors = ofType(first, "anchors")[0].anchors;
+      const lifetimeWindow = anchors.lifetimeWindow;
+      expect(lifetimeWindow).toBeDefined();
       for (const s of plan.steps) {
-        if (s.entity?.releaseYear) {
-          expect(s.entity.releaseYear).toBeGreaterThanOrEqual(startYear);
-          expect(s.entity.releaseYear).toBeLessThanOrEqual(endYear);
+        if (s.entity?.releaseYear && lifetimeWindow) {
+          expect(s.entity.releaseYear).toBeGreaterThanOrEqual(lifetimeWindow.startYear);
+          expect(s.entity.releaseYear).toBeLessThanOrEqual(lifetimeWindow.endYear);
         }
       }
       // Sensitivities and rejected items never leak into the plan text.

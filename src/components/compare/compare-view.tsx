@@ -18,7 +18,12 @@ import { getMessages } from "@/i18n";
 import type { RejectedItem, SessionRequestDraft } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
 
-const CAUGHT_KINDS = new Set(["anachronism", "wrong_locale", "emotional_risk"]);
+export const CAUGHT_KINDS = new Set(["anachronism", "wrong_locale", "emotional_risk"]);
+
+/** The one rejection set the hero, grid and glance all agree on: pre-plan catches whose kind is in CAUGHT_KINDS. */
+export function caughtRejections(view: SessionView) {
+  return view.rejected.filter((r) => r.phase !== "replan" && CAUGHT_KINDS.has(r.kind));
+}
 
 interface Metrics {
   verified: number;
@@ -37,7 +42,7 @@ function metrics(view: SessionView): Metrics {
   return {
     verified: entities.filter((e) => e.provenance === "llm-proposed-qloo-verified").length,
     discoveries: entities.filter((e) => e.provenance === "qloo-affinity").length,
-    caught: view.rejected.filter((r) => CAUGHT_KINDS.has(r.kind)).length,
+    caught: caughtRejections(view).length,
     anchored: steps.filter((s) => s.provenance === "qloo-grounded").length,
     steps: steps.length,
     images: steps.filter((s) => s.entity?.imageUrl || s.mediaUrl).length,
@@ -86,10 +91,10 @@ export function CompareView() {
   const a = metrics(llm.view);
   const b = metrics(grounded.view);
   const groundedRejected = grounded.view.rejected.filter((r) => r.phase !== "replan");
-  // Mobile "At a glance" strip mirrors the hero's `b.caught` count: same
-  // CAUGHT_KINDS set, so a reader doesn't see "0 slips" and then a list that
-  // includes `not_found` items.
-  const groundedCaught = groundedRejected.filter((r) => CAUGHT_KINDS.has(r.kind));
+  // Mobile "At a glance" strip and the hero stat and the grid caught row
+  // all count the same list: pre-plan rejections whose kind lands in
+  // CAUGHT_KINDS. The invariant is tested in compare-view.spec.ts.
+  const groundedCaught = caughtRejections(grounded.view);
   const headlineReady = b.caught + b.verified > 0;
   const rows: { label: string; llm: string; grounded: string; win: boolean }[] = [
     { label: t.metrics.verified, llm: "", grounded: String(b.verified), win: b.verified > 0 },

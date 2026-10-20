@@ -3,12 +3,13 @@
 exports[`golden mock run: fatima > grounded: valid, era-correct, sensitivity-safe and stable 1`] = `
 [
   "0. [opening] Tea together | llm-only | 2 min",
-  "1. [listen] Oum Kalthoum, 'Enta Omri' (1964) | qloo-grounded | Oum Kalthoum (llm-proposed-qloo-verified) | 4 min",
-  "2. [look] Faten Hamama on screen | qloo-grounded | Faten Hamama (llm-proposed-qloo-verified) | 4 min",
-  "3. [taste] Mint tea, the morning ritual | llm-only | 3 min",
-  "4. [move] Sway along: Abdelhalim Hafez | qloo-grounded | Abdelhalim Hafez (llm-proposed-qloo-verified) | 3 min",
-  "5. [listen] Warda Al-Jazairia | qloo-grounded | Warda Al-Jazairia (qloo-affinity) | 2 min",
-  "6. [closing] Thank you, Fatima | llm-only | 2 min",
+  "1. [look] Mohammed V on the radio (1955) | qloo-grounded | Mohammed V (llm-proposed-qloo-verified) | 2 min",
+  "2. [listen] Oum Kalthoum, 'Enta Omri' (1964) | qloo-grounded | Oum Kalthoum (llm-proposed-qloo-verified) | 3 min",
+  "3. [look] Faten Hamama on screen | qloo-grounded | Faten Hamama (llm-proposed-qloo-verified) | 3 min",
+  "4. [taste] Mint tea, the morning ritual | llm-only | 3 min",
+  "5. [move] Sway along: Abdelhalim Hafez | qloo-grounded | Abdelhalim Hafez (llm-proposed-qloo-verified) | 3 min",
+  "6. [listen] Nass El Ghiwane (1972) | qloo-grounded | Nass El Ghiwane (llm-proposed-qloo-verified) | 3 min",
+  "7. [closing] Thank you, Fatima | llm-only | 1 min",
 ]
 `;
 
@@ -26,12 +27,12 @@ exports[`golden mock run: fatima > llm-only: valid, era-correct, sensitivity-saf
 exports[`golden mock run: maria > grounded: valid, era-correct, sensitivity-safe and stable 1`] = `
 [
   "0. [opening] A coffee together | llm-only | 2 min",
-  "1. [listen] Frank Sinatra, 'Strangers in the Night' (1966) | qloo-grounded | Frank Sinatra (llm-proposed-qloo-verified) | 3 min",
+  "1. [look] Totò al Giro d'Italia (1948) | qloo-grounded | Totò al Giro d'Italia (llm-proposed-qloo-verified) | 3 min",
   "2. [move] Clap along: Carosone, 'Tu vuò fà l'americano' | qloo-grounded | Renato Carosone (llm-proposed-qloo-verified) | 3 min",
-  "3. [look] Naples on screen: 'L'oro di Napoli' (1954) | qloo-grounded | L'oro di Napoli (llm-proposed-qloo-verified) | 3 min",
-  "4. [talk] Forza Napoli: the Sívori years | qloo-grounded | Omar Sívori (llm-proposed-qloo-verified) | 3 min",
-  "5. [taste] The smell of Sunday ragù | llm-only | 2 min",
-  "6. [listen] Peppino di Capri, 'Roberta' (1963) | qloo-grounded | Peppino di Capri (qloo-affinity) | 2 min",
+  "3. [listen] Frank Sinatra, 'Strangers in the Night' (1966) | qloo-grounded | Frank Sinatra (llm-proposed-qloo-verified) | 3 min",
+  "4. [look] Naples on screen: 'L'oro di Napoli' (1954) | qloo-grounded | L'oro di Napoli (llm-proposed-qloo-verified) | 3 min",
+  "5. [talk] Forza Napoli: the Sívori years | qloo-grounded | Omar Sívori (llm-proposed-qloo-verified) | 2 min",
+  "6. [taste] The smell of Sunday ragù | llm-only | 2 min",
   "7. [closing] Thank you, Maria | llm-only | 2 min",
 ]
 `;
@@ -50,23 +51,25 @@ exports[`golden mock run: maria > llm-only: valid, era-correct, sensitivity-safe
 exports[`golden mock run: seamus > grounded: valid, era-correct, sensitivity-safe and stable 1`] = `
 [
   "0. [opening] A cup of tea together | llm-only | 2 min",
-  "1. [move] The Royal Showband, 'The Hucklebuck' | qloo-grounded | The Royal Showband (llm-proposed-qloo-verified) | 5 min",
-  "2. [look] 'The Quiet Man' (1952) | qloo-grounded | The Quiet Man (llm-proposed-qloo-verified) | 4 min",
-  "3. [talk] Hurling: Christy Ring and the Glen | qloo-grounded | Christy Ring (llm-proposed-qloo-verified) | 4 min",
-  "4. [listen] Jim Reeves, 'He'll Have to Go' | qloo-grounded | Jim Reeves (llm-proposed-qloo-verified) | 4 min",
-  "5. [listen] Dickie Rock and the Miami Showband | qloo-grounded | Dickie Rock (qloo-affinity) | 4 min",
-  "6. [closing] Thanks, Seamus | llm-only | 2 min",
+  "1. [listen] John McCormack, 'Danny Boy' | qloo-grounded | John McCormack (llm-proposed-qloo-verified) | 4 min",
+  "2. [move] The Royal Showband, 'The Hucklebuck' | qloo-grounded | The Royal Showband (llm-proposed-qloo-verified) | 4 min",
+  "3. [look] 'The Quiet Man' (1952) | qloo-grounded | The Quiet Man (llm-proposed-qloo-verified) | 3 min",
+  "4. [talk] Hurling: Christy Ring and the Glen | qloo-grounded | Christy Ring (llm-proposed-qloo-verified) | 4 min",
+  "5. [listen] Jim Reeves, 'He'll Have to Go' | qloo-grounded | Jim Reeves (llm-proposed-qloo-verified) | 3 min",
+  "6. [listen] Dickie Rock and the Miami Showband | qloo-grounded | Dickie Rock (llm-proposed-qloo-verified) | 3 min",
+  "7. [closing] Thanks, Seamus | llm-only | 2 min",
 ]
 `;
 
 exports[`golden mock run: seamus > llm-only: valid, era-correct, sensitivity-safe and stable 1`] = `
 [
   "0. [opening] A cup of tea together | llm-only | 2 min",
-  "1. [move] The Royal Showband, 'The Hucklebuck' | llm-only | 5 min",
-  "2. [look] 'The Quiet Man' (1952) | llm-only | 4 min",
-  "3. [talk] Hurling: Christy Ring and the Glen | llm-only | 5 min",
-  "4. [listen] Jim Reeves, 'He'll Have to Go' | llm-only | 4 min",
-  "5. [listen] Listen: Brendan Bowyer | llm-only | 3 min",
-  "6. [closing] Thanks, Seamus | llm-only | 2 min",
+  "1. [listen] John McCormack, 'Danny Boy' | llm-only | 4 min",
+  "2. [move] The Royal Showband, 'The Hucklebuck' | llm-only | 4 min",
+  "3. [look] 'The Quiet Man' (1952) | llm-only | 3 min",
+  "4. [talk] Hurling: Christy Ring and the Glen | llm-only | 4 min",
+  "5. [listen] Jim Reeves, 'He'll Have to Go' | llm-only | 3 min",
+  "6. [listen] Dickie Rock and the Miami Showband | llm-only | 3 min",
+  "7. [closing] Thanks, Seamus | llm-only | 2 min",
 ]
 `;

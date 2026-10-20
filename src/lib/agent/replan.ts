@@ -200,7 +200,7 @@ export function runReplan(deps: AgentDeps, request: ReplanRequest, ctx: CallCont
       const kept = item.keepStepId ? byId.get(item.keepStepId) : undefined;
       if (item.keepStepId && kept && !next.includes(kept)) next.push(kept);
       else if (!item.keepStepId) {
-        const step = toStep(run, item.step, byRef.get(item.step.materialRef), 0, same, plan.mode === "grounded");
+        const step = toStep(run, anchors, item.step, byRef.get(item.step.materialRef), 0, same, plan.mode === "grounded");
         if (step) {
           next.push(step);
           created.add(step.id);

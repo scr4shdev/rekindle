@@ -199,7 +199,7 @@ export const it: PartialMessages = {
     followUps: "Se si apre",
     tip: "Suggerimento",
     media: "Trovalo",
-    searchMedia: "Cerca su YouTube",
+    searchMedia: "Cerca online",
     opensInNewTab: "(si apre in una nuova scheda)",
     verified: "Verificato in Qloo",
     verifiedHint:

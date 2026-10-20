@@ -36,7 +36,9 @@ function assertPastUnchanged(before: SessionPlan, after: SessionPlan, stepId: st
 describe("runReplan", () => {
   it("upset: calming step next, risky upcoming step removed, past untouched", async () => {
     const { plan, anchors } = await session("maria");
-    const look = plan.steps.find((s) => s.kind === "look")!;
+    // The L'oro di Napoli look step sits mid-plan; reacting "upset" there lets
+    // the mock replan reach for a same-domain or talk upcoming step as risky.
+    const look = plan.steps.find((s) => s.entity?.name === "L'oro di Napoli")!;
     const events = await replan(plan, anchors, look.id, "upset");
     assertStreamRules(events, "replan");
     const next = ofType(events, "plan")[0].plan;

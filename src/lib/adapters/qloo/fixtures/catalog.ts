@@ -48,6 +48,7 @@ const MARIA = rows("maria", [
   ["MOCK-ARTIST-MASSIMO-RANIERI", "Massimo Ranieri", A, 0.61, 0.83, { dateOfBirth: "1951-05-03", description: "Neapolitan singer, 'Rose rosse' (1969).", tags: ["60s", "70s"] }],
   ["MOCK-ARTIST-SERGIO-BRUNI", "Sergio Bruni", A, 0.45, 0.82, { dateOfBirth: "1921-09-15", description: "'The voice of Naples', classic Neapolitan song.", tags: ["50s", "60s"] }],
   ["MOCK-ARTIST-MINA", "Mina", A, 0.8, 0.79, { dateOfBirth: "1940-03-25", description: "Italian pop singer, star from 1959.", tags: ["60s", "70s"] }],
+  ["MOCK-MOVIE-TOTO-GIRO", "Totò al Giro d'Italia", M, 0.5, 0.83, { releaseYear: 1948, description: "Mario Mattoli's slapstick comedy with Totò chasing the Giro.", disambiguation: "1948, Mario Mattoli" }],
   ["SAMPLE-MOVIE-ORO-DI-NAPOLI", "L'oro di Napoli", M, 0.62, 0.84, { releaseYear: 1954, description: "Vittorio De Sica's portrait of Naples in six stories, with Sophia Loren and Totò.", disambiguation: "1954, Vittorio De Sica" }],
   ["SAMPLE-MOVIE-QUATTRO-GIORNATE", "Le quattro giornate di Napoli", M, 0.41, 0.8, { releaseYear: 1962, description: "Drama of the 1943 Naples uprising against the occupation.", disambiguation: "1962, Nanni Loy" }],
   ["SAMPLE-MOVIE-MATRIMONIO-ALL-ITALIANA", "Matrimonio all'italiana", M, 0.66, 0.87, { releaseYear: 1964, description: "Sophia Loren and Marcello Mastroianni in a Naples love story.", disambiguation: "1964, Vittorio De Sica" }],
@@ -64,6 +65,7 @@ const MARIA = rows("maria", [
 ]);
 
 const SEAMUS = rows("seamus", [
+  ["MOCK-ARTIST-JOHN-MCCORMACK", "John McCormack", A, 0.55, 0.82, { dateOfBirth: "1884-06-14", description: "Athlone tenor; 'Danny Boy' and sentimental ballads carried the pre-war wireless.", tags: ["40s"] }],
   ["MOCK-ARTIST-ROYAL-SHOWBAND", "The Royal Showband", A, 0.42, 0.86, { description: "Waterford showband, one of the biggest of the late 1950s and 60s.", tags: ["50s", "60s"] }],
   ["MOCK-ARTIST-BRENDAN-BOWYER", "Brendan Bowyer", A, 0.4, 0.85, { dateOfBirth: "1938-10-12", description: "Lead singer of the Royal Showband, 'The Hucklebuck' (1965).", tags: ["60s"] }],
   ["MOCK-ARTIST-DICKIE-ROCK", "Dickie Rock", A, 0.38, 0.89, { dateOfBirth: "1936-10-01", description: "Showband star with the Miami Showband.", tags: ["60s"] }],
@@ -93,7 +95,7 @@ const FATIMA = rows("fatima", [
   ["MOCK-ARTIST-ABDELHALIM-HAFEZ", "Abdelhalim Hafez", A, 0.82, 0.88, { dateOfBirth: "1929-06-21", description: "Egyptian singer and actor, 'the dark nightingale'.", tags: ["50s", "60s", "70s"] }],
   ["MOCK-ARTIST-FARID-AL-ATRASH", "Farid al-Atrash", A, 0.7, 0.87, { dateOfBirth: "1910-10-19", description: "Syrian-Egyptian composer, oud player and film star.", tags: ["50s", "60s"] }],
   ["MOCK-ARTIST-FAIRUZ", "Fairuz", A, 0.85, 0.85, { dateOfBirth: "1934-11-20", description: "Lebanese singer, star of the 1960s and 70s.", tags: ["60s", "70s"] }],
-  ["MOCK-ARTIST-NASS-EL-GHIWANE", "Nass El Ghiwane", A, 0.55, 0.84, { description: "Moroccan group from Casablanca, famous from 1971.", tags: ["70s"] }],
+  ["MOCK-ARTIST-NASS-EL-GHIWANE", "Nass El Ghiwane", A, 0.55, 0.84, { description: "Moroccan group of the early 1970s, chaabi and gnawa rhythms.", tags: ["70s"] }],
   ["MOCK-ARTIST-DOUKKALI", "Abdelwahab Doukkali", A, 0.5, 0.86, { dateOfBirth: "1941-01-02", description: "Moroccan singer from Fès, 'Kan ya ma kan' (1960s).", tags: ["60s", "70s"] }],
   ["MOCK-ARTIST-WARDA", "Warda Al-Jazairia", A, 0.6, 0.89, { dateOfBirth: "1939-07-22", description: "Algerian-Egyptian singer, star from the 1960s.", tags: ["60s", "70s"] }],
   ["MOCK-ARTIST-JACQUES-BREL", "Jacques Brel", A, 0.8, 0.8, { dateOfBirth: "1929-04-08", description: "Brussels-born singer, 'Ne me quitte pas' (1959).", tags: ["60s"] }],
@@ -103,6 +105,7 @@ const FATIMA = rows("fatima", [
   ["MOCK-MOVIE-DOA-AL-KARAWAN", "Doa al-Karawan", M, 0.42, 0.85, { releaseYear: 1959, description: "The Nightingale's Prayer, with Faten Hamama.", disambiguation: "1959, Henry Barakat" }],
   ["MOCK-MOVIE-WESSADA", "Al-Wessada al-Khalia", M, 0.38, 0.83, { releaseYear: 1957, description: "The Empty Pillow, Abdelhalim Hafez romance.", disambiguation: "1957, Salah Abu Seif" }],
   ["MOCK-MOVIE-ABI-FOQ", "Abi Foq al-Shagara", M, 0.45, 0.87, { releaseYear: 1969, description: "Abdelhalim Hafez's last musical, set in Alexandria.", disambiguation: "1969, Hussein Kamal" }],
+  ["MOCK-PERSON-MOHAMMED-V", "Mohammed V", P, 0.5, 0.85, { dateOfBirth: "1909-08-10", description: "Sultan then King of Morocco; a national figure of Fatima's Fès childhood." }],
   ["MOCK-PERSON-FATEN-HAMAMA", "Faten Hamama", P, 0.6, 0.87, { dateOfBirth: "1931-05-27", description: "The lady of the Arab screen." }],
   ["MOCK-PERSON-OMAR-SHARIF", "Omar Sharif", P, 0.8, 0.84, { dateOfBirth: "1932-04-10", description: "Egyptian actor, Faten Hamama's screen partner." }],
   ["MOCK-PERSON-SOAD-HOSNY", "Soad Hosny", P, 0.55, 0.86, { dateOfBirth: "1943-01-26", description: "Cinderella of Egyptian cinema, 1960s-70s." }],

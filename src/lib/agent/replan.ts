@@ -20,13 +20,61 @@ import { ageBucket, clip, DOMAIN_OF_TYPE, eraFilter, isTasteOutage, normalizeNam
 export const REPLAN_NEW_MATERIALS = 2;
 
 /**
- * Replan-start narration keyed by reaction. Caregiver-language inner voice,
+ * Replan-phase narration keyed by caregiver language and reaction. Written in
+ * the caregiver's inner voice (the trace is for them, not the person),
  * matching the recorded demo copy in sample-events (`sample.replanStarted`).
+ * Falls back to English for any tag outside the demo locales.
  */
-const STARTED: Record<ReplanRequest["reaction"], string> = {
-  lit_up: "Leaning into this thread…",
-  neutral: "Trying something different…",
-  upset: "They seemed upset. Slowing down with something calm and familiar…",
+type ReplanLang = "en" | "it" | "fr";
+function replanLang(tag: string | undefined): ReplanLang {
+  const primary = tag?.toLowerCase().split("-")[0];
+  return primary === "it" || primary === "fr" ? primary : "en";
+}
+const STARTED: Record<ReplanLang, Record<ReplanRequest["reaction"], string>> = {
+  en: {
+    lit_up: "Leaning into this thread…",
+    neutral: "Trying something different…",
+    upset: "They seemed upset. Slowing down with something calm and familiar…",
+  },
+  it: {
+    lit_up: "Teniamo questo filo…",
+    neutral: "Proviamo qualcosa di diverso…",
+    upset: "Sembrava turbata. Rallentiamo con qualcosa di calmo e familiare…",
+  },
+  fr: {
+    lit_up: "On garde ce fil…",
+    neutral: "Essayons quelque chose de différent…",
+    upset: "Elle avait l'air troublée. On ralentit avec quelque chose de calme et familier…",
+  },
+};
+const REPLAN_COPY: Record<ReplanLang, {
+  nothingToAdapt: string;
+  nothingToChange: string;
+  madeRoom: string;
+  noRoom: string;
+  adapted: string;
+}> = {
+  en: {
+    nothingToAdapt: "That was the last step: there is nothing left to adapt.",
+    nothingToChange: "Nothing to change.",
+    madeRoom: "Removed to make room for what comes next.",
+    noRoom: "No room left in this session.",
+    adapted: "The rest of the session is adapted.",
+  },
+  it: {
+    nothingToAdapt: "Era l'ultima tappa: non c'è più niente da adattare.",
+    nothingToChange: "Non serve cambiare nulla.",
+    madeRoom: "Rimosso per far spazio a quello che viene dopo.",
+    noRoom: "Non c'è più spazio in questa sessione.",
+    adapted: "Il resto della sessione è adattato.",
+  },
+  fr: {
+    nothingToAdapt: "C'était la dernière étape : il n'y a plus rien à adapter.",
+    nothingToChange: "Rien à changer.",
+    madeRoom: "Retiré pour laisser la place à la suite.",
+    noRoom: "Plus de place dans cette séance.",
+    adapted: "Le reste de la séance est adapté.",
+  },
 };
 
 const summarize = (s: SessionStep): ReplanStepSummary => ({
@@ -84,8 +132,10 @@ export function runReplan(deps: AgentDeps, request: ReplanRequest, ctx: CallCont
 
   return stamped(run, async function* () {
     const started = run.deps.now().getTime();
-    yield { type: "phase", phase: "replan", status: "started", message: STARTED[request.reaction] };
-    yield { type: "note", phase: "replan", text: STARTED[request.reaction] };
+    const lang = replanLang(plan.caregiverLanguage);
+    const copy = REPLAN_COPY[lang];
+    yield { type: "phase", phase: "replan", status: "started", message: STARTED[lang][request.reaction] };
+    yield { type: "note", phase: "replan", text: STARTED[lang][request.reaction] };
     const reacted = plan.steps.find((s) => s.id === request.stepId);
     if (!reacted) {
       yield { type: "error", code: "invalid_input", phase: "replan", recoverable: false, message: "That step is not part of this plan." };
@@ -104,9 +154,9 @@ export function runReplan(deps: AgentDeps, request: ReplanRequest, ctx: CallCont
       });
 
     if (upcoming.length === 0) {
-      yield { type: "note", phase: "replan", text: "That was the last step: there is nothing left to adapt." };
+      yield { type: "note", phase: "replan", text: copy.nothingToAdapt };
       yield { type: "plan", plan: finish(steps) };
-      yield { type: "phase", phase: "replan", status: "completed", message: "Nothing to change.", durationMs: run.deps.now().getTime() - started };
+      yield { type: "phase", phase: "replan", status: "completed", message: copy.nothingToChange, durationMs: run.deps.now().getTime() - started };
       return;
     }
 
@@ -179,7 +229,7 @@ export function runReplan(deps: AgentDeps, request: ReplanRequest, ctx: CallCont
         item: {
           label: step.title,
           // Steps the model dropped without saying why are treated as making room, not as risky.
-          reason: clip(r?.reason, 400) ?? "Removed to make room for what comes next.",
+          reason: clip(r?.reason, 400) ?? copy.madeRoom,
           kind: r?.kind ?? "low_relevance",
           phase: "replan",
           domain: step.entity?.domain,
@@ -193,7 +243,7 @@ export function runReplan(deps: AgentDeps, request: ReplanRequest, ctx: CallCont
         type: "rejected",
         item: {
           label: step.title,
-          reason: "No room left in this session.",
+          reason: copy.noRoom,
           kind: "low_relevance",
           phase: "replan",
           domain: step.entity?.domain,
@@ -210,7 +260,7 @@ export function runReplan(deps: AgentDeps, request: ReplanRequest, ctx: CallCont
       type: "phase",
       phase: "replan",
       status: "completed",
-      message: clip(out.message, 400) ?? "The rest of the session is adapted.",
+      message: clip(out.message, 400) ?? copy.adapted,
       durationMs: run.deps.now().getTime() - started,
       counts: { added: created.size, removed: upcoming.filter((s) => !next.includes(s)).length + trimmed.filter((s) => !upcoming.includes(s)).length },
     };

@@ -57,8 +57,17 @@ async function verifyOne(run: Run, candidate: Candidate): Promise<VerifyOutcome>
     // Bugs are not "not found": only port errors are handled here.
     if (!(error instanceof PortError)) throw error;
     if (isTasteOutage(error)) return { kind: "outage", error };
-    // bad_request: the guard or the API refused this one query. Nothing personal is ever sent.
-    return { kind: "not_found", events: [], reason: "Not checked: the query was refused, so it is not used." };
+    // Per-query misses (bad_request, timeout, invalid_response): the single
+    // call did not land, but Qloo itself is still reachable, so the run keeps
+    // going and this candidate is treated as not found.
+    const code = (error as PortError).code;
+    const reason =
+      code === "timeout"
+        ? "Qloo did not answer in time for this one; not used."
+        : code === "invalid_response"
+          ? "Qloo answered oddly for this one; not used."
+          : "Not checked: the query was refused, so it is not used.";
+    return { kind: "not_found", events: [], reason };
   }
   const events = [qlooCallEvent(run, "verify", response)];
   const sameType = response.items.filter((e) => e.type === type);

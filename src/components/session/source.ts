@@ -140,7 +140,18 @@ export function sampleSource(speed = 1, language?: string): AgentEventSource {
 
 /** The backend is not there (route missing or unreachable), as opposed to a real error. */
 function isMissingBackend(error: unknown): boolean {
-  if (error instanceof StreamRequestError) return error.status === 404 || error.status === 405 || error.status === 501;
+  if (error instanceof StreamRequestError) {
+    // 404/405/501: route not deployed. 5xx: the handler is there but could not
+    // serve this request (serverless cold-start, upstream outage, deadline hit
+    // before the stream opened). In both cases, a recorded demo is a better
+    // judge experience than a red alert, so fall through to the fixture.
+    return (
+      error.status === 404 ||
+      error.status === 405 ||
+      error.status === 501 ||
+      (error.status >= 500 && error.status <= 599)
+    );
+  }
   return error instanceof TypeError;
 }
 

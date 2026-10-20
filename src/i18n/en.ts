@@ -71,6 +71,17 @@ export const en = {
   session: {
     eraBandLabel: "Place and era",
     lifespan: (from: number, to: number) => `Spanning ${from} to ${to}, childhood through mid life.`,
+    phaseTimelineLabel: "Life phases spanned by this session",
+    phaseBands: {
+      childhood: "Childhood",
+      youth: "Youth",
+      early_adulthood: "Early adulthood",
+      mid_life: "Mid life",
+      later_life: "Later life",
+    },
+    phaseYears: (from: number, to: number) => `${from} to ${to}`,
+    phaseStep: (title: string, year: number) => `${title}, ${year}`,
+    phaseStepNoYear: (title: string) => title,
     planningFor: (name: string) => `Planning a session for ${name}`,
     planningGeneric: "Planning your session",
     waitHint: "This usually takes 15–30 seconds. The agent will narrate as it works.",

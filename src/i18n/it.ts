@@ -85,6 +85,17 @@ export const it: PartialMessages = {
   session: {
     eraBandLabel: "Luogo ed epoca",
     lifespan: (from: number, to: number) => `Dal ${from} al ${to}, dall'infanzia alla maturità.`,
+    phaseTimelineLabel: "Fasi di vita toccate da questa sessione",
+    phaseBands: {
+      childhood: "Infanzia",
+      youth: "Giovinezza",
+      early_adulthood: "Primi anni adulti",
+      mid_life: "Maturità",
+      later_life: "Anni recenti",
+    },
+    phaseYears: (from: number, to: number) => `dal ${from} al ${to}`,
+    phaseStep: (title: string, year: number) => `${title}, ${year}`,
+    phaseStepNoYear: (title: string) => title,
     planningFor: (name: string) => `Pianifico una sessione per ${name}`,
     planningGeneric: "Pianifico la sessione",
     waitHint: "Di solito servono 15–30 secondi. L'agente racconta mentre lavora.",

@@ -4,6 +4,7 @@ import { ArrowLeftIcon, BotIcon, PlayIcon, PrinterIcon, RotateCcwIcon, ScaleIcon
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { EraHero } from "@/components/session/era-hero";
 import { LiveSession } from "@/components/session/live-session";
 import { PlanTimeline } from "@/components/session/plan-timeline";
 import { ReasoningTrace } from "@/components/session/reasoning-trace";
@@ -14,110 +15,8 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAgentStream } from "@/hooks/use-agent-stream";
 import { MessagesProvider, useMessages } from "@/i18n/provider";
-import type { Anchors, Reaction, ReactionRecord, SessionMode } from "@/lib/domain/types";
+import type { Reaction, ReactionRecord, SessionMode } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
-
-function languageNames(anchors: Anchors): string {
-  return anchors.languages.map((l) => l.name).join(", ");
-}
-
-/** Reminiscence-bump years: roughly 12-25 after birth. */
-function formativeFromBirth(birthYear?: number): { startYear: number; endYear: number } | undefined {
-  if (!birthYear) return undefined;
-  return { startYear: birthYear + 12, endYear: birthYear + 25 };
-}
-
-const PERSONA_HERO_TONE: Record<string, string> = {
-  // Napoli: terracotta sun. Cork: sea-green. Fès: lamp-amber.
-  maria: "from-ochre-soft via-paper-deep to-rose-soft/60",
-  seamus: "from-sage-soft via-paper-deep to-sage-soft/40",
-  fatima: "from-ochre-soft via-paper-deep to-ochre-soft/60",
-  custom: "from-paper-deep via-paper-deep to-sage-soft/40",
-};
-
-/**
- * Place + era + session-language hero band. Visible from first paint (fed from
- * the request's person info) so a judge is not staring at an empty header while
- * the agent streams; once PARSE lands, anchors refine place and years. Pure
- * typography and a soft gradient. Dark-mode safe, reduced-motion safe.
- */
-function EraHero({
-  persona,
-  anchors,
-  birthPlace,
-  birthYear,
-  sessionLanguage,
-  streaming,
-}: {
-  persona: string;
-  anchors: Anchors | undefined;
-  birthPlace: string | undefined;
-  birthYear: number | undefined;
-  sessionLanguage: string;
-  streaming: boolean;
-}) {
-  const t = useMessages().session;
-  const place = anchors?.places[0]?.name ?? birthPlace;
-  const window = anchors?.formativeWindow ?? formativeFromBirth(birthYear);
-  const languageLabel = anchors
-    ? languageNames(anchors)
-    : (() => {
-        try {
-          return new Intl.DisplayNames([sessionLanguage], { type: "language" }).of(sessionLanguage) ?? sessionLanguage;
-        } catch {
-          return sessionLanguage;
-        }
-      })();
-  if (!place && !window) return null;
-  const tone = PERSONA_HERO_TONE[persona] ?? PERSONA_HERO_TONE.custom;
-  return (
-    <section
-      aria-label={t.eraBandLabel}
-      data-testid="era-hero"
-      data-streaming={streaming || undefined}
-      className={cn(
-        "animate-rise relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br px-5 py-5 transition-[padding] duration-500 motion-reduce:transition-none sm:px-8",
-        tone,
-        streaming ? "sm:py-9" : "sm:py-5",
-      )}
-      lang={sessionLanguage}
-    >
-      <div className="flex flex-col items-baseline gap-x-5 gap-y-1 sm:flex-row sm:flex-wrap">
-        {place && (
-          <h2
-            className={cn(
-              "font-heading font-semibold leading-[1.05] text-foreground transition-[font-size] duration-500 motion-reduce:transition-none",
-              streaming ? "text-4xl sm:text-6xl" : "text-2xl sm:text-4xl",
-            )}
-          >
-            {place}
-          </h2>
-        )}
-        {window && (
-          <p
-            className={cn(
-              "font-heading font-semibold text-sage-ink transition-[font-size] duration-500 motion-reduce:transition-none",
-              streaming ? "text-2xl sm:text-4xl" : "text-xl sm:text-2xl",
-            )}
-          >
-            · {window.startYear}–{window.endYear}
-          </p>
-        )}
-        <p className="text-sm font-semibold tracking-wide text-muted-foreground uppercase sm:text-base">
-          {languageLabel}
-        </p>
-      </div>
-      {anchors?.lifePhases && anchors.lifePhases.length > 0 && (
-        <p
-          className="mt-2 text-sm text-muted-foreground sm:text-base"
-          data-testid="era-hero-lifespan"
-        >
-          {t.lifespan(anchors.lifePhases[0].startYear, anchors.lifePhases[anchors.lifePhases.length - 1].endYear)}
-        </p>
-      )}
-    </section>
-  );
-}
 
 export function SessionView() {
   const params = useSearchParams();
@@ -258,6 +157,7 @@ function SessionViewBody({
         <EraHero
           persona={resolved.persona}
           anchors={anchors}
+          plan={plan}
           birthPlace={resolved.request.person.birthPlace}
           birthYear={resolved.request.person.birthYear}
           sessionLanguage={resolved.request.person.sessionLanguage ?? "en"}

@@ -237,9 +237,12 @@ function composeSession(input: ComposeSessionInput): ComposeSessionOutput {
   });
   // The schema needs at least one middle step: talk about the old days when nothing survived critique.
   if (body.length === 0) body.push(genericStep({ label: input.anchors.loves[0]?.label ?? "the old days", domain: "sport", ref: "" }, input.sessionLanguage, input.caregiverLanguage, who));
-  const lang = genericLang(input.sessionLanguage);
+  // The plan title is caregiver-facing (shown at the top of the plan, printed
+  // on the hand-off sheet), so it reads in the caregiver's language even when
+  // the session itself runs in the person's language.
+  const titleLang = genericLang(input.caregiverLanguage);
   return {
-    title: persona?.title ?? { en: "A gentle trip back in time", it: "Un dolce viaggio nel tempo", fr: "Un doux voyage dans le temps" }[lang],
+    title: persona?.title ?? { en: "A gentle trip back in time", it: "Un dolce viaggio nel tempo", fr: "Un doux voyage dans le temps" }[titleLang],
     disclaimer: DISCLAIMERS[input.caregiverLanguage.toLowerCase().split("-")[0]] ?? input.disclaimerEnglish,
     steps: [bookend("opening", persona, input, who), ...body, bookend("closing", persona, input, who)],
   };
@@ -247,8 +250,70 @@ function composeSession(input: ComposeSessionInput): ComposeSessionOutput {
 
 const KEEP_PLACEHOLDER: ModelStep = { kind: "talk", title: "", materialRef: "", prompt: "", promptTranslation: "", followUps: [], caregiverTip: "", durationMin: 1, mediaHint: "" };
 
+/**
+ * Replan narration localized to the caregiver's reading language. Keys match
+ * the three demo locales; anything else falls back to English. Each entry is a
+ * builder because some lines interpolate the reacted-step or new-material
+ * title.
+ */
+type ReplanLang = "en" | "it" | "fr";
+const REPLAN_PROSE: Record<ReplanLang, {
+  upsetMessage: string;
+  upsetNote: (title: string) => string;
+  litUpWithFresh: (label: string) => string;
+  litUpStay: string;
+  litUpNote: (title: string) => string;
+  neutralDifferent: (title: string) => string;
+  neutralSame: string;
+  neutralNote: (title: string) => string;
+  skippedRisky: (title: string) => string;
+  madeRoom: string;
+}> = {
+  en: {
+    upsetMessage: "Next up: a calm, familiar pause.",
+    upsetNote: (t) => `They seemed upset during '${t}'. Slowing down with something soothing and familiar.`,
+    litUpWithFresh: (l) => `More of what lit them up: ${l} next.`,
+    litUpStay: "Keeping that thread going.",
+    litUpNote: (t) => `They lit up at '${t}': leaning into that thread.`,
+    neutralDifferent: (t) => `Trying something different next: ${t}.`,
+    neutralSame: "Carrying on gently.",
+    neutralNote: (t) => `No reaction to '${t}': changing the kind of activity.`,
+    skippedRisky: (t) => `'${t}' could stir up the same feelings; skipped for now.`,
+    madeRoom: "Making room for more of what they enjoyed.",
+  },
+  it: {
+    upsetMessage: "Ora: una pausa calma e familiare.",
+    upsetNote: (t) => `Sembrava turbata durante '${t}'. Rallentiamo con qualcosa di dolce e familiare.`,
+    litUpWithFresh: (l) => `Ancora di ciò che l'ha illuminata: dopo arriva ${l}.`,
+    litUpStay: "Continuiamo su questo filo.",
+    litUpNote: (t) => `Si è illuminata con '${t}': teniamo questo filo.`,
+    neutralDifferent: (t) => `Proviamo qualcosa di diverso: ${t}.`,
+    neutralSame: "Andiamo avanti con dolcezza.",
+    neutralNote: (t) => `Nessuna reazione a '${t}': cambiamo tipo di attività.`,
+    skippedRisky: (t) => `'${t}' potrebbe risvegliare le stesse emozioni: per ora lo saltiamo.`,
+    madeRoom: "Lasciamo spazio a ciò che le è piaciuto di più.",
+  },
+  fr: {
+    upsetMessage: "Ensuite : une pause calme et familière.",
+    upsetNote: (t) => `Elle avait l'air troublée pendant « ${t} ». On ralentit avec quelque chose de doux et familier.`,
+    litUpWithFresh: (l) => `Encore de ce qui l'a illuminée : ${l} ensuite.`,
+    litUpStay: "On garde ce fil.",
+    litUpNote: (t) => `Elle s'est illuminée sur « ${t} » : on garde ce fil.`,
+    neutralDifferent: (t) => `On essaie quelque chose de différent : ${t}.`,
+    neutralSame: "On continue tout en douceur.",
+    neutralNote: (t) => `Pas de réaction à « ${t} » : on change de type d'activité.`,
+    skippedRisky: (t) => `« ${t} » pourrait réveiller les mêmes émotions : on le passe pour l'instant.`,
+    madeRoom: "On fait de la place pour ce qu'elle a aimé.",
+  },
+};
+function replanLang(tag: string | undefined): ReplanLang {
+  const primary = tag?.toLowerCase().split("-")[0];
+  return primary === "it" || primary === "fr" ? primary : "en";
+}
+
 function replanSession(input: ReplanSessionInput): ReplanSessionOutput {
   const persona = personaByAnchors(input.anchors);
+  const prose = REPLAN_PROSE[replanLang(input.caregiverLanguage)];
   const keep = (s: ReplanStepSummary) => ({ keepStepId: s.id, step: KEEP_PLACEHOLDER });
   const isClosing = (s: ReplanStepSummary) => s.kind === "closing";
   const upcoming = [...input.upcoming];
@@ -261,12 +326,12 @@ function replanSession(input: ReplanSessionInput): ReplanSessionOutput {
   if (input.reaction === "upset") {
     const risky = upcoming.find((s) => !isClosing(s) && ((s.domain && s.domain === reacted.domain) || s.kind === "talk"));
     if (risky) {
-      removed.push({ stepId: risky.id, kind: "emotional_risk", reason: `'${risky.title}' could stir up the same feelings; skipped for now.` });
+      removed.push({ stepId: risky.id, kind: "emotional_risk", reason: prose.skippedRisky(risky.title) });
       upcoming.splice(upcoming.indexOf(risky), 1);
     }
     first = { keepStepId: "", step: bookend("calm", persona, input, "") };
-    message = "Next up: a calm, familiar pause.";
-    note = `They seemed upset during '${reacted.title}'. Slowing down with something soothing and familiar.`;
+    message = prose.upsetMessage;
+    note = prose.upsetNote(reacted.title);
   } else if (input.reaction === "lit_up") {
     const fresh = input.newMaterials[0];
     if (fresh) {
@@ -275,21 +340,21 @@ function replanSession(input: ReplanSessionInput): ReplanSessionOutput {
       const total = upcoming.reduce((n, s) => n + s.durationMin, first.step.durationMin);
       const droppable = [...upcoming].reverse().find((s) => !isClosing(s));
       if (total > input.minutesRemaining && droppable) {
-        removed.push({ stepId: droppable.id, kind: "low_relevance", reason: "Making room for more of what they enjoyed." });
+        removed.push({ stepId: droppable.id, kind: "low_relevance", reason: prose.madeRoom });
         upcoming.splice(upcoming.indexOf(droppable), 1);
       }
-      message = `More of what lit them up: ${fresh.label} next.`;
+      message = prose.litUpWithFresh(fresh.label);
     } else {
       const same = upcoming.find((s) => !isClosing(s) && s.domain === reacted.domain);
       if (same) upcoming.unshift(...upcoming.splice(upcoming.indexOf(same), 1));
-      message = "Keeping that thread going.";
+      message = prose.litUpStay;
     }
-    note = `They lit up at '${reacted.title}': leaning into that thread.`;
+    note = prose.litUpNote(reacted.title);
   } else {
     const different = upcoming.find((s) => !isClosing(s) && s.kind !== reacted.kind);
     if (different) upcoming.unshift(...upcoming.splice(upcoming.indexOf(different), 1));
-    message = different ? `Trying something different next: ${different.title}.` : "Carrying on gently.";
-    note = `No reaction to '${reacted.title}': changing the kind of activity.`;
+    message = different ? prose.neutralDifferent(different.title) : prose.neutralSame;
+    note = prose.neutralNote(reacted.title);
   }
 
   return { message, notes: [note], upcoming: [...(first ? [first] : []), ...upcoming.map(keep)].slice(0, Math.max(1, input.maxUpcoming)), removed };

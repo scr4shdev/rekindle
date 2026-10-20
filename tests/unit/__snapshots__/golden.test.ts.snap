@@ -2,49 +2,49 @@
 
 exports[`golden mock run: fatima > grounded: valid, era-correct, sensitivity-safe and stable 1`] = `
 [
-  "0. [opening] Un thé ensemble | llm-only | 2 min",
+  "0. [opening] Tea together | llm-only | 2 min",
   "1. [listen] Oum Kalthoum, 'Enta Omri' (1964) | qloo-grounded | Oum Kalthoum (llm-proposed-qloo-verified) | 4 min",
   "2. [look] Faten Hamama on screen | qloo-grounded | Faten Hamama (llm-proposed-qloo-verified) | 4 min",
   "3. [taste] Mint tea, the morning ritual | llm-only | 3 min",
   "4. [move] Sway along: Abdelhalim Hafez | qloo-grounded | Abdelhalim Hafez (llm-proposed-qloo-verified) | 3 min",
   "5. [listen] Warda Al-Jazairia | qloo-grounded | Warda Al-Jazairia (qloo-affinity) | 2 min",
-  "6. [closing] Merci, Fatima | llm-only | 2 min",
+  "6. [closing] Thank you, Fatima | llm-only | 2 min",
 ]
 `;
 
 exports[`golden mock run: fatima > llm-only: valid, era-correct, sensitivity-safe and stable 1`] = `
 [
-  "0. [opening] Un thé ensemble | llm-only | 2 min",
+  "0. [opening] Tea together | llm-only | 2 min",
   "1. [listen] Oum Kalthoum, 'Enta Omri' (1964) | llm-only | 4 min",
   "2. [look] Faten Hamama on screen | llm-only | 3 min",
   "3. [taste] Mint tea, the morning ritual | llm-only | 3 min",
   "4. [move] Sway along: Abdelhalim Hafez | llm-only | 3 min",
   "5. [listen] Listen: Farid al-Atrash | llm-only | 3 min",
-  "6. [closing] Merci, Fatima | llm-only | 2 min",
+  "6. [closing] Thank you, Fatima | llm-only | 2 min",
 ]
 `;
 
 exports[`golden mock run: maria > grounded: valid, era-correct, sensitivity-safe and stable 1`] = `
 [
-  "0. [opening] Un caffè insieme | llm-only | 2 min",
+  "0. [opening] A coffee together | llm-only | 2 min",
   "1. [listen] Frank Sinatra, 'Strangers in the Night' (1966) | qloo-grounded | Frank Sinatra (llm-proposed-qloo-verified) | 3 min",
   "2. [move] Clap along: Carosone, 'Tu vuò fà l'americano' | qloo-grounded | Renato Carosone (llm-proposed-qloo-verified) | 3 min",
   "3. [look] Naples on screen: 'L'oro di Napoli' (1954) | qloo-grounded | L'oro di Napoli (llm-proposed-qloo-verified) | 3 min",
   "4. [talk] Forza Napoli: the Sívori years | qloo-grounded | Omar Sívori (llm-proposed-qloo-verified) | 3 min",
   "5. [taste] The smell of Sunday ragù | llm-only | 2 min",
   "6. [listen] Peppino di Capri, 'Roberta' (1963) | qloo-grounded | Peppino di Capri (qloo-affinity) | 2 min",
-  "7. [closing] Grazie, Maria | llm-only | 2 min",
+  "7. [closing] Thank you, Maria | llm-only | 2 min",
 ]
 `;
 
 exports[`golden mock run: maria > llm-only: valid, era-correct, sensitivity-safe and stable 1`] = `
 [
-  "0. [opening] Un caffè insieme | llm-only | 2 min",
+  "0. [opening] A coffee together | llm-only | 2 min",
   "1. [listen] Frank Sinatra, 'My Way' (1969) | llm-only | 4 min",
   "2. [listen] Renato Carosone, 'Napoli Mia Bella' (1957) | llm-only | 4 min",
   "3. [talk] Maradona and the 1987 scudetto | llm-only | 4 min",
   "4. [taste] The smell of Sunday ragù | llm-only | 4 min",
-  "5. [closing] Grazie, Maria | llm-only | 2 min",
+  "5. [closing] Thank you, Maria | llm-only | 2 min",
 ]
 `;
 

@@ -85,9 +85,9 @@ const MARIA: PersonaFixture = {
     "Diego Maradona": { kind: "anachronism", reason: "Arrived in 1984, when she was 42. Sívori (1965-69) belongs to her youth." },
     "Nino D'Angelo": { kind: "anachronism", reason: "Famous from 1982, when she was 40: after her formative years." },
   },
-  title: "Un pomeriggio a Napoli",
+  title: "An afternoon in Naples",
   opening: {
-    title: "Un caffè insieme",
+    title: "A coffee together",
     prompt: "Buongiorno Maria! Ho pensato di passare un po' di tempo insieme con la musica di Napoli. Le va?",
     translation: "Good morning Maria! I thought we could spend some time together with the music of Naples. Would you like that?",
     followUps: [],
@@ -95,7 +95,7 @@ const MARIA: PersonaFixture = {
     mediaHint: "",
   },
   closing: {
-    title: "Grazie, Maria",
+    title: "Thank you, Maria",
     prompt: "Grazie Maria, è stato bellissimo cantare con lei. Lo rifacciamo presto?",
     translation: "Thank you Maria, it was lovely singing with you. Shall we do it again soon?",
     followUps: [],
@@ -103,7 +103,7 @@ const MARIA: PersonaFixture = {
     mediaHint: "",
   },
   calm: {
-    kind: "listen", minutes: 3, title: "Una pausa dolce",
+    kind: "listen", minutes: 3, title: "A gentle pause",
     prompt: "Facciamo una pausa con una canzone dolce, di quelle di casa. Chiuda gli occhi, se vuole.",
     translation: "Let's take a pause with a gentle song from home. Close your eyes if you like.",
     followUps: [],
@@ -394,9 +394,9 @@ const FATIMA: PersonaFixture = {
     "Stella Artois": { kind: "emotional_risk", reason: "A beer brand: the notes ask for nothing with alcohol." },
     Khaled: { kind: "anachronism", reason: "Became famous in the late 1980s and 90s, after her formative years." },
   },
-  title: "Un après-midi à Fès",
+  title: "An afternoon in Fès",
   opening: {
-    title: "Un thé ensemble",
+    title: "Tea together",
     prompt: "Bonjour Fatima ! J'ai apporté un peu de musique d'Égypte et de Fès. On écoute ensemble ?",
     translation: "Hello Fatima! I brought some music from Egypt and Fès. Shall we listen together?",
     followUps: [],
@@ -404,7 +404,7 @@ const FATIMA: PersonaFixture = {
     mediaHint: "",
   },
   closing: {
-    title: "Merci, Fatima",
+    title: "Thank you, Fatima",
     prompt: "Merci Fatima, c'était un très beau moment avec vous.",
     translation: "Thank you Fatima, that was a lovely moment with you.",
     followUps: [],
@@ -412,7 +412,7 @@ const FATIMA: PersonaFixture = {
     mediaHint: "",
   },
   calm: {
-    kind: "listen", minutes: 3, title: "Une pause douce",
+    kind: "listen", minutes: 3, title: "A gentle pause",
     prompt: "Faisons une petite pause avec une musique douce. Fermez les yeux si vous voulez.",
     translation: "Let's take a little pause with some gentle music. Close your eyes if you like.",
     followUps: [],

@@ -177,7 +177,7 @@ const STEPS: SessionStep[] = [
     id: "s_open",
     order: 0,
     kind: "opening",
-    title: "Un caffè insieme",
+    title: "A coffee together",
     prompt: "Buongiorno Maria! Ho pensato di passare un po' di tempo insieme con la musica di Napoli. Le va?",
     promptTranslation: "Good morning Maria! I thought we could spend some time together with the music of Naples. Would you like that?",
     followUps: [],
@@ -270,7 +270,7 @@ const STEPS: SessionStep[] = [
     id: "s_close",
     order: 7,
     kind: "closing",
-    title: "Grazie, Maria",
+    title: "Thank you, Maria",
     prompt: "Grazie Maria, è stato bellissimo cantare con lei. Lo rifacciamo presto?",
     promptTranslation: "Thank you Maria, it was lovely singing with you. Shall we do it again soon?",
     followUps: [],
@@ -282,7 +282,7 @@ const STEPS: SessionStep[] = [
 
 export const SAMPLE_PLAN: SessionPlan = {
   id: "plan_sample_maria",
-  title: "Un pomeriggio a Napoli",
+  title: "An afternoon in Naples",
   language: "it",
   caregiverLanguage: "en",
   steps: STEPS,

@@ -98,7 +98,6 @@ const FATIMA = rows("fatima", [
   ["MOCK-ARTIST-NASS-EL-GHIWANE", "Nass El Ghiwane", A, 0.55, 0.84, { description: "Moroccan group of the early 1970s, chaabi and gnawa rhythms.", tags: ["70s"] }],
   ["MOCK-ARTIST-DOUKKALI", "Abdelwahab Doukkali", A, 0.5, 0.86, { dateOfBirth: "1941-01-02", description: "Moroccan singer from Fès, 'Kan ya ma kan' (1960s).", tags: ["60s", "70s"] }],
   ["MOCK-ARTIST-WARDA", "Warda Al-Jazairia", A, 0.6, 0.89, { dateOfBirth: "1939-07-22", description: "Algerian-Egyptian singer, star from the 1960s.", tags: ["60s", "70s"] }],
-  ["MOCK-ARTIST-JACQUES-BREL", "Jacques Brel", A, 0.8, 0.8, { dateOfBirth: "1929-04-08", description: "Brussels-born singer, 'Ne me quitte pas' (1959).", tags: ["60s"] }],
   ["MOCK-ARTIST-CHEB-KHALED", "Khaled", A, 0.75, 0.83, { dateOfBirth: "1960-02-29", description: "Algerian raï singer, 'Didi' (1992).", tags: ["90s"] }],
   ["MOCK-MOVIE-AL-KHATAYA", "Al-Khataya", M, 0.4, 0.86, { releaseYear: 1962, description: "Egyptian melodrama starring Abdelhalim Hafez.", disambiguation: "1962, Hassan El Imam" }],
   ["MOCK-MOVIE-MABOUDAT", "Ma'boudat al-Gamahir", M, 0.35, 0.84, { releaseYear: 1967, description: "Musical with Abdelhalim Hafez and Shadia.", disambiguation: "1967, Helmy Rafla" }],
@@ -121,6 +120,7 @@ const FATIMA = rows("fatima", [
 const GENERIC = rows("generic", [
   ["MOCK-ARTIST-BING-CROSBY", "Bing Crosby", A, 0.8, 0.84, { dateOfBirth: "1903-05-03", description: "Crooner of 'White Christmas' (1942).", tags: ["40s", "50s"] }],
   ["MOCK-ARTIST-EDITH-PIAF", "Édith Piaf", A, 0.85, 0.85, { dateOfBirth: "1915-12-19", description: "French singer, 'La vie en rose' (1946).", tags: ["40s", "50s"] }],
+  ["MOCK-ARTIST-JACQUES-BREL", "Jacques Brel", A, 0.8, 0.8, { dateOfBirth: "1929-04-08", description: "Brussels-born singer, 'Ne me quitte pas' (1959).", tags: ["60s"] }],
   ["MOCK-ARTIST-NAT-KING-COLE", "Nat King Cole", A, 0.82, 0.86, { dateOfBirth: "1919-03-17", description: "Singer of 'Unforgettable' (1951).", tags: ["50s"] }],
   ["MOCK-ARTIST-BEATLES", "The Beatles", A, 0.99, 0.85, { description: "Liverpool band, worldwide from 1963.", tags: ["60s"] }],
   ["MOCK-ARTIST-ROLLING-STONES", "The Rolling Stones", A, 0.95, 0.82, { description: "London rock band, from 1964.", tags: ["60s", "70s"] }],

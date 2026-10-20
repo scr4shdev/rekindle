@@ -141,14 +141,14 @@ export const en = {
       `Checking who else people who enjoy ${seeds} tend to enjoy, up to today`,
     narrationInsightsNoYears: (seeds: string) =>
       `Checking who else people who enjoy ${seeds} tend to enjoy`,
-    /** The only caller today is cuisine-tag resolution. Soften, but keep the word. Update when new /v2/tags callers appear. */
-    narrationTags: (query: string) => `Resolving '${query}' as a tag`,
+    /** The only caller today is cuisine-tag resolution. Caregiver-friendly: no "resolve" or "tag". Update when new /v2/tags callers appear. */
+    narrationTags: (query: string) => `Looking up ${query} in Qloo's taste graph`,
     replanStarted: {
       lit_up: "Leaning into this thread…",
       neutral: "Trying something different…",
       upset: "They seemed upset. Slowing down with something calm and familiar…",
     },
-    results: (n: number) => (n === 1 ? "1 result" : `${n} results`),
+    results: (n: number) => (n === 0 ? "nothing matched" : n === 1 ? "found 1" : `found ${n}`),
     cached: "cached",
     mock: "demo data",
     live_: "live",

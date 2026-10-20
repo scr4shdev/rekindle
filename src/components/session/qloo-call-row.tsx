@@ -66,9 +66,7 @@ export function QlooCallRow({ call, entities = {} }: { call: QlooCallRecord; ent
         <DatabaseZapIcon className="size-4 shrink-0 text-ochre" aria-hidden />
         <span className="sr-only">{tr.qlooRequest}:</span>
         <span className="min-w-0 flex-1 truncate">{narration(call, entities, tr)}</span>
-        <span className="ml-auto shrink-0 text-right text-muted-foreground tabular-nums">
-          {tr.results(call.resultCount)} · {Math.round(call.durationMs)} ms
-        </span>
+        <span className="ml-auto shrink-0 text-right text-muted-foreground">{tr.results(call.resultCount)}</span>
       </summary>
       <div className="border-t border-border px-3 py-2">
         <p className="mb-2 text-xs font-semibold text-muted-foreground">
@@ -78,6 +76,8 @@ export function QlooCallRow({ call, entities = {} }: { call: QlooCallRecord; ent
           {" · "}
           {call.source === "mock" ? tr.mock : tr.live_}
           {call.cached && ` · ${tr.cached}`}
+          {" · "}
+          <span className="tabular-nums">{Math.round(call.durationMs)} ms</span>
         </p>
         <dl className="grid grid-cols-[minmax(0,auto)_minmax(0,1fr)] gap-x-3 gap-y-1 font-mono text-[0.8rem]">
           {entries.map(([key, value]) => (

@@ -158,13 +158,13 @@ export const it: PartialMessages = {
     narrationInsightsOpenEnd: (seeds: string) =>
       `Guardo chi altro apprezza chi ama ${seeds}, fino a oggi`,
     narrationInsightsNoYears: (seeds: string) => `Guardo chi altro apprezza chi ama ${seeds}`,
-    narrationTags: (query: string) => `Risolvo '${query}' come etichetta`,
+    narrationTags: (query: string) => `Cerco ${query} nel grafo dei gusti di Qloo`,
     replanStarted: {
       lit_up: "Mi appoggio su questo filo…",
       neutral: "Provo qualcosa di diverso…",
       upset: "Sembra turbata. Rallento con qualcosa di calmo e familiare…",
     },
-    results: (n: number) => (n === 1 ? "1 risultato" : `${n} risultati`),
+    results: (n: number) => (n === 0 ? "nessuna corrispondenza" : n === 1 ? "trovato 1" : `trovati ${n}`),
     cached: "in cache",
     mock: "dati demo",
     live_: "live",

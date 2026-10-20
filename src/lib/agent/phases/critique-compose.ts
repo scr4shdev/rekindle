@@ -23,8 +23,9 @@ export const PLAN_MAX_STEPS = 20;
  * F2: cultural-mismatch gate for non-Western personas. The Qloo live probe
  * showed that seeds like Oum Kalthoum / Faten Hamama expand to Hollywood or
  * US political entities, and the LLM's own propose step over-reaches to
- * mainstream Western figures (Donald Trump, The Beatles, Casablanca) for
- * the same cultural blind spot. For non-Western origin we ask the LLM to
+ * mainstream Western figures (worldwide bands, Hollywood classics, US
+ * political figures) for the same cultural blind spot. For non-Western
+ * origin we ask the LLM to
  * classify each groundable material (qloo-affinity from expand plus
  * qloo-verified from the LLM's proposals) as cultural_match |
  * cultural_mismatch | unclear, and reject the mismatches with

@@ -32,10 +32,9 @@ export interface PersonaFixture {
   /**
    * Cultural-check verdicts by exact item label (hand-authored decision
    * table). Items not listed default to `cultural_match`. Used by the mock
-   * LLM `cultural-check` responder for non-Western personas (e.g. a Moroccan
-   * elder) so Western-drift candidates like Donald Trump or The Beatles are
-   * rejected with a `cultural_mismatch:` sentinel reason the UI badges as
-   * "Doesn't fit culture".
+   * LLM `cultural-check` responder for non-Western personas so Western-drift
+   * candidates can be rejected with a `cultural_mismatch:` sentinel reason
+   * the UI badges as "Doesn't fit culture".
    */
   culturalCheck?: Record<string, { verdict: "cultural_mismatch" | "unclear"; reason: string }>;
   title: string;
@@ -407,49 +406,26 @@ const FATIMA: PersonaFixture = {
     candidates: [
       c("music", "Oum Kalthoum", "urn:entity:artist", 1964, "Stated love; 'Enta Omri' came out when she was 14."),
       c("music", "Abdel Halim Hafez", "urn:entity:artist", 1960, "Stated love; the voice of her teenage years."),
-      // Western-drift candidate (hand-authored): the LLM proposes a worldwide
-      // 1960s band for anyone of this era because its training data
-      // over-indexes on mainstream Western figures. The cultural-check phase
-      // catches it.
-      c("music", "The Beatles", "urn:entity:artist", 1965, "A worldwide 1960s band."),
       c("music", "Nass El Ghiwane", "urn:entity:artist", 1972, "The Moroccan sound of her early twenties."),
       c("music", "Cheb Khaled", "urn:entity:artist", 1992, "The king of raï."),
       c("film", "Al-Khataya", "urn:entity:movie", 1962, "Abdelhalim Hafez on screen, black and white."),
       c("film", "Abi Foq al-Shagara", "urn:entity:movie", 1969, "A huge hit in Moroccan cinemas."),
       c("film", "Doa al-Karawan", "urn:entity:movie", 1959, "Faten Hamama classic."),
-      c("film", "Casablanca", "urn:entity:movie", 1942, "A film set in Morocco."),
+      // Culturally plausible but pre-birth: a canonical Egyptian golden-age
+      // film the LLM might reasonably propose for a Moroccan viewer, which
+      // the Qloo lifetime rail refuses because it was released before 1950.
+      c("film", "Lashin", "urn:entity:movie", 1938, "A classic Egyptian film of the golden age."),
       c("public_figure", "Mohammed V", "urn:entity:person", 1955, "The Sultan then King during her Fès childhood: everyone's radio hero in 1955."),
       c("public_figure", "Faten Hamama", "urn:entity:person", 0, "The star of the Egyptian films she loved."),
       c("public_figure", "Omar Sharif", "urn:entity:person", 0, "Faten Hamama's screen partner."),
-      c("public_figure", "Donald Trump", "urn:entity:person", 0, "A globally famous public figure."),
       c("food", "Moroccan mint tea", "none", 0, "Stated love; her morning ritual."),
+      c("food", "Fès pastries", "none", 0, "Fès medina sweets with mint tea."),
       c("food", "Msemen", "none", 0, "Stated love; made every morning."),
-      c("food", "Stella Artois", "urn:entity:brand", 1970, "Brussels' everyday brand."),
     ],
     notes: ["Fès 1950-1980: a Fès childhood, Egyptian song and cinema, then Brussels."],
   },
   critique: {
-    "Stella Artois": { kind: "emotional_risk", reason: "A beer brand: the notes ask for nothing with alcohol." },
     Khaled: { kind: "anachronism", reason: "Became famous in the late 1980s and 90s, after her formative years." },
-  },
-  // Hand-authored cultural-check verdicts. The mock LLM reads these by exact
-  // label match (no regex or keyword lists), so the gate rejects each with
-  // kind="wrong_locale" and a reason that renders as "Doesn't fit culture"
-  // in the trace. Mirror of what the live LLM would conclude for a Moroccan
-  // elder's non-Western origin profile.
-  culturalCheck: {
-    "Donald Trump": {
-      verdict: "cultural_mismatch",
-      reason: "A Western political figure outside Fatima's 1960s Fès world.",
-    },
-    "The Beatles": {
-      verdict: "cultural_mismatch",
-      reason: "An English-language band outside the Arabic and French music she grew up with.",
-    },
-    Casablanca: {
-      verdict: "cultural_mismatch",
-      reason: "A Hollywood production, not from the Egyptian cinema that Moroccan audiences actually watched.",
-    },
   },
   title: "An afternoon in Fès",
   opening: {
@@ -536,9 +512,11 @@ const FATIMA: PersonaFixture = {
     },
   },
   // Hand-authored llm-only body for the Compare view. The LLM alone over-reaches
-  // to mainstream Western figures for a Moroccan elder; the grounded run's
-  // cultural-check phase catches these three, and the matching labels here make
-  // the LLM-only column render rose "would have slipped" badges on each.
+  // to mainstream Western figures for a Moroccan elder. These items live ONLY
+  // in llm-only mode (never in the grounded propose), so a Moroccan Muslim
+  // woman's family never sees Trump, The Beatles or Casablanca in the live
+  // grounded trace. The Compare page matches these titles against the
+  // grounded run's rejection list to render rose "would have slipped" badges.
   llmOnlyBody: [
     {
       kind: "listen",

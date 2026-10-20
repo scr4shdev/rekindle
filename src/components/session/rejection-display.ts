@@ -7,7 +7,8 @@
  * `cultural_mismatch:` prefix as a sentinel so the UI can:
  *
  *   1. Override the badge label to something honest (not "Wrong place" for a
- *      cross-cultural extrapolation like Fatima -> Donald Trump).
+ *      cross-cultural extrapolation like a Western public figure proposed for
+ *      a Moroccan elder).
  *   2. Strip the sentinel from the user-visible reason paragraph.
  *
  * The prefix stays in the stored reason so logs and traces still carry the

@@ -23,7 +23,7 @@ export const OLLAMA_DEFAULT_MODEL = "qwen3:8b";
 
 /** Pinned default model per provider. Override with LLM_MODEL. */
 export const DEFAULT_LLM_MODELS: Record<LlmProviderName, string> = {
-  gemini: "gemini-3.5-flash",
+  gemini: "gemini-3.1-flash-lite",
   groq: "openai/gpt-oss-120b",
   anthropic: "claude-haiku-4-5",
   ollama: OLLAMA_DEFAULT_MODEL,

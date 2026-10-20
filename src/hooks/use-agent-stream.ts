@@ -7,8 +7,8 @@ import { getMessages } from "@/i18n";
 import type { AgentEvent, ReplanRequestDraft, SessionRequestDraft } from "@/lib/domain/types";
 
 /** Map a transport failure to a safe, user-facing failure (never echoes input or internals). */
-function toFailure(error: unknown, signal: AbortSignal): StreamFailure {
-  const t = getMessages().errors;
+function toFailure(error: unknown, signal: AbortSignal, language?: string): StreamFailure {
+  const t = getMessages(language).errors;
   if (signal.aborted) return { code: "cancelled", message: t.cancelled };
   if (error instanceof StreamRequestError) {
     if (error.status === 400 || error.status === 413 || error.status === 415) return { code: "invalid_input", message: t.invalid };
@@ -24,7 +24,7 @@ function toFailure(error: unknown, signal: AbortSignal): StreamFailure {
  * `replan` runs a replan stream on top of the current plan, `cancel` aborts.
  * Any in-flight stream is aborted on unmount.
  */
-export function useAgentStream(source: AgentEventSource) {
+export function useAgentStream(source: AgentEventSource, language?: string) {
   const [view, dispatch] = useReducer(reduceView, undefined, initialView);
   const [servedBy, setServedBy] = useState<SourceKind | undefined>();
   // Separate controllers: a replan may start while the session stream is still closing.
@@ -47,12 +47,12 @@ export function useAgentStream(source: AgentEventSource) {
       if (!sawDone && current()) throw new Error("Stream ended early");
     } catch (error) {
       if (!current()) return;
-      const failure = toFailure(error, signal);
+      const failure = toFailure(error, signal, language);
       dispatch(stream === "session" ? { type: "failed", failure } : { type: "replan-failed", failure });
     } finally {
       if (current()) slot.current = null;
     }
-  }, []);
+  }, [language]);
 
   const start = useCallback(
     (request: SessionRequestDraft) => {

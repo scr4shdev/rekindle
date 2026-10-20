@@ -17,20 +17,19 @@ import { DOMAIN_ICON } from "@/components/session/icons";
 import { rejectionDisplay } from "@/components/session/rejection-display";
 import type { PhaseView, SessionView, TraceItem } from "@/components/session/view-state";
 import { Button } from "@/components/ui/button";
-import { getMessages } from "@/i18n";
+import { useMessages } from "@/i18n/provider";
 import type { Candidate, RejectedItem, VerifiedEntity } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
 
-const t = () => getMessages().trace;
-
 /** "A", "A and B", "A, B and C". */
-function joinNames(names: string[]): string {
+function joinNames(names: string[], and: string): string {
   if (names.length <= 1) return names[0] ?? "";
-  return `${names.slice(0, -1).join(", ")} ${t().and} ${names.at(-1)}`;
+  return `${names.slice(0, -1).join(", ")} ${and} ${names.at(-1)}`;
 }
 
 export function ReasoningTrace({ view, className, onRetry }: { view: SessionView; className?: string; onRetry?: () => void }) {
-  const tr = t();
+  const messages = useMessages();
+  const tr = messages.trace;
   const scroller = useRef<HTMLDivElement>(null);
   const streaming = view.status === "streaming" || view.replanning;
   const itemCount = view.phases.reduce((n, p) => n + p.items.length + 1, 0);
@@ -128,7 +127,7 @@ function PhaseNode({ status }: { status: PhaseView["status"] }) {
 }
 
 function PhaseRow({ phase, last, entities, onRetry }: { phase: PhaseView; last: boolean; entities: SessionView["entities"]; onRetry?: () => void }) {
-  const tr = t();
+  const tr = useMessages().trace;
   const pending = phase.status === "pending";
   const candidates = phase.items.filter((i): i is Extract<TraceItem, { kind: "candidate" }> => i.kind === "candidate");
   const others = phase.items.filter((i) => i.kind !== "candidate");
@@ -169,12 +168,13 @@ function PhaseRow({ phase, last, entities, onRetry }: { phase: PhaseView; last: 
 
 function CandidateChip({ candidate }: { candidate: Candidate }) {
   const Icon = DOMAIN_ICON[candidate.domain];
+  const domains = useMessages().domains;
   return (
     <li
       className="inline-flex animate-rise items-center gap-1.5 rounded-full bg-clay-soft px-3 py-1 text-[0.9rem] text-clay-ink"
       title={candidate.rationale}
     >
-      <Icon className="size-4 shrink-0" aria-label={getMessages().domains[candidate.domain]} />
+      <Icon className="size-4 shrink-0" aria-label={domains[candidate.domain]} />
       <span className="font-semibold">{candidate.name}</span>
       {candidate.year && <span className="tabular-nums opacity-80">{candidate.year}</span>}
     </li>
@@ -182,8 +182,9 @@ function CandidateChip({ candidate }: { candidate: Candidate }) {
 }
 
 function TraceItemView({ item, entities, onRetry }: { item: TraceItem; entities: SessionView["entities"]; onRetry?: () => void }) {
-  const tr = t();
-  const sessionT = getMessages().session;
+  const messages = useMessages();
+  const tr = messages.trace;
+  const sessionT = messages.session;
   switch (item.kind) {
     case "note":
       return <p className="border-l-3 border-ochre/60 pl-3 text-[0.95rem] italic">{item.text}</p>;
@@ -220,7 +221,7 @@ function TraceItemView({ item, entities, onRetry }: { item: TraceItem; entities:
 }
 
 function VerifiedRow({ entity, entities }: { entity: VerifiedEntity; entities: SessionView["entities"] }) {
-  const tr = t();
+  const tr = useMessages().trace;
   const Icon = DOMAIN_ICON[entity.domain];
   if (entity.provenance === "qloo-affinity") {
     const seeds = (entity.seedQlooIds ?? []).map((id) => entities[id]?.name).filter((n): n is string => Boolean(n));
@@ -241,7 +242,7 @@ function VerifiedRow({ entity, entities }: { entity: VerifiedEntity; entities: S
             </span>
           )}
         </div>
-        {seeds.length > 0 && <p className="text-[0.9rem] leading-snug">{tr.affinityLine(joinNames(seeds), entity.name)}</p>}
+        {seeds.length > 0 && <p className="text-[0.9rem] leading-snug">{tr.affinityLine(joinNames(seeds, tr.and), entity.name)}</p>}
       </div>
     );
   }
@@ -259,7 +260,8 @@ function VerifiedRow({ entity, entities }: { entity: VerifiedEntity; entities: S
 }
 
 function RejectedRow({ item }: { item: RejectedItem }) {
-  const display = rejectionDisplay(item);
+  const messages = useMessages();
+  const display = rejectionDisplay(item, messages);
   return (
     <div className="flex flex-col gap-1 rounded-xl border border-rose/30 bg-rose-soft/60 px-3 py-2" data-testid="trace-rejected">
       <div className="flex flex-wrap items-center gap-2">

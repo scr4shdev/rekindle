@@ -4,7 +4,7 @@ import { CircleSlashIcon, ClockIcon, HeartHandshakeIcon, ListOrderedIcon, WandSp
 import { StepCard } from "@/components/session/step-card";
 import type { SessionView } from "@/components/session/view-state";
 import { Badge } from "@/components/ui/badge";
-import { getMessages } from "@/i18n";
+import { useMessages } from "@/i18n/provider";
 import { cn } from "@/lib/utils";
 
 export function PlanTimeline({
@@ -18,9 +18,10 @@ export function PlanTimeline({
   caregiverLanguage: string;
   className?: string;
 }) {
-  const t = getMessages().session;
-  const ts = getMessages().step;
-  const tp = getMessages().print;
+  const messages = useMessages();
+  const t = messages.session;
+  const ts = messages.step;
+  const tp = messages.print;
   const plan = view.plan;
   const composing = !plan && view.steps.length > 0;
   const minutes = plan?.totalMinutes ?? view.steps.reduce((n, s) => n + s.durationMin, 0);

@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAgentStream } from "@/hooks/use-agent-stream";
-import { getMessages } from "@/i18n";
+import { MessagesProvider, useMessages } from "@/i18n/provider";
 import type { Anchors, Reaction, ReactionRecord, SessionMode } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
 
@@ -23,7 +23,6 @@ function languageNames(anchors: Anchors): string {
 
 export function SessionView() {
   const params = useSearchParams();
-  const t = getMessages().session;
   const personaParam = params.get("persona");
   const modeParam = params.get("mode");
   const sourceParam = parseSourceParam(params.get("source"));
@@ -32,8 +31,14 @@ export function SessionView() {
   // Resolved once per URL: custom input is read from memory at that moment.
   const resolved = useMemo(() => resolveRequest(personaParam, modeParam), [personaParam, modeParam]);
   const hasRecording = resolved.ok && resolved.hasRecording;
-  const source = useMemo(() => resolveSource(sourceParam, { speed, hasRecording }), [sourceParam, speed, hasRecording]);
-  const { view, servedBy, start, replan, cancel } = useAgentStream(source);
+  // Chrome follows the person: Maria -> Italian, Fatima -> French. The caregiver
+  // route (landing, compare, error pages) stays English.
+  const sessionLanguage = resolved.ok ? (resolved.request.person.sessionLanguage ?? "en") : "en";
+  const source = useMemo(
+    () => resolveSource(sourceParam, { speed, hasRecording, language: sessionLanguage }),
+    [sourceParam, speed, hasRecording, sessionLanguage],
+  );
+  const { view, servedBy, start, replan, cancel } = useAgentStream(source, sessionLanguage);
   const [runId, setRunId] = useState(0);
   const [liveOpen, setLiveOpen] = useState(false);
   const [liveIndex, setLiveIndex] = useState(0);
@@ -64,21 +69,74 @@ export function SessionView() {
   }, [resolved, start, runId]);
 
   if (!resolved.ok) {
-    return (
-      <div className="mx-auto flex max-w-2xl flex-col items-start gap-5 rounded-3xl border border-border bg-card p-8 shadow-paper" role="alert" data-testid="session-alert">
-        <p className="text-xl">{resolved.reason === "missing-custom" ? t.missingCustom : t.unknownPersona}</p>
-        <div className="flex flex-wrap gap-3">
-          <Link href="/#custom" className={buttonVariants({ size: "lg" })}>
-            {t.missingCustomAction}
-          </Link>
-          <Link href={`/session?persona=${RECORDED_PERSONA}`} className={buttonVariants({ size: "lg", variant: "outline" })}>
-            {t.tryMaria}
-          </Link>
-        </div>
-      </div>
-    );
+    return <SessionResolveError reason={resolved.reason} />;
   }
 
+  return (
+    <MessagesProvider language={sessionLanguage}>
+      <SessionViewBody
+        resolved={resolved}
+        view={view}
+        servedBy={servedBy}
+        liveOpen={liveOpen}
+        setLiveOpen={setLiveOpen}
+        liveIndex={liveIndex}
+        setLiveIndex={setLiveIndex}
+        reactions={reactions}
+        onReact={react}
+        onRetry={() => setRunId((n) => n + 1)}
+        onCancel={cancel}
+      />
+    </MessagesProvider>
+  );
+}
+
+type ResolvedOk = Extract<ReturnType<typeof resolveRequest>, { ok: true }>;
+
+function SessionResolveError({ reason }: { reason: string }) {
+  const t = useMessages().session;
+  return (
+    <div className="mx-auto flex max-w-2xl flex-col items-start gap-5 rounded-3xl border border-border bg-card p-8 shadow-paper" role="alert" data-testid="session-alert">
+      <p className="text-xl">{reason === "missing-custom" ? t.missingCustom : t.unknownPersona}</p>
+      <div className="flex flex-wrap gap-3">
+        <Link href="/#custom" className={buttonVariants({ size: "lg" })}>
+          {t.missingCustomAction}
+        </Link>
+        <Link href={`/session?persona=${RECORDED_PERSONA}`} className={buttonVariants({ size: "lg", variant: "outline" })}>
+          {t.tryMaria}
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function SessionViewBody({
+  resolved,
+  view,
+  servedBy,
+  liveOpen,
+  setLiveOpen,
+  liveIndex,
+  setLiveIndex,
+  reactions,
+  onReact,
+  onRetry,
+  onCancel,
+}: {
+  resolved: ResolvedOk;
+  view: ReturnType<typeof useAgentStream>["view"];
+  servedBy: ReturnType<typeof useAgentStream>["servedBy"];
+  liveOpen: boolean;
+  setLiveOpen: (open: boolean) => void;
+  liveIndex: number;
+  setLiveIndex: (n: number) => void;
+  reactions: Record<string, Reaction>;
+  onReact: (stepId: string, reaction: Reaction) => void;
+  onRetry: () => void;
+  onCancel: () => void;
+}) {
+  const t = useMessages().session;
+  const hasRecording = resolved.hasRecording;
   const mode: SessionMode = resolved.request.mode ?? "grounded";
   const plan = view.plan;
   const streaming = view.status === "streaming";
@@ -134,13 +192,13 @@ export function SessionView() {
           </div>
           <div className="flex flex-wrap gap-2.5">
             {streaming && (
-              <Button variant="outline" onClick={cancel} data-icon="inline-start">
+              <Button variant="outline" onClick={onCancel} data-icon="inline-start">
                 <SquareIcon aria-hidden />
                 {t.cancel}
               </Button>
             )}
             {(view.status === "error" || view.status === "cancelled") && (
-              <Button onClick={() => setRunId((n) => n + 1)} data-icon="inline-start">
+              <Button onClick={onRetry} data-icon="inline-start">
                 <RotateCcwIcon aria-hidden />
                 {t.retry}
               </Button>
@@ -195,7 +253,7 @@ export function SessionView() {
         <ReasoningTrace
           view={view}
           className="max-h-[60dvh] print:hidden lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)]"
-          onRetry={() => setRunId((n) => n + 1)}
+          onRetry={onRetry}
         />
         {!traceWide && (
           <PlanTimeline
@@ -215,7 +273,7 @@ export function SessionView() {
           index={liveIndex}
           onIndexChange={setLiveIndex}
           reactions={reactions}
-          onReact={react}
+          onReact={onReact}
         />
       )}
     </div>
@@ -223,7 +281,7 @@ export function SessionView() {
 }
 
 function SourceBadge({ kind }: { kind: SourceKind }) {
-  const t = getMessages().session;
+  const t = useMessages().session;
   return (
     <Tooltip>
       <TooltipTrigger render={<Badge variant="outline" className="cursor-help" />}>

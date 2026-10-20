@@ -25,7 +25,7 @@ import { ProvenanceBadge, StepMedia } from "@/components/session/step-card";
 import type { SessionView } from "@/components/session/view-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { getMessages } from "@/i18n";
+import { useMessages } from "@/i18n/provider";
 import type { Reaction, SessionPlan } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
 
@@ -118,8 +118,9 @@ export function LiveSession({
   reactions: Record<string, Reaction>;
   onReact: (stepId: string, reaction: Reaction) => void;
 }) {
-  const t = getMessages().live;
-  const ts = getMessages().step;
+  const messages = useMessages();
+  const t = messages.live;
+  const ts = messages.step;
   const [showTranslation, setShowTranslation] = useState(true);
   // Focus the session itself on open, so Space toggles the timer instead of pressing Close.
   const popupRef = useRef<HTMLDivElement>(null);

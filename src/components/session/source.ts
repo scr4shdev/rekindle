@@ -97,8 +97,8 @@ async function* replay(events: readonly AgentEvent[], speed: number, signal: Abo
 }
 
 /** A short synthetic replan for reactions the recording does not cover: the plan is returned unchanged. */
-function syntheticReplan(request: ReplanRequestDraft): AgentEvent[] {
-  const t = getMessages().sample;
+function syntheticReplan(request: ReplanRequestDraft, language?: string): AgentEvent[] {
+  const t = getMessages(language).sample;
   const plan = { ...request.plan, meta: { ...request.plan.meta, revision: request.plan.meta.revision ?? 0 } };
   const payloads: AgentEventPayload[] = [
     { type: "phase", phase: "replan", status: "started", message: t.replanStarted[request.reaction] },
@@ -120,7 +120,7 @@ function syntheticReplan(request: ReplanRequestDraft): AgentEvent[] {
   });
 }
 
-export function sampleSource(speed = 1): AgentEventSource {
+export function sampleSource(speed = 1, language?: string): AgentEventSource {
   return {
     session(request, { signal, onResolved }) {
       onResolved?.("sample");
@@ -133,7 +133,7 @@ export function sampleSource(speed = 1): AgentEventSource {
         (request.plan.meta.revision ?? 0) === 0 &&
         request.stepId === SAMPLE_REPLAN_REQUEST_STEP_ID &&
         request.reaction === "upset";
-      return replay(recorded ? SAMPLE_REPLAN_EVENTS : syntheticReplan(request), speed, signal);
+      return replay(recorded ? SAMPLE_REPLAN_EVENTS : syntheticReplan(request, language), speed, signal);
     },
   };
 }
@@ -162,12 +162,17 @@ async function* withFallback(
 
 /**
  * Resolve `?source=`. `hasRecording` is true when the request matches the
- * recorded persona, so `auto` may fall back to it.
+ * recorded persona, so `auto` may fall back to it. `language` is the
+ * person's session language, used for synthetic-replan narration in the
+ * caregiver's reading language (e.g. "it" for Maria).
  */
-export function resolveSource(param: SourceParam, { speed = 1, hasRecording = false } = {}): AgentEventSource {
-  if (param === "sample") return sampleSource(speed);
+export function resolveSource(
+  param: SourceParam,
+  { speed = 1, hasRecording = false, language }: { speed?: number; hasRecording?: boolean; language?: string } = {},
+): AgentEventSource {
+  if (param === "sample") return sampleSource(speed, language);
   if (param === "api" || !hasRecording) return apiSource;
-  const sample = sampleSource(speed);
+  const sample = sampleSource(speed, language);
   return {
     session: (request, options) =>
       withFallback(

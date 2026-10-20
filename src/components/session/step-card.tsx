@@ -7,12 +7,12 @@ import { EraArt } from "@/components/era-art";
 import { DOMAIN_MOTIF, STEP_ICON, STEP_MOTIF } from "@/components/session/icons";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { getMessages } from "@/i18n";
+import { useMessages } from "@/i18n/provider";
 import type { SessionStep } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
 
 export function ProvenanceBadge({ step }: { step: SessionStep }) {
-  const t = getMessages().step;
+  const t = useMessages().step;
   const entity = step.entity;
   const [label, hint, variant, Icon] =
     step.provenance === "llm-only" || !entity
@@ -86,7 +86,8 @@ export function StepCard({
   caregiverLanguage: string;
   changed?: boolean;
 }) {
-  const t = getMessages().step;
+  const messages = useMessages();
+  const t = messages.step;
   const Icon = STEP_ICON[step.kind];
   const searchable = step.kind === "listen" || step.kind === "look" || Boolean(step.mediaHint);
   return (
@@ -156,11 +157,11 @@ export function StepCard({
           </p>
         )}
         <div className="hidden flex-wrap items-center gap-x-6 gap-y-1 border-t border-dashed pt-2 text-sm print:flex" aria-hidden>
-          <span className="font-semibold">{getMessages().print.reactions}</span>
+          <span className="font-semibold">{messages.print.reactions}</span>
           {(["lit_up", "neutral", "upset"] as const).map((r) => (
             <span key={r} className="inline-flex items-center gap-1.5">
               <span className="inline-block size-3.5 rounded-sm border border-current" />
-              {getMessages().live.reactions[r]}
+              {messages.live.reactions[r]}
             </span>
           ))}
         </div>

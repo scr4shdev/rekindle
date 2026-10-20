@@ -139,31 +139,71 @@ export default function ForOperatorsPage() {
           <li>
             <strong>a.</strong> A rising cross-cultural care workforce in the
             UK, EU and GCC: aides and the people they care for increasingly do
-            not share era or culture.{" "}
+            not share era or culture. Skills for Care puts about a quarter of
+            the England care workforce as non-EU nationals and 21% from Black
+            communities against 4% in the wider working population.{" "}
             <SourceLink
               href="https://www.skillsforcare.org.uk/Adult-Social-Care-Workforce-Data/Workforce-intelligence/publications/national-information/The-state-of-the-adult-social-care-sector-and-workforce-in-England.aspx"
-              label="Skills for Care 2024"
+              label="Skills for Care, State of the adult social care sector 2024"
             />
           </li>
           <li>
-            <strong>b.</strong> The non-pharma dementia intervention evidence
-            base is strong: NICE guideline NG97 recommends offering activities
-            tailored to the person&apos;s preferences, and Cochrane finds
-            reminiscence has small but consistent effects on quality of life
-            and communication.{" "}
+            <strong>b.</strong> People from minority ethnic communities are
+            under-represented in UK dementia services and under-diagnosed
+            relative to the population average, so a culturally-matched
+            session is a daily operational problem, not a research one.{" "}
+            <SourceLink
+              href="https://www.alzheimers.org.uk/sites/default/files/2021-09/ethinic_minorities_increasing_access_to_diagnosis.pdf"
+              label="Alzheimer's Society, Increasing access to a dementia diagnosis 2021"
+            />{" "}
+            <SourceLink
+              href="https://www.ucl.ac.uk/news/2022/sep/dementia-rates-over-20-higher-among-black-adults-uk-average"
+              label="UCL / BMJ 2022 on South Asian under-recording"
+            />
+          </li>
+          <li>
+            <strong>c.</strong> The non-pharma evidence base is real but
+            modest, and strongest when sessions are personalised. The Woods
+            2018 Cochrane review of reminiscence finds a small quality-of-life
+            benefit in care homes (SMD 0.46, 95% CI 0.18 to 0.75) and little
+            effect for group formats on their own. NICE NG97 recommends
+            offering activities tailored to the person&apos;s preferences,
+            which is the delivery pattern Rekindle is built for.{" "}
+            <SourceLink
+              href="https://www.cochranelibrary.com/cdsr/doi/10.1002/14651858.CD001120.pub3/full"
+              label="Woods et al., Cochrane 2018"
+            />{" "}
             <SourceLink
               href="https://www.nice.org.uk/guidance/ng97"
               label="NICE NG97"
             />{" "}
+            <Hedge>
+              Effect sizes small; we frame Rekindle as a reminiscence
+              activity, not therapy.
+            </Hedge>
+          </li>
+          <li>
+            <strong>d.</strong> Music-anchored activity is the strongest
+            non-pharmacological lever: a BMJ Open umbrella review reports a
+            pooled effect for music on agitation (SMD -0.49) and anxiety
+            (SMD -0.64) in dementia, and a Finnish RCT by Sarkamo found
+            that 10 weeks of singing and listening lifted mood for everyone
+            and helped memory in mild dementia. This is why Rekindle leans on
+            music and personalised cultural anchors rather than generic
+            prompts.{" "}
             <SourceLink
-              href="https://www.cochrane.org/CD001120/DEMENTIA_reminiscence-therapy-for-dementia"
-              label="Cochrane review on reminiscence"
+              href="https://bmjopen.bmj.com/content/7/3/e012759"
+              label="Abraha et al., BMJ Open 2017"
+            />{" "}
+            <SourceLink
+              href="https://doi.org/10.1093/geront/gnt100"
+              label="Sarkamo et al., The Gerontologist 2014"
             />
           </li>
           <li>
-            <strong>c.</strong> Qloo&apos;s taste graph lets us ship cross-cultural
-            recall without manually curating catalogs per country. Every
-            suggestion carries a provenance badge in-product.
+            <strong>e.</strong> Qloo&apos;s taste graph lets us ship
+            cross-cultural recall without manually curating catalogs per
+            country. Every suggestion carries a provenance badge in-product.
           </li>
         </ul>
       </OperatorSection>

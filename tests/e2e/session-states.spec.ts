@@ -17,7 +17,9 @@ test.describe("session error and degraded states", () => {
     await page.goto("/session?persona=seamus&source=api");
     await expect(page.getByTestId("session-alert")).toContainText("The language model is unavailable right now.");
     await expect(page.getByTestId("session-view")).toHaveAttribute("data-status", "error");
-    await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
+    // Two retry buttons may render (header + trace); first() picks the header one.
+    await expect(page.getByRole("button", { name: "Try again" }).first()).toBeVisible();
+    await expect(page.getByTestId("trace-retry")).toBeVisible();
     await expect(page.getByRole("link", { name: "Open Maria's recorded demo" })).toBeVisible();
     await expect(page.getByTestId("plan-placeholder")).toContainText("No plan this time");
   });
@@ -26,7 +28,8 @@ test.describe("session error and degraded states", () => {
     await mockJsonError(page, "/api/session", 400, "invalid_input");
     await page.goto("/session?persona=fatima&source=api");
     const alert = page.getByTestId("session-alert");
-    await expect(alert).toContainText("could not accept these notes");
+    // Fatima's UI is French: "n'a pas pu accepter ces notes".
+    await expect(alert).toContainText("n'a pas pu accepter ces notes");
     await expect(alert).not.toContainText("Fès");
   });
 
@@ -45,17 +48,19 @@ test.describe("session error and degraded states", () => {
     await mockStream(page, "/api/session", events.map((e, seq) => ({ ...e, seq })));
     await page.goto("/session?persona=maria&source=api");
     await expect(page.getByTestId("session-view")).toHaveAttribute("data-status", "done");
-    await expect(page.getByText("Recovered:")).toBeVisible();
-    await expect(page.getByText("Some checks could not run")).toBeVisible();
+    // Maria's chrome is Italian.
+    await expect(page.getByText("Recuperato:")).toBeVisible();
+    await expect(page.getByText("Alcune verifiche non sono riuscite")).toBeVisible();
     await expect(page.getByTestId("step-card")).toHaveCount(8);
   });
 
   test("stop cancels the stream and retry starts again", async ({ page }) => {
     await page.goto("/session?persona=maria&source=sample&speed=0.5");
-    await page.getByRole("button", { name: "Stop" }).click();
+    // Maria's chrome is Italian: "Ferma" / "Fermato".
+    await page.getByRole("button", { name: "Ferma" }).click();
     await expect(page.getByTestId("session-view")).toHaveAttribute("data-status", "cancelled");
-    await expect(page.getByText("Stopped. Nothing was kept.")).toBeVisible();
-    await expect(page.getByTestId("plan-placeholder")).toContainText("Stopped before a plan was made");
+    await expect(page.getByText("Fermato. Niente è stato tenuto.")).toBeVisible();
+    await expect(page.getByTestId("plan-placeholder")).toContainText("Fermato prima di comporre un piano");
     await page.goto("/session?persona=maria&source=sample&speed=40");
     await expect(page.getByTestId("session-view")).toHaveAttribute("data-status", "done");
   });

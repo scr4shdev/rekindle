@@ -1,5 +1,6 @@
 import { ChevronRightIcon, DatabaseZapIcon } from "lucide-react";
-import { getMessages } from "@/i18n";
+import { useMessages } from "@/i18n/provider";
+import type { Messages } from "@/i18n";
 import type { QlooCallRecord, VerifiedEntity } from "@/lib/domain/types";
 
 function formatValue(value: QlooCallRecord["params"][string]): string {
@@ -23,8 +24,7 @@ function yearSpan(params: QlooCallRecord["params"]): { start?: string | number; 
  * trying to learn, not the HTTP shape. Falls back to the raw query if nothing
  * cleaner can be said.
  */
-export function narration(call: QlooCallRecord, entities: Record<string, VerifiedEntity>): string {
-  const tr = getMessages().trace;
+function narration(call: QlooCallRecord, entities: Record<string, VerifiedEntity>, tr: Messages["trace"]): string {
   const p = call.params;
   if (call.endpoint === "/v2/insights") {
     const seedNames = resolveSeedNames(p["signal.interests.entities"], entities);
@@ -57,7 +57,7 @@ export function narration(call: QlooCallRecord, entities: Record<string, Verifie
  * log line.
  */
 export function QlooCallRow({ call, entities = {} }: { call: QlooCallRecord; entities?: Record<string, VerifiedEntity> }) {
-  const tr = getMessages().trace;
+  const tr = useMessages().trace;
   const entries = Object.entries(call.params);
   return (
     <details className="group rounded-xl border border-border bg-paper-deep" data-testid="qloo-call">
@@ -65,7 +65,7 @@ export function QlooCallRow({ call, entities = {} }: { call: QlooCallRecord; ent
         <ChevronRightIcon className="size-4 shrink-0 transition-transform group-open:rotate-90" aria-hidden />
         <DatabaseZapIcon className="size-4 shrink-0 text-ochre" aria-hidden />
         <span className="sr-only">{tr.qlooRequest}:</span>
-        <span className="min-w-0 flex-1 truncate">{narration(call, entities)}</span>
+        <span className="min-w-0 flex-1 truncate">{narration(call, entities, tr)}</span>
         <span className="ml-auto shrink-0 text-right text-muted-foreground tabular-nums">
           {tr.results(call.resultCount)} · {Math.round(call.durationMs)} ms
         </span>

@@ -1,7 +1,7 @@
 {
   "promptVersions": {
     "parse-anchors": "1.0.0",
-    "propose-candidates": "1.2.0",
+    "propose-candidates": "1.2.1",
     "match-entity": "1.1.0",
     "cultural-check": "1.0.0",
     "critique-items": "1.0.0",
@@ -18,5 +18,5 @@
   "recordedAt": "2026-10-18T19:00:00.000Z",
   "totalDurationMs": 2060,
   "eventCount": 85,
-  "sha256": "2a957861f073c79e10afcb23ae7cb24a638f98a1cf10ee618818b105f33ad193"
+  "sha256": "6f037af5089188e66ded32278807559567e69570523a0ff0be834a9ab0c463a3"
 }

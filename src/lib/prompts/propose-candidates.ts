@@ -10,7 +10,7 @@ import type { PromptDefinition } from "@/lib/ports/llm";
 import { dataBlock, DATA_NOTICE, lines, ROLE } from "@/lib/prompts/shared";
 
 export const ID = "propose-candidates";
-export const VERSION = "1.2.0";
+export const VERSION = "1.2.1";
 
 export interface ProposeCandidatesInput {
   anchors: Anchors;
@@ -48,6 +48,8 @@ export const system = lines(
     "- Start from the stated loves, then add what was popular where they lived.",
     "- Lifespan coverage, not just formative years: aim for at least one strong candidate per non-empty life phase in the anchors.lifePhases list (childhood lullabies and games, youth-first-love music, early-parenting television, mid-life public figures, songs they played for their own children). The formative window is the richest zone, not the only one.",
     "- Tag every candidate with its lifePhase: pick the phase whose window the year falls in (phase start inclusive, phase end inclusive). If the item spans two phases, pick the earlier one. Use 'none' only when no phase in the input fits.",
+    "- Year must be the year the item was most important for THIS person (first encountered, peak popularity in their city, release year of a landmark album), NOT the person's birth year. Items with no meaningful year (dishes, lifelong rituals) stay year 0.",
+    "- Example for a 1950-born Moroccan whose childhood is 1950-1958 and youth is 1958-1971: Oum Kalthoum, year 1964, lifePhase youth; Fairuz, year 1960, lifePhase youth; Fès medina, year 0, lifePhase childhood; Nass El Ghiwane, year 1972, lifePhase early_adulthood. One item per phase at minimum, drawn from the person's culture, so childhood, youth and early_adulthood each have an anchor.",
     "- Locale: local and national culture of their places first, then international stars that reached that place.",
     "- Respect sensitivities: do not propose items centred on a topic marked 'avoid'.",
     "- For music propose artists (Qloo has no songs). Athletes and actors are persons. Dishes stay qlooType 'none'.",

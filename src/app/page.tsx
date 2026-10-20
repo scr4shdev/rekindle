@@ -11,22 +11,22 @@ export default function Home() {
     { icon: SearchCheckIcon, text: t.promises.grounded, tone: "bg-ochre-soft text-ochre-ink" },
   ];
   return (
-    <main id="main" className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-10 px-5 pt-2 pb-20 sm:gap-12 sm:px-8 sm:pt-4">
-      <section className="flex flex-col gap-4 sm:gap-5" aria-labelledby="hero-title">
-        <h1 id="hero-title" className="animate-rise max-w-4xl text-[2rem] leading-[1.05] font-semibold sm:text-[3.4rem]">
+    <main id="main" className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-5 pt-2 pb-20 sm:gap-10 sm:px-8 sm:pt-4">
+      <section className="flex flex-col gap-3 sm:gap-4" aria-labelledby="hero-title">
+        <h1 id="hero-title" className="animate-rise max-w-4xl text-[1.9rem] leading-[1.05] font-semibold sm:text-[2.9rem]">
           {t.title}
         </h1>
-        <p className="animate-rise max-w-4xl text-muted-foreground sm:text-xl">{t.leadShort}</p>
-        <ul className="animate-rise flex flex-wrap gap-2 sm:gap-2.5">
+        <p className="animate-rise max-w-4xl text-muted-foreground sm:text-lg">{t.leadShort}</p>
+        <ul className="animate-rise flex flex-wrap items-center gap-2 sm:gap-2.5">
           {promises.map(({ icon: Icon, text, tone }) => (
-            <li key={text} className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-[0.85rem] font-semibold sm:px-4 sm:py-2 sm:text-base ${tone}`}>
+            <li key={text} className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-[0.85rem] font-semibold sm:px-4 sm:py-1.5 sm:text-[0.95rem] ${tone}`}>
               <Icon className="size-4 sm:size-5" aria-hidden />
               {text}
             </li>
           ))}
         </ul>
         <p
-          className="animate-rise max-w-4xl rounded-2xl border border-border bg-sage-soft/50 px-4 py-2.5 font-mono text-[0.8rem] leading-snug text-sage-ink sm:text-[0.95rem]"
+          className="animate-rise max-w-4xl font-mono text-[0.72rem] leading-snug text-muted-foreground sm:text-[0.8rem]"
           data-testid="agent-flow"
           aria-label={t.agentFlowLabel}
         >

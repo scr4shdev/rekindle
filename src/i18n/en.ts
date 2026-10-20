@@ -11,9 +11,9 @@ export const en = {
   landing: {
     title: "An agent that plans 20 quiet minutes for someone living with dementia.",
     leadShort:
-      "It proposes songs, films and faces from their era, then checks every one against Qloo's taste graph — so nothing feels wrong for the person you care for.",
+      "Every song, film and face from their era is checked against Qloo's taste graph — so nothing feels wrong for the person you care for.",
     agentFlowLabel: "How the agent works",
-    agentFlow: "Parse → propose → verify in Qloo → expand → critique → compose. Six phases, 10–20 Qloo calls per plan.",
+    agentFlow: "Parse → propose → verify in Qloo → compose. 6 phases, 10–20 Qloo calls per plan.",
     promises: {
       stored: "Nothing you type is stored",
       activity: "A shared activity, not therapy",

@@ -13,10 +13,10 @@ export const it: PartialMessages = {
   landing: {
     title: "Un agente che pianifica 20 minuti sereni con chi vive con la demenza.",
     leadShort:
-      "Propone canzoni, film e volti della loro epoca, poi verifica ognuno nel grafo dei gusti di Qloo — perché niente sembri fuori posto per la persona a cui tieni.",
+      "Ogni canzone, film e volto della loro epoca è verificato nel grafo dei gusti di Qloo — perché nulla stoni per la persona a cui tieni.",
     agentFlowLabel: "Come lavora l'agente",
     agentFlow:
-      "Leggo → immagino → verifico con Qloo → scopro → critico → compongo. Sei fasi, 10–20 richieste a Qloo per piano.",
+      "Leggi → immagina → verifica con Qloo → componi. 6 fasi, 10–20 richieste a Qloo per piano.",
     promises: {
       stored: "Nulla di ciò che scrivi viene salvato",
       activity: "Un'attività condivisa, non una terapia",

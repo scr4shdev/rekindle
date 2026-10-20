@@ -11,6 +11,7 @@ import type { ComposeMaterial, ModelStep } from "@/lib/prompts/compose-session";
 import { DISCLAIMER_EN } from "@/lib/prompts/compose-session";
 import type { CulturalCheckItem } from "@/lib/prompts/cultural-check";
 
+import { phaseForYear } from "@/lib/agent/phases/parse-propose";
 import type { Material, Run } from "@/lib/agent/run";
 import { callLlm } from "@/lib/agent/run";
 import { clip, isNonWesternOrigin, normalizeDurations } from "@/lib/agent/util";
@@ -173,7 +174,7 @@ export function toComposeMaterial(m: Material, all: Material[], ref: string): Co
 }
 
 /** Build a domain step from a model step. Provenance is decided here: an attached verified entity means qloo-grounded. */
-export function toStep(run: Run, model: ModelStep, material: Material | undefined, order: number, sameLanguage: boolean, grounded: boolean): SessionStep | undefined {
+export function toStep(run: Run, anchors: Anchors, model: ModelStep, material: Material | undefined, order: number, sameLanguage: boolean, grounded: boolean): SessionStep | undefined {
   const prompt = clip(model.prompt, 600);
   if (!prompt) return undefined;
   const entity = grounded ? material?.entity : undefined;
@@ -182,7 +183,22 @@ export function toStep(run: Run, model: ModelStep, material: Material | undefine
   // call, closer to the source of truth). Fall back to the model's choice,
   // then to undefined. 'none' sentinels mean "no phase" and are dropped.
   const modelPhase = model.lifePhase && model.lifePhase !== "none" ? LifePhaseLabelSchema.safeParse(model.lifePhase) : undefined;
-  const lifePhase: LifePhaseLabel | undefined = material?.lifePhase ?? (modelPhase?.success ? modelPhase.data : undefined);
+  let lifePhase: LifePhaseLabel | undefined = material?.lifePhase ?? (modelPhase?.success ? modelPhase.data : undefined);
+  // Server-side guarantee: every body step carries a lifePhase when the person
+  // has phases defined. If the LLM left it as 'none' and no material phase was
+  // attached, prefer the phase whose window contains the material's year;
+  // else fall back to the formative window's midpoint phase. Opening and
+  // closing are left phase-less on purpose.
+  const isBody = model.kind !== "opening" && model.kind !== "closing";
+  const phases = anchors.lifePhases;
+  if (!lifePhase && isBody && phases && phases.length > 0) {
+    const materialYear = material?.year;
+    const fw = anchors.formativeWindow;
+    const midYear = Math.round((fw.startYear + fw.endYear) / 2);
+    lifePhase =
+      (materialYear !== undefined ? phaseForYear(phases, materialYear) : undefined) ??
+      phaseForYear(phases, midYear);
+  }
   const parsed = SessionStepSchema.safeParse({
     id: run.deps.newId("s"),
     order,
@@ -239,7 +255,7 @@ export async function* composePhase(
     if (draft.length >= maxSteps) break;
     // A step built on something critique rejected never reaches the plan.
     if (model.materialRef && rejectedRefs.has(model.materialRef)) continue;
-    const step = toStep(run, model, byRef.get(model.materialRef), draft.length, same, mode === "grounded");
+    const step = toStep(run, anchors, model, byRef.get(model.materialRef), draft.length, same, mode === "grounded");
     if (step) draft.push(step);
   }
   if (draft.length === 0) throw new PortError("llm", "invalid_response", "The composed session had no usable steps", false);

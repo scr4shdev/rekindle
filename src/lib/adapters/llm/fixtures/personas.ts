@@ -79,6 +79,7 @@ const MARIA: PersonaFixture = {
       c("music", "Domenico Modugno", "urn:entity:artist", 1958, "Volare won Sanremo when she was 16."),
       c("music", "Pino Daniele", "urn:entity:artist", 1977, "Iconic Neapolitan songwriter."),
       c("music", "Festival di Napoli 1958", "urn:entity:album", 1958, "The Neapolitan song festival she would have heard on the radio."),
+      c("film", "Totò al Giro d'Italia", "urn:entity:movie", 1948, "Totò's slapstick cinema of her Naples childhood."),
       c("film", "L'oro di Napoli", "urn:entity:movie", 1954, "De Sica's love letter to Naples, with Loren."),
       c("film", "Le quattro giornate di Napoli", "urn:entity:movie", 1962, "Famous Naples film of her youth."),
       c("public_figure", "Sophia Loren", "urn:entity:person", 0, "Grew up near Naples; a star of her youth."),
@@ -119,8 +120,16 @@ const MARIA: PersonaFixture = {
     tip: "Hold her hand if she welcomes it. No questions for a minute: just listen together.",
     mediaHint: "Search 'Roberto Murolo Era de maggio'",
   },
-  planOrder: ["Frank Sinatra", "Renato Carosone", "L'oro di Napoli", "Omar Sívori", "Ragù napoletano", "Peppino di Capri"],
+  planOrder: ["Totò al Giro d'Italia", "Renato Carosone", "Frank Sinatra", "L'oro di Napoli", "Omar Sívori", "Ragù napoletano", "Peppino di Capri"],
   steps: {
+    "Totò al Giro d'Italia": {
+      kind: "look", minutes: 3, title: "Totò al Giro d'Italia (1948)",
+      prompt: "Guardi questa foto di Totò, com'era buffo! Che cosa le ricorda?",
+      translation: "Look at this photo of Totò, how funny he was! What does it bring to mind?",
+      followUps: ["Mi racconti un film di Totò che vi faceva ridere a casa?"],
+      tip: "A black-and-white still of Totò grinning works best. Let her name a scene the family loved.",
+      mediaHint: "Search 'Totò al Giro d'Italia 1948' on Google Images",
+    },
     "Frank Sinatra": {
       kind: "listen", minutes: 3, title: "Frank Sinatra, 'Strangers in the Night' (1966)",
       prompt: "Ascoltiamo Sinatra. Che voce, vero? Mi racconti cosa le fa venire in mente.",
@@ -269,9 +278,11 @@ const SEAMUS: PersonaFixture = {
   },
   propose: {
     candidates: [
+      c("music", "John McCormack", "urn:entity:artist", 1940, "Count John McCormack's tenor voice on the wireless of his Cork childhood."),
       c("music", "Royal Showband", "urn:entity:artist", 1960, "The showband of the dance halls when he was courting."),
       c("music", "Brendan Bowyer", "urn:entity:artist", 1965, "'The Hucklebuck' filled every dance hall."),
       c("music", "Jim Reeves", "urn:entity:artist", 1962, "Hugely popular on Irish radio in the early 60s."),
+      c("music", "Dickie Rock", "urn:entity:artist", 1966, "The Miami Showband frontman of the Cork dance-hall years."),
       c("music", "Bridie Gallagher", "urn:entity:artist", 1956, "The girl from Donegal, a radio favourite."),
       c("music", "U2", "urn:entity:artist", 1980, "Ireland's biggest band."),
       c("film", "The Quiet Man", "urn:entity:movie", 1952, "John Wayne in the west of Ireland, when he was 14."),
@@ -313,8 +324,15 @@ const SEAMUS: PersonaFixture = {
     tip: "Lower the volume and sit close. No questions for a while.",
     mediaHint: "Search 'Jim Reeves I Love You Because'",
   },
-  planOrder: ["The Royal Showband", "The Quiet Man", "Christy Ring", "Jim Reeves", "Dickie Rock"],
+  planOrder: ["John McCormack", "The Royal Showband", "The Quiet Man", "Christy Ring", "Jim Reeves", "Dickie Rock"],
   steps: {
+    "John McCormack": {
+      kind: "listen", minutes: 4, title: "John McCormack, 'Danny Boy'",
+      prompt: "Here's John McCormack. That voice came out of every wireless when you were small. How does it strike you now?",
+      translation: "", followUps: ["If you fancy, hum along with the chorus."],
+      tip: "Keep the volume low: this is a childhood tune, not a dance-hall number. A smile or a quiet hum is the whole point.",
+      mediaHint: "Search 'John McCormack Danny Boy' on YouTube",
+    },
     "The Royal Showband": {
       kind: "move", minutes: 5, title: "The Royal Showband, 'The Hucklebuck'",
       prompt: "Here's the Royal Showband. Tap your foot along with me!",
@@ -348,7 +366,7 @@ const SEAMUS: PersonaFixture = {
       prompt: "One more from the showbands: Dickie Rock. Shall we listen?",
       translation: "", followUps: [],
       tip: "People who enjoy the Royal Showband also tend to enjoy Dickie Rock. Watch his face: a smile is the answer.",
-      mediaHint: "Search 'Dickie Rock Miami Showband 1960s'",
+      mediaHint: "Search 'Dickie Rock Miami Showband 1960s' on YouTube",
     },
   },
 };
@@ -394,12 +412,13 @@ const FATIMA: PersonaFixture = {
       // over-indexes on mainstream Western figures. The cultural-check phase
       // catches it.
       c("music", "The Beatles", "urn:entity:artist", 1965, "A worldwide 1960s band."),
-      c("music", "Nass El Ghiwane", "urn:entity:artist", 1971, "The Moroccan sound of her early twenties."),
+      c("music", "Nass El Ghiwane", "urn:entity:artist", 1972, "The Moroccan sound of her early twenties."),
       c("music", "Cheb Khaled", "urn:entity:artist", 1992, "The king of raï."),
       c("film", "Al-Khataya", "urn:entity:movie", 1962, "Abdelhalim Hafez on screen, black and white."),
       c("film", "Abi Foq al-Shagara", "urn:entity:movie", 1969, "A huge hit in Moroccan cinemas."),
       c("film", "Doa al-Karawan", "urn:entity:movie", 1959, "Faten Hamama classic."),
       c("film", "Casablanca", "urn:entity:movie", 1942, "A film set in Morocco."),
+      c("public_figure", "Mohammed V", "urn:entity:person", 1955, "The Sultan then King during her Fès childhood: everyone's radio hero in 1955."),
       c("public_figure", "Faten Hamama", "urn:entity:person", 0, "The star of the Egyptian films she loved."),
       c("public_figure", "Omar Sharif", "urn:entity:person", 0, "Faten Hamama's screen partner."),
       c("public_figure", "Donald Trump", "urn:entity:person", 0, "A globally famous public figure."),
@@ -407,7 +426,7 @@ const FATIMA: PersonaFixture = {
       c("food", "Msemen", "none", 0, "Stated love; made every morning."),
       c("food", "Stella Artois", "urn:entity:brand", 1970, "Brussels' everyday brand."),
     ],
-    notes: ["Fès 1960-1980: Egyptian song and cinema, then Brussels."],
+    notes: ["Fès 1950-1980: a Fès childhood, Egyptian song and cinema, then Brussels."],
   },
   critique: {
     "Stella Artois": { kind: "emotional_risk", reason: "A beer brand: the notes ask for nothing with alcohol." },
@@ -457,8 +476,24 @@ const FATIMA: PersonaFixture = {
     tip: "Sit close and hold her hand if she welcomes it. A glass of water or mint to smell can help.",
     mediaHint: "Search 'Fairuz Ya Mersal El Merasil'",
   },
-  planOrder: ["Oum Kalthoum", "Faten Hamama", "Moroccan mint tea", "Abdelhalim Hafez", "Warda Al-Jazairia"],
+  planOrder: ["Mohammed V", "Oum Kalthoum", "Faten Hamama", "Moroccan mint tea", "Abdelhalim Hafez", "Nass El Ghiwane", "Warda Al-Jazairia"],
   steps: {
+    "Mohammed V": {
+      kind: "look", minutes: 3, title: "Mohammed V on the radio (1955)",
+      prompt: "Regardez cette photo de Mohammed V en 1955. Qu'est-ce qu'elle vous évoque, de ce temps-là à Fès ?",
+      translation: "Look at this photo of Mohammed V in 1955. What does it bring up for you, from those days in Fès?",
+      followUps: ["Dans la médina, les gens écoutaient la radio ensemble, racontez-moi si vous voulez."],
+      tip: "A sepia portrait is enough. His return in 1955 is a childhood memory for anyone her age in Fès.",
+      mediaHint: "Search 'Mohammed V 1955' on Google Images",
+    },
+    "Nass El Ghiwane": {
+      kind: "listen", minutes: 4, title: "Nass El Ghiwane (1972)",
+      prompt: "Nass El Ghiwane ! Vous aviez vingt-deux ans quand ils ont commencé. Qu'est-ce que ça vous fait, aujourd'hui ?",
+      translation: "Nass El Ghiwane! You were twenty-two when they started. How does it feel today?",
+      followUps: ["Si vous voulez, battez la mesure avec moi."],
+      tip: "This is the sound of her early twenties in Fès and Brussels. Keep the volume low: the drums carry the room on their own.",
+      mediaHint: "Search 'Nass El Ghiwane 1972' on YouTube",
+    },
     "Oum Kalthoum": {
       kind: "listen", minutes: 4, title: "Oum Kalthoum, 'Enta Omri' (1964)",
       prompt: "Écoutons Oum Kalthoum. Quelle voix ! Qu'est-ce que cette chanson vous évoque ?",

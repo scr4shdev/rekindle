@@ -32,7 +32,7 @@ export function PersonaCards() {
               data-testid={`persona-${persona.slug}`}
               className="group flex h-full flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-paper transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-lift focus-visible:-translate-y-1"
             >
-              <EraArt motif={MOTIF[persona.slug]} className="h-20 border-b border-border sm:h-24">
+              <EraArt motif={MOTIF[persona.slug]} className="h-16 border-b border-border sm:h-20">
                 <span className="absolute bottom-2.5 left-4 rounded-full bg-card/95 px-3 py-1 font-heading text-lg font-semibold shadow-paper">
                   {t.era(decade(birthYear + 12), decade(birthYear + 25))}
                 </span>

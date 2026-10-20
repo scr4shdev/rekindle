@@ -9,9 +9,9 @@ export const en = {
     theme: { toggle: "Switch light or dark theme", light: "Light", dark: "Dark" },
   },
   landing: {
-    title: "A 20-minute reminiscence session a care aide can run bedside, in a culture they do not share.",
+    title: "A 20-minute reminiscence session a caregiver can run, in any culture.",
     leadShort:
-      "A professional carer, a family member, anyone who sits by someone living with dementia: Rekindle plans a timed session grounded in Qloo's taste graph, so a 1960s Fès childhood is not met with a 1960s Hollywood classic.",
+      "For care aides and families. Rekindle's agent verifies every song, film and face against Qloo's taste graph, so a 1960s Fès childhood is not met with a 1960s Hollywood classic.",
     agentFlowLabel: "How the agent works",
     agentFlow: "Parse → propose → verify in Qloo → compose. 6 phases, 10–20 Qloo calls per plan.",
     promises: {

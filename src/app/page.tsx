@@ -11,12 +11,12 @@ export default function Home() {
     { icon: SearchCheckIcon, text: t.promises.grounded, tone: "bg-ochre-soft text-ochre-ink" },
   ];
   return (
-    <main id="main" className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-5 pt-2 pb-20 sm:gap-10 sm:px-8 sm:pt-4">
-      <section className="flex flex-col gap-3 sm:gap-4" aria-labelledby="hero-title">
-        <h1 id="hero-title" className="animate-rise max-w-4xl text-[1.9rem] leading-[1.05] font-semibold sm:text-[2.9rem]">
+    <main id="main" className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-5 pt-2 pb-20 sm:gap-5 sm:px-8">
+      <section className="flex flex-col gap-2" aria-labelledby="hero-title">
+        <h1 id="hero-title" className="animate-rise max-w-4xl text-[1.75rem] leading-[1.05] font-semibold sm:text-[2.3rem]">
           {t.title}
         </h1>
-        <p className="animate-rise max-w-4xl text-muted-foreground sm:text-lg">{t.leadShort}</p>
+        <p className="animate-rise max-w-4xl text-muted-foreground sm:text-base">{t.leadShort}</p>
         <ul className="animate-rise flex flex-wrap items-center gap-2 sm:gap-2.5">
           {promises.map(({ icon: Icon, text, tone }) => (
             <li key={text} className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-[0.85rem] font-semibold sm:px-4 sm:py-1.5 sm:text-[0.95rem] ${tone}`}>

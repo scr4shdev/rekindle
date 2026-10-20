@@ -56,7 +56,7 @@ export interface PersonaFixture {
 }
 
 type C = ProposeCandidatesOutput["candidates"][number];
-const c = (domain: C["domain"], name: string, qlooType: C["qlooType"], year: number, rationale: string): C => ({ domain, name, qlooType, year, rationale });
+const c = (domain: C["domain"], name: string, qlooType: C["qlooType"], year: number, rationale: string): C => ({ domain, name, qlooType, year, rationale, lifePhase: "none" });
 
 const MARIA: PersonaFixture = {
   parse: {
@@ -195,6 +195,7 @@ const MARIA: PersonaFixture = {
       caregiverTip: "Play it softly and let her settle.",
       durationMin: 4,
       mediaHint: "Search 'Frank Sinatra My Way 1969'",
+      lifePhase: "none",
     },
     {
       kind: "listen",
@@ -206,6 +207,7 @@ const MARIA: PersonaFixture = {
       caregiverTip: "If she sings along, sing with her.",
       durationMin: 4,
       mediaHint: "Search 'Renato Carosone Napoli Mia Bella'",
+      lifePhase: "none",
     },
     {
       kind: "talk",
@@ -217,6 +219,7 @@ const MARIA: PersonaFixture = {
       caregiverTip: "Follow her lead; there is no wrong answer.",
       durationMin: 4,
       mediaHint: "",
+      lifePhase: "none",
     },
     {
       kind: "taste",
@@ -228,6 +231,7 @@ const MARIA: PersonaFixture = {
       caregiverTip: "A small jar of tomato sauce or fresh basil to smell works well. Check any swallowing guidance before offering food.",
       durationMin: 4,
       mediaHint: "",
+      lifePhase: "none",
     },
   ],
 };
@@ -511,6 +515,7 @@ const FATIMA: PersonaFixture = {
       caregiverTip: "Play it softly and let her settle.",
       durationMin: 4,
       mediaHint: "Search 'The Beatles Yesterday 1965'",
+      lifePhase: "none",
     },
     {
       kind: "look",
@@ -522,6 +527,7 @@ const FATIMA: PersonaFixture = {
       caregiverTip: "A classic black-and-white poster usually works best.",
       durationMin: 4,
       mediaHint: "Search 'Casablanca 1942 poster'",
+      lifePhase: "none",
     },
     {
       kind: "taste",
@@ -533,6 +539,7 @@ const FATIMA: PersonaFixture = {
       caregiverTip: "Fresh mint to smell is enough. Check any swallowing or diet guidance before offering tea.",
       durationMin: 4,
       mediaHint: "",
+      lifePhase: "none",
     },
     {
       kind: "talk",
@@ -544,6 +551,7 @@ const FATIMA: PersonaFixture = {
       caregiverTip: "Follow her lead; there is no wrong answer.",
       durationMin: 4,
       mediaHint: "",
+      lifePhase: "none",
     },
   ],
 };

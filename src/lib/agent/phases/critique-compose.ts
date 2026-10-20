@@ -20,11 +20,17 @@ export const PLAN_MAX_STEPS = 20;
 
 /**
  * F2: cultural-mismatch gate for non-Western personas. The Qloo live probe
- * showed that seeds like Oum Kalthoum / Faten Hamama expand to Hollywood or US
- * political entities. For non-Western origin we ask the LLM to classify each
- * qloo-affinity material as cultural_match | cultural_mismatch | unclear, and
- * reject the mismatches with kind=wrong_locale (the closest frozen rejection
- * kind; the reason text names the extrapolation).
+ * showed that seeds like Oum Kalthoum / Faten Hamama expand to Hollywood or
+ * US political entities, and the LLM's own propose step over-reaches to
+ * mainstream Western figures (Donald Trump, The Beatles, Casablanca) for
+ * the same cultural blind spot. For non-Western origin we ask the LLM to
+ * classify each groundable material (qloo-affinity from expand plus
+ * qloo-verified from the LLM's proposals) as cultural_match |
+ * cultural_mismatch | unclear, and reject the mismatches with
+ * kind=wrong_locale (the closest frozen rejection kind; the reason text
+ * names the extrapolation). LLM-only candidates that failed verify are not
+ * checked here: critique-items handles those with its sensitivity and era
+ * rules.
  */
 async function* culturalMismatchGate(
   run: Run,
@@ -34,7 +40,9 @@ async function* culturalMismatchGate(
 ): AsyncGenerator<AgentEventPayload, Set<string>> {
   const rejected = new Set<string>();
   if (!isNonWesternOrigin(anchors, person.sessionLanguage)) return rejected;
-  const indexed = materials.map((m, i) => ({ ref: materialAlias(i), m })).filter(({ m }) => m.source === "qloo-affinity");
+  const indexed = materials
+    .map((m, i) => ({ ref: materialAlias(i), m }))
+    .filter(({ m }) => m.source === "qloo-affinity" || m.source === "qloo-verified");
   if (indexed.length === 0) return rejected;
 
   const items: CulturalCheckItem[] = indexed.map(({ ref, m }) => ({

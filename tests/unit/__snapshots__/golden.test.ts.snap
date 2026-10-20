@@ -15,12 +15,11 @@ exports[`golden mock run: fatima > grounded: valid, era-correct, sensitivity-saf
 exports[`golden mock run: fatima > llm-only: valid, era-correct, sensitivity-safe and stable 1`] = `
 [
   "0. [opening] Tea together | llm-only | 2 min",
-  "1. [listen] Oum Kalthoum, 'Enta Omri' (1964) | llm-only | 4 min",
-  "2. [look] Faten Hamama on screen | llm-only | 3 min",
-  "3. [taste] Mint tea, the morning ritual | llm-only | 3 min",
-  "4. [move] Sway along: Abdelhalim Hafez | llm-only | 3 min",
-  "5. [listen] Listen: Farid al-Atrash | llm-only | 3 min",
-  "6. [closing] Thank you, Fatima | llm-only | 2 min",
+  "1. [listen] The Beatles, 'Yesterday' (1965) | llm-only | 4 min",
+  "2. [look] 'Casablanca' on screen (1942) | llm-only | 4 min",
+  "3. [taste] Mint tea, the morning ritual | llm-only | 4 min",
+  "4. [talk] A word about Donald Trump in the news | llm-only | 4 min",
+  "5. [closing] Thank you, Fatima | llm-only | 2 min",
 ]
 `;
 

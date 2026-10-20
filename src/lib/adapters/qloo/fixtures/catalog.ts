@@ -107,6 +107,14 @@ const FATIMA = rows("fatima", [
   ["MOCK-PERSON-OMAR-SHARIF", "Omar Sharif", P, 0.8, 0.84, { dateOfBirth: "1932-04-10", description: "Egyptian actor, Faten Hamama's screen partner." }],
   ["MOCK-PERSON-SOAD-HOSNY", "Soad Hosny", P, 0.55, 0.86, { dateOfBirth: "1943-01-26", description: "Cinderella of Egyptian cinema, 1960s-70s." }],
   ["MOCK-BRAND-STELLA-ARTOIS", "Stella Artois", B, 0.85, 0.8, { description: "Belgian beer brand from Leuven." }],
+  // Hand-authored Western-drift entries that verify successfully in the mock
+  // for Fatima's propose fixture. They exist in the catalog so the trace
+  // shows the LLM proposed them and Qloo confirmed real matches; the
+  // cultural-check phase is the layer that catches them as mismatches for
+  // a Moroccan elder's cultural world.
+  ["MOCK-ARTIST-BEATLES-FATIMA", "The Beatles", A, 0.99, 0.6, { description: "Liverpool band, worldwide from 1963.", tags: ["60s"] }],
+  ["MOCK-MOVIE-CASABLANCA-FATIMA", "Casablanca", M, 0.9, 0.6, { releaseYear: 1942, description: "Bogart and Bergman in a wartime Morocco setting, Hollywood production.", disambiguation: "1942, Michael Curtiz" }],
+  ["MOCK-PERSON-DONALD-TRUMP", "Donald Trump", P, 0.95, 0.5, { dateOfBirth: "1946-06-14", description: "US public figure." }],
 ]);
 
 const GENERIC = rows("generic", [

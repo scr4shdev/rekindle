@@ -361,14 +361,29 @@ function replanSession(input: ReplanSessionInput): ReplanSessionOutput {
 }
 
 /**
- * Deterministic cultural-check for the mock LLM: no fixture persona has
- * cross-culture leaks (MockQloo serves only the persona's group), so every
- * verdict is `cultural_match`. Live-Qloo mode uses the real LLM; this is only
- * reached in tests and demo mock sessions.
+ * Deterministic cultural-check for the mock LLM. A persona may ship a
+ * hand-authored decision table (`persona.culturalCheck`) keyed by exact
+ * label: those items get the authored verdict (cultural_mismatch or unclear).
+ * Everything else is `cultural_match`. The persona is identified by the
+ * `origin.culturalBackground` string carried in the cultural-check input,
+ * which matches the parse fixture exactly. No regex or keyword matching:
+ * all meaning goes through the fixture lookup.
  */
+function personaByCulturalBackground(cb: string | undefined): PersonaFixture | undefined {
+  if (!cb) return undefined;
+  return (Object.keys(PERSONA_FIXTURES) as PersonaSlug[])
+    .map((s) => PERSONA_FIXTURES[s])
+    .find((f) => f.parse.culturalBackground === cb);
+}
+
 function culturalCheck(input: CulturalCheckInput): CulturalCheckOutput {
+  const persona = personaByCulturalBackground(input.origin.culturalBackground);
   return {
-    verdicts: input.items.map((item) => ({ ref: item.ref, verdict: "cultural_match", reason: "Mock: no cultural mismatch detected." })),
+    verdicts: input.items.map((item) => {
+      const fixed = persona?.culturalCheck ? lookup(persona.culturalCheck, item.name) : undefined;
+      if (fixed) return { ref: item.ref, verdict: fixed.verdict, reason: fixed.reason };
+      return { ref: item.ref, verdict: "cultural_match", reason: "Mock: no cultural mismatch detected." };
+    }),
   };
 }
 

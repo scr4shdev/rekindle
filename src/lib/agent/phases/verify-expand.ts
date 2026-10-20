@@ -12,7 +12,7 @@ import { matchEntityPrompt } from "@/lib/prompts";
 
 import type { Material, Run } from "@/lib/agent/run";
 import { bornYearOf, callLlm, callTaste, errorFromQloo, qlooCallEvent, toVerifiedEntity } from "@/lib/agent/run";
-import { ageBucket, clip, DOMAIN_OF_TYPE, EXPAND_TARGET, isTasteOutage, lifespanEraFilter, mapLimit, normalizeName, primaryPlace } from "@/lib/agent/util";
+import { ageBucket, clip, DOMAIN_OF_TYPE, EXPAND_TARGET, isTasteOutage, lifespanEraFilter, lifetimeViolation, mapLimit, normalizeName, primaryPlace } from "@/lib/agent/util";
 import { phaseForYear } from "@/lib/agent/phases/parse-propose";
 
 /** Parallel Qloo searches in VERIFY (bounded to stay polite to the API, HARD RULE 6). */
@@ -233,6 +233,17 @@ export async function* verifyPhase(run: Run, anchors: Anchors, candidates: Candi
     yield* outcome.events;
     if (outcome.kind === "found") {
       const entity = toVerifiedEntity(run, outcome.entity, candidate.domain, { provenance: "llm-proposed-qloo-verified", candidateId: candidate.id });
+      // Hard lifetime rail: reject entities whose dates sit outside the
+      // person's birth-to-today window. Dropped from materials so no
+      // compose step builds on it; emitted as rejected so the trace shows
+      // the catch and the compare view credits Qloo for the save.
+      const lifetimeFail = lifetimeViolation(anchors, { releaseYear: entity.releaseYear, bornYear: bornYearOf(outcome.entity) });
+      if (lifetimeFail) {
+        notFound++;
+        run.stats.rejected++;
+        yield { type: "rejected", item: { label: entity.name, reason: lifetimeFail, kind: "anachronism", phase: "verify", domain: candidate.domain, refId: candidate.id } };
+        continue;
+      }
       verified++;
       run.stats.verified++;
       yield { type: "verified", entity };
@@ -372,6 +383,18 @@ export async function* expandPhase(run: Run, anchors: Anchors, materials: Materi
       if (added >= max) break;
       if (known.has(raw.qlooId) || knownNames.has(normalizeName(raw.name)) || !QLOO_INSIGHTS_TYPES.includes(raw.type as QlooInsightsType)) continue;
       if (hasYear && raw.releaseYear !== undefined && (raw.releaseYear < spanStart || raw.releaseYear > spanEnd)) continue;
+      // Hard lifetime rail on affinity results too. Qloo may surface a
+      // post-lifetime entity (modern reissue, newer artist with the same
+      // name); credit Qloo by emitting the rejection rather than silently
+      // filtering it.
+      const lifetimeFail = lifetimeViolation(anchors, { releaseYear: raw.releaseYear, bornYear: bornYearOf(raw) });
+      if (lifetimeFail) {
+        known.add(raw.qlooId);
+        knownNames.add(normalizeName(raw.name));
+        run.stats.rejected++;
+        yield { type: "rejected", item: { label: raw.name, reason: lifetimeFail, kind: "anachronism", phase: "verify", domain: DOMAIN_OF_TYPE[type] ?? "public_figure" } };
+        continue;
+      }
       known.add(raw.qlooId);
       knownNames.add(normalizeName(raw.name));
       const entity = toVerifiedEntity(run, raw, DOMAIN_OF_TYPE[type] ?? "public_figure", { provenance: "qloo-affinity", seedQlooIds: seedIds });

@@ -102,6 +102,42 @@ export function lifespanEraFilter(anchors: Anchors): TasteEraFilter {
 }
 
 /**
+ * Hard lifetime safety rail. Returns a short reason when the entity's
+ * relevant date sits outside the anchors' lifetime window (birth year
+ * through today, inclusive), or undefined when the entity is in bounds or
+ * carries no date signal. The caller rejects out-of-bounds entities with
+ * kind `anachronism` and this reason, so the trace credits Qloo for the
+ * catch rather than silently filtering. Date fields follow the Qloo
+ * ERA_FILTER_SUPPORT map: releaseYear for movies/tv/books/videogames,
+ * dateOfBirth for persons/artists/brands. Entities without a date (e.g.
+ * places with no publication year) are not rejected on lifetime bounds;
+ * cultural-check already covers the obvious wrong-culture cases.
+ */
+export function lifetimeViolation(
+  anchors: Anchors,
+  entity: { releaseYear?: number; bornYear?: number },
+): string | undefined {
+  const w = anchors.lifetimeWindow;
+  if (!w) return undefined;
+  if (entity.releaseYear !== undefined) {
+    if (entity.releaseYear < w.startYear) {
+      return `Released in ${entity.releaseYear}, before ${w.startYear}: the person had not been born yet.`;
+    }
+    if (entity.releaseYear > w.endYear) {
+      return `Released in ${entity.releaseYear}, after the person's lifetime window (ends ${w.endYear}).`;
+    }
+  }
+  if (entity.bornYear !== undefined) {
+    if (entity.bornYear > w.endYear) {
+      return `Born in ${entity.bornYear}, after the person's lifetime window (ends ${w.endYear}).`;
+    }
+    // A person active during someone's lifetime can still be born well before
+    // them, so bornYear < startYear is not itself a violation.
+  }
+  return undefined;
+}
+
+/**
  * Narrow place-name normalizations for the hackathon Qloo tier. Not a general
  * alias table: just the one city the live probe found rejected under its
  * ASCII-folded form. "Fes" / "Fez" -> "Fès" (which Qloo accepts). Country-level

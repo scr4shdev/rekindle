@@ -191,6 +191,14 @@ export const Anchors = z.object({
    * backward compatibility; absent means fall back to formativeWindow.
    */
   lifePhases: z.array(LifePhase).max(5).optional(),
+  /**
+   * Hard outer bounds the person could possibly have experienced:
+   * [birthYear, min(deathYear ?? currentYear, currentYear)]. Used by
+   * verify-expand as a lifetime-safety rail: entities whose relevant date
+   * sits outside this window are rejected with a specific reason. Optional
+   * and additive; absent (no birthYear) means the check is skipped.
+   */
+  lifetimeWindow: z.object({ startYear: Year, endYear: Year }).optional(),
   places: z.array(Place).max(8),
   languages: z.array(z.object({ tag: LanguageTag, name: z.string().min(1).max(60) })).min(1).max(5),
   loves: z.array(Love).max(20),

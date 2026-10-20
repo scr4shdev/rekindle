@@ -75,6 +75,10 @@ export function toAnchors(out: ParseAnchorsOutput, person: PersonInput, run: Run
   const startYear = Math.min(birthYear + formativeAgeMin, currentYear);
   const endYear = Math.min(birthYear + formativeAgeMax, currentYear);
   const lifePhases = deriveLifePhases(birthYear, currentYear);
+  // Hard lifetime bounds. deathYear is not in PersonInput today, so the end
+  // is pinned to the current year; a future contract widening can carry
+  // deathYear and tighten the upper bound.
+  const lifetimeWindow = { startYear: birthYear, endYear: currentYear };
 
   const places = out.places
     .map((p) => ({
@@ -99,6 +103,7 @@ export function toAnchors(out: ParseAnchorsOutput, person: PersonInput, run: Run
     birthYearSource,
     formativeWindow: { startYear, endYear },
     lifePhases: lifePhases.length ? lifePhases : undefined,
+    lifetimeWindow,
     places,
     languages,
     loves: out.loves

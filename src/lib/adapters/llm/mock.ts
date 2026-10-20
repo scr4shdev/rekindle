@@ -172,7 +172,12 @@ function genericStep(material: Pick<ComposeMaterial, "label" | "domain" | "ref" 
     followUps: [],
     caregiverTip: c.tip,
     durationMin: 3,
-    mediaHint: kind === "listen" || kind === "look" ? `Search '${material.label}'` : "",
+    mediaHint:
+      kind === "listen"
+        ? `Search '${material.label}' on YouTube`
+        : kind === "look"
+          ? `Search '${material.label}' on Google Images`
+          : "",
     lifePhase: material.lifePhase ?? "none",
   };
 }

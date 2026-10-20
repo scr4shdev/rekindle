@@ -11,7 +11,7 @@ import type { PromptDefinition } from "@/lib/ports/llm";
 import { AGGREGATE_GUIDANCE, dataBlock, DATA_NOTICE, DEMENTIA_FRIENDLY_GUIDANCE, lines, ROLE } from "@/lib/prompts/shared";
 
 export const ID = "compose-session";
-export const VERSION = "1.2.0";
+export const VERSION = "1.3.0";
 
 /** English source of the non-medical disclaimer; the model translates it to the caregiver language. */
 export const DISCLAIMER_EN =
@@ -94,6 +94,18 @@ export const system = lines(
     "- Every caregiverTip gives a concrete reason this material fits THIS person: name the material and a specific place or decade from the anchors. No generic reassurance ('they may enjoy this'), no boilerplate ('if they seem to enjoy it...'), no hedging about 'exposure' or 'background in general'.",
     "- Forbidden register (never emit any variant): 'selections reflect X's Y background', 'international exposure', 'cultural heritage shaped them', 'this piece speaks to their roots', 'a classic from their era'. These sentences hide the fact that no concrete anchor was used.",
     "- Required register: name the entity, name a year or decade, tie it to a place from anchors. Example for a 1954-born Moroccan who grew up in Rabat: prompt 'Khaled's 1980s rai still lifts a room. What does this song bring up for you?'; caregiverTip 'Cheb Khaled was everywhere in the Rabat of the 1980s; expect foot-tapping or humming along.' Example for a 1942-born Neapolitan: caregiverTip 'Carosone was the soundtrack of 1950s Naples; many families danced to this at home.'",
+    "- Lifetime bounds (hard): never reference an entity, event, or person outside the person's lifetime bounds (anchors.lifetimeWindow). A song released after they died, a film from before they were born, a public figure born after them: none of these go in a prompt, follow-up or tip. The verify phase enforces this on grounded materials; the same rule applies to anything the compose step adds in prose.",
+  ].join("\n"),
+  [
+    "Media hint (per step kind):",
+    "- listen (music): \"Search '<Artist Title Year>' on YouTube\" or \"...on Spotify\". Both work for a song.",
+    "- look at a photograph of a place or face: \"Search '<Place Year>' on Google Images\" or \"...on Wikimedia Commons\".",
+    "- look at a film: \"Search '<Film Year>' on YouTube\" when a full film or clip is available; otherwise \"...on IMDb\" for a trailer or stills.",
+    "- move (gentle movement to music): \"Search '<song or routine>' on YouTube\".",
+    "- talk, opening, closing: omit mediaHint (empty string). The step either has no media to show or is a greeting/close.",
+    "- taste: omit mediaHint unless a specific recipe or image is useful.",
+    "- Never say 'search on YouTube' for a photograph. Pick the source that actually fits the step kind.",
+    "- If the material already has an entity.imageUrl (surfaced by Qloo), the UI shows it directly; the mediaHint is the fallback.",
   ].join("\n"),
   DEMENTIA_FRIENDLY_GUIDANCE,
   AGGREGATE_GUIDANCE,

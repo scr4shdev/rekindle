@@ -32,8 +32,11 @@ export function jsonError(
 
 /** Limits per client IP: a burst of `capacity` requests, refilled at `refillPerMinute`. */
 export const RATE_LIMITS = {
-  session: { capacity: 8, refillPerMinute: 4 },
-  replan: { capacity: 30, refillPerMinute: 15 },
+  // Session: judges reload hard and often. A short burst (reloads, back-navigation,
+  // dev-tools "disable cache" refreshes) is normal, not abuse: give it headroom
+  // and refill fast enough that a steady human cadence never hits the limit.
+  session: { capacity: 20, refillPerMinute: 30 },
+  replan: { capacity: 30, refillPerMinute: 30 },
 } as const;
 /** Clients tracked per instance; the least recently seen are forgotten first. */
 export const RATE_LIMIT_MAX_CLIENTS = 5_000;

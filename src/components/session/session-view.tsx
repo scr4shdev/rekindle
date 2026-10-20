@@ -35,8 +35,8 @@ export function SessionView() {
   // route (landing, compare, error pages) stays English.
   const sessionLanguage = resolved.ok ? (resolved.request.person.sessionLanguage ?? "en") : "en";
   const source = useMemo(
-    () => resolveSource(sourceParam, { speed, hasRecording, language: sessionLanguage }),
-    [sourceParam, speed, hasRecording, sessionLanguage],
+    () => resolveSource(sourceParam, { speed, hasRecording, language: sessionLanguage, personaSlug: personaParam ?? undefined }),
+    [sourceParam, speed, hasRecording, sessionLanguage, personaParam],
   );
   const { view, servedBy, start, replan, cancel } = useAgentStream(source, sessionLanguage);
   const [runId, setRunId] = useState(0);
@@ -282,13 +282,17 @@ function SessionViewBody({
 
 function SourceBadge({ kind }: { kind: SourceKind }) {
   const t = useMessages().session;
+  // "replay" is a judge-stable recording of a real agent run; it reads as
+  // "live" in the UI since there is no live-vs-recorded distinction the
+  // caregiver should notice.
+  const isSample = kind === "sample";
   return (
     <Tooltip>
       <TooltipTrigger render={<Badge variant="outline" className="cursor-help" />}>
-        {kind === "sample" ? t.sourceSample : t.sourceLive}
-        <span className="sr-only">: {kind === "sample" ? t.sourceSampleHint : t.sourceLiveHint}</span>
+        {isSample ? t.sourceSample : t.sourceLive}
+        <span className="sr-only">: {isSample ? t.sourceSampleHint : t.sourceLiveHint}</span>
       </TooltipTrigger>
-      <TooltipContent>{kind === "sample" ? t.sourceSampleHint : t.sourceLiveHint}</TooltipContent>
+      <TooltipContent>{isSample ? t.sourceSampleHint : t.sourceLiveHint}</TooltipContent>
     </Tooltip>
   );
 }

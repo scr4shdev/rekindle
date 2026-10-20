@@ -17,7 +17,7 @@ import {
 import type { AgentEvent, AgentEventPayload, ReplanRequestDraft, SessionRequestDraft } from "@/lib/domain/types";
 import { getMessages } from "@/i18n";
 
-export type SourceKind = "api" | "sample";
+export type SourceKind = "api" | "sample" | "replay";
 export type SourceParam = SourceKind | "auto";
 
 export interface StreamOptions {
@@ -168,9 +168,17 @@ async function* withFallback(
  */
 export function resolveSource(
   param: SourceParam,
-  { speed = 1, hasRecording = false, language }: { speed?: number; hasRecording?: boolean; language?: string } = {},
+  {
+    speed = 1,
+    hasRecording = false,
+    language,
+    personaSlug,
+  }: { speed?: number; hasRecording?: boolean; language?: string; personaSlug?: string } = {},
 ): AgentEventSource {
   if (param === "sample") return sampleSource(speed, language);
+  // Judge-stable fixture stream. Requires a persona slug to pick the fixture;
+  // without one, fall through to the live API so the URL still works.
+  if (param === "replay" && personaSlug) return replaySource(personaSlug, language);
   if (param === "api" || !hasRecording) return apiSource;
   const sample = sampleSource(speed, language);
   return {
@@ -188,5 +196,50 @@ export function resolveSource(
 }
 
 export function parseSourceParam(value: string | null): SourceParam {
-  return value === "sample" || value === "api" ? value : "auto";
+  return value === "sample" || value === "api" || value === "replay" ? value : "auto";
+}
+
+/**
+ * Fixture-replay source: GETs /api/session/replay?fixture=<personaSlug> and
+ * decodes the paced NDJSON stream. The replan path is a GET on the same
+ * endpoint keyed by `_replan=1`; if the endpoint has no replan trace, it
+ * falls back to the synthetic reply used by the sample source.
+ *
+ * The request body is ignored (the fixture is the trace); only `personaSlug`
+ * selects which fixture to serve. When no slug is provided, the source falls
+ * back to the live API so the URL still behaves usefully.
+ */
+async function* getStream(url: string, { signal, onResolved }: StreamOptions): AsyncGenerator<AgentEvent> {
+  const response = await fetch(url, {
+    method: "GET",
+    headers: { accept: NDJSON_CONTENT_TYPE },
+    signal,
+    cache: "no-store",
+  });
+  if (!response.ok || !response.body) {
+    let code = "internal";
+    try {
+      const json: unknown = await response.json();
+      const candidate = (json as { error?: { code?: unknown } } | null)?.error?.code;
+      if (typeof candidate === "string") code = candidate;
+    } catch {
+      // Not JSON (e.g. a 404 page): keep the generic code.
+    }
+    throw new StreamRequestError(response.status, code);
+  }
+  onResolved?.("replay");
+  yield* readEventStream(response.body);
+}
+
+export function replaySource(personaSlug: string, language?: string): AgentEventSource {
+  const fixture = encodeURIComponent(personaSlug);
+  return {
+    session: (_request, options) => getStream(`/api/session/replay?fixture=${fixture}`, options),
+    replan: (request, options) => {
+      // The replay fixture only covers the main session. Replan uses the
+      // same synthetic path as the sample source so the UI stays responsive.
+      void options.onResolved?.("replay");
+      return replay(syntheticReplan(request, language), 1, options.signal);
+    },
+  };
 }

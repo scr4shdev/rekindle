@@ -12,21 +12,21 @@ test.describe("caregiver session mode", () => {
     await expect(live).toBeVisible();
     await expect(page.getByTestId("live-prompt")).toContainText("Buongiorno Maria");
     await expect(page.getByTestId("live-prompt")).toHaveAttribute("lang", "it");
-    // Timer auto-starts on step entry — it ticks down without the caregiver pressing anything.
+    // Timer auto-starts on step entry: it ticks down without the caregiver pressing anything.
     await expect(page.getByTestId("live-timer")).toHaveText("1:59", { timeout: 3000 });
-    // Maria's chrome is Italian: "Metti in pausa il timer" / "Avvia timer".
-    await expect(page.getByRole("button", { name: "Metti in pausa il timer" })).toBeVisible();
+    // Maria's caregiver is English: "Pause timer" / "Start timer". The prompt stays Italian.
+    await expect(page.getByRole("button", { name: "Pause timer" })).toBeVisible();
     // Focus starts on the session itself: Space toggles the timer and does not close the dialog.
     await page.keyboard.press(" ");
     await expect(live).toBeVisible();
-    await expect(page.getByRole("button", { name: "Avvia timer" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Start timer" })).toBeVisible();
     await expect(page.getByTestId("live-translation")).toBeVisible();
-    await page.getByRole("button", { name: "Nascondi significato" }).click();
+    await page.getByRole("button", { name: "Hide meaning" }).click();
     await expect(page.getByTestId("live-translation")).toBeHidden();
     await page.getByTestId("live-prompt").click();
     await page.keyboard.press("ArrowRight");
     await expect(page.getByTestId("live-prompt")).toContainText("Ascoltiamo Sinatra");
-    // Next step restarts the timer at 3:00 — auto-start means it is already running.
+    // Next step restarts the timer at 3:00 (auto-start means it is already running).
     await expect(page.getByTestId("live-timer")).toHaveText(/^(3:00|2:59)$/);
     await page.keyboard.press("ArrowLeft");
     await expect(page.getByTestId("live-prompt")).toContainText("Buongiorno Maria");
@@ -39,13 +39,13 @@ test.describe("caregiver session mode", () => {
     await expect(page.getByTestId("session-view")).toHaveAttribute("data-status", "done");
     await page.getByTestId("start-live").click();
     for (let i = 0; i < 3; i++) await page.getByTestId("live-next").click();
-    // Timer auto-starts on step entry — no manual Start needed.
+    // Timer auto-starts on step entry: no manual Start needed.
     await expect(page.getByTestId("live-timer")).toHaveText("2:59", { timeout: 3000 });
     // The recorded replan for this step changes the plan (new revision).
     await page.getByTestId("react-upset").click();
     await expect(page.getByTestId("live-up-next")).toContainText("Roberto Murolo");
     await expect(page.getByTestId("live-timer")).toHaveText(/^2:5[0-7]$/, { timeout: 4000 });
-    await expect(page.getByRole("button", { name: "Metti in pausa il timer" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Pause timer" })).toBeVisible();
   });
 
   test("upset on the film still replans with a calming song (sample source)", async ({ page }) => {
@@ -58,12 +58,12 @@ test.describe("caregiver session mode", () => {
     await page.getByTestId("react-upset").click();
     await expect(page.getByTestId("react-upset")).toHaveAttribute("aria-pressed", "true");
     await expect(page.getByTestId("live-up-next")).toContainText("Roberto Murolo");
-    await expect(page.getByTestId("live-up-next")).toContainText("Adattato");
-    await expect(page.getByTestId("live-notice")).toContainText("Piano adattato. Prossima tappa: Roberto Murolo");
-    await page.getByRole("button", { name: "Chiudi la modalità sessione" }).click();
+    await expect(page.getByTestId("live-up-next")).toContainText("Adapted");
+    await expect(page.getByTestId("live-notice")).toContainText("Plan adapted. Next up: Roberto Murolo");
+    await page.getByRole("button", { name: "Close session mode" }).click();
     await expect(page.locator('[data-step-id="s_murolo"]')).toHaveAttribute("data-changed", "true");
-    await expect(page.getByText("Messo da parte per ora: Forza Napoli: the Sívori years")).toBeVisible();
-    await expect(page.getByText("Adattato una volta")).toBeVisible();
+    await expect(page.getByText("Set aside for now: Forza Napoli: the Sívori years")).toBeVisible();
+    await expect(page.getByText("Adapted once")).toBeVisible();
   });
 
   test("a reaction the recording does not cover keeps the plan and says so", async ({ page }) => {
@@ -71,9 +71,9 @@ test.describe("caregiver session mode", () => {
     await expect(page.getByTestId("session-view")).toHaveAttribute("data-status", "done");
     await page.getByTestId("start-live").click();
     await page.getByTestId("react-lit_up").click();
-    await expect(page.getByText("Piano verificato. Non serviva cambiare nulla.")).toBeVisible();
-    await page.getByRole("button", { name: "Chiudi la modalità sessione" }).click();
-    await expect(page.getByText(/Adattato/)).toHaveCount(0);
+    await expect(page.getByText("Plan checked. Nothing needed to change.")).toBeVisible();
+    await page.getByRole("button", { name: "Close session mode" }).click();
+    await expect(page.getByText(/Adapted/)).toHaveCount(0);
   });
 
   test("reactions post a stateless replan request to the API", async ({ page }) => {
@@ -85,13 +85,13 @@ test.describe("caregiver session mode", () => {
     });
     await page.goto("/session?persona=maria&source=api");
     await expect(page.getByTestId("session-view")).toHaveAttribute("data-status", "done");
-    await expect(page.getByText("Pianificatore live")).toBeVisible();
+    await expect(page.getByText("Live planner")).toBeVisible();
     await page.getByTestId("start-live").click();
     await page.getByTestId("live-next").click();
     await page.getByTestId("react-lit_up").click();
-    await expect(page.getByText(/Piano adattato/)).toBeVisible();
-    await page.getByRole("button", { name: "Chiudi la modalità sessione" }).click();
-    await expect(page.getByText("Adattato una volta")).toBeVisible();
+    await expect(page.getByText(/Plan adapted/)).toBeVisible();
+    await page.getByRole("button", { name: "Close session mode" }).click();
+    await expect(page.getByText("Adapted once")).toBeVisible();
     expect(replanBody?.stepId).toBe("s_sinatra");
     expect(replanBody?.reaction).toBe("lit_up");
     expect(replanBody?.plan.id).toBe("plan_sample_maria");
@@ -115,7 +115,7 @@ test("print view shows the session sheet without the trace", async ({ page }) =>
   await expect(page.getByTestId("session-view")).toHaveAttribute("data-status", "done");
   await page.emulateMedia({ media: "print" });
   await expect(page.getByTestId("reasoning-trace")).toBeHidden();
-  await expect(page.getByText("Scheda della sessione")).toBeVisible();
-  await expect(page.getByText("Come ha risposto?").first()).toBeVisible();
+  await expect(page.getByText("Session sheet")).toBeVisible();
+  await expect(page.getByText("How did they respond?").first()).toBeVisible();
   await expect(page.getByRole("banner")).toBeHidden();
 });

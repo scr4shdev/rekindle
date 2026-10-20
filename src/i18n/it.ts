@@ -15,9 +15,9 @@ export const it: PartialMessages = {
     title: "Un agente che pianifica 20 minuti sereni con chi vive con la demenza.",
     leadShort:
       "Ogni canzone, film e volto della loro epoca è controllato nel grafo dei gusti di Qloo, e le mancanze emergono nella traccia invece di sparire, perché nulla stoni per la persona a cui tieni.",
-    agentFlowLabel: "Come lavora l'agente",
+    agentFlowLabel: "La promessa dell'agente",
     agentFlow:
-      "Leggi → immagina → verifica con Qloo → componi. 6 fasi, 10–20 richieste a Qloo per piano.",
+      "L'agente prepara venti minuti nella loro lingua, e ogni idea che propone viene controllata prima.",
     promises: {
       stored: "Nulla di ciò che scrivi viene salvato",
       activity: "Un'attività condivisa, non una terapia",

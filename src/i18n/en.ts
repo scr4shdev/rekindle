@@ -12,8 +12,8 @@ export const en = {
     title: "A 20-minute reminiscence session a caregiver can run, in any culture.",
     leadShort:
       "For care aides and families. Rekindle's agent checks every song, film and face against Qloo's taste graph, with misses surfaced in the trace, not hidden, so a 1960s Fès childhood is not met with a 1960s Hollywood classic.",
-    agentFlowLabel: "How the agent works",
-    agentFlow: "Parse → propose → verify in Qloo → compose. 6 phases, 10–20 Qloo calls per plan.",
+    agentFlowLabel: "What the agent promises",
+    agentFlow: "The agent plans twenty minutes in their language, and every idea it suggests gets checked first.",
     promises: {
       stored: "Nothing you type is stored",
       activity: "A shared activity, not therapy",

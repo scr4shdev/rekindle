@@ -11,11 +11,22 @@ import { assertStreamRules } from "./stream-rules";
 
 const ofType = <K extends AgentEvent["type"]>(list: AgentEvent[], type: K) => list.filter((e): e is AgentEventOf<K> => e.type === type);
 
-/** Words that must never appear in a persona's plan (its "avoid" sensitivities and rejected items). */
-const FORBIDDEN: Record<string, string[]> = {
-  maria: ["guerra", "war", "Maradona", "Pino Daniele", "quattro giornate", "Nino D'Angelo"],
-  seamus: ["emigration", "emigrated", "emigrant", "England", "Bridie Gallagher", "U2"],
-  fatima: ["alcohol", "alcool", "bière", "beer", "Stella Artois", "Khaled"],
+/**
+ * Words that must never appear in a persona's plan.
+ * - FORBIDDEN_ALWAYS: true "avoid" sensitivities from the notes. Both modes.
+ * - FORBIDDEN_GROUNDED: items grounded Qloo verification catches as
+ *   anachronisms or cultural slips. Llm-only mode intentionally lets these
+ *   through to demonstrate what Qloo verification adds in the compare view.
+ */
+const FORBIDDEN_ALWAYS: Record<string, string[]> = {
+  maria: ["guerra", "war"],
+  seamus: ["emigration", "emigrated", "emigrant"],
+  fatima: ["alcohol", "alcool", "bière", "beer"],
+};
+const FORBIDDEN_GROUNDED: Record<string, string[]> = {
+  maria: ["Maradona", "Pino Daniele", "quattro giornate", "Nino D'Angelo"],
+  seamus: ["England", "Bridie Gallagher", "U2"],
+  fatima: ["Stella Artois", "Khaled"],
 };
 
 const summary = (plan: SessionPlan) =>
@@ -49,7 +60,10 @@ describe.each(PERSONAS.map((p) => [p.slug, p] as const))("golden mock run: %s", 
         .flatMap((s) => [s.title, s.prompt, s.promptTranslation, ...s.followUps, s.caregiverTip, s.mediaHint, s.entity?.name, s.entity?.description])
         .filter(Boolean)
         .join(" \n ");
-      for (const word of FORBIDDEN[slug]) expect(text).not.toMatch(new RegExp(`\\b${word}\\b`, "iu"));
+      for (const word of FORBIDDEN_ALWAYS[slug]) expect(text).not.toMatch(new RegExp(`\\b${word}\\b`, "iu"));
+      if (mode === "grounded") {
+        for (const word of FORBIDDEN_GROUNDED[slug]) expect(text).not.toMatch(new RegExp(`\\b${word}\\b`, "iu"));
+      }
 
       // Prompts are open-ended invitations, not memory quizzes.
       for (const s of plan.steps) expect(s.prompt.toLowerCase()).not.toMatch(/do you remember|si ricorda|vous souvenez/);

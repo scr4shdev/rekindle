@@ -21,7 +21,7 @@ export function SiteHeader() {
         <nav className="flex items-center gap-1" aria-label={t.nav.label}>
           <Link
             href="/compare?persona=maria"
-            className="hidden h-11 items-center rounded-full px-4 font-semibold text-muted-foreground hover:bg-muted hover:text-foreground sm:inline-flex"
+            className="inline-flex h-11 items-center rounded-full px-3 font-semibold text-muted-foreground hover:bg-muted hover:text-foreground sm:px-4"
           >
             {t.nav.compare}
           </Link>

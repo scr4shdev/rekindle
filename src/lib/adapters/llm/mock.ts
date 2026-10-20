@@ -114,27 +114,46 @@ function matchEntity(input: MatchEntityInput): MatchEntityOutput {
     : { matchIndex: -1, confidence: "low", reason: "No result is clearly the same entity." };
 }
 
+/**
+ * Detect `mode: "llm-only"` without threading it through the prompt input:
+ * verify is skipped in llm-only mode, so every material/item arrives with
+ * source="llm-idea". In grounded mode persona-matched candidates verify, so at
+ * least one qloo-sourced item is in the batch. This matters because grounded
+ * mode must keep its persona-critique anachronism rejections (Pino, Maradona)
+ * while llm-only mode must let them through — otherwise the two compare
+ * columns look identical and the "would have slipped" badges never appear.
+ */
+function isLlmOnlyBatch(sources: ReadonlyArray<{ source: "qloo-verified" | "qloo-affinity" | "llm-idea" }>): boolean {
+  return sources.length > 0 && sources.every((s) => s.source === "llm-idea");
+}
+
 function critiqueItems(input: CritiqueItemsInput): CritiqueItemsOutput {
   const persona = personaByAnchors(input.anchors);
   const { startYear, endYear } = input.anchors.formativeWindow;
+  const llmOnly = isLlmOnlyBatch(input.items);
   const seen = new Map<string, string>();
   const verdicts = input.items.map((item): CritiqueItemsOutput["verdicts"][number] => {
-    const fixed = persona ? lookup(persona.critique, item.label) : undefined;
+    const fixed = !llmOnly && persona ? lookup(persona.critique, item.label) : undefined;
     const key = looseKey(item.label);
     const duplicateOf = seen.get(key);
     seen.set(key, item.label);
     if (fixed) return { ref: item.ref, keep: false, kind: fixed.kind, reason: fixed.reason };
     if (duplicateOf) return { ref: item.ref, keep: false, kind: "duplicate", reason: `Same as ${duplicateOf}, already in the list.` };
-    if (item.year && item.year > endYear + GENERIC_YEAR_TOLERANCE) {
+    if (!llmOnly && item.year && item.year > endYear + GENERIC_YEAR_TOLERANCE) {
       return { ref: item.ref, keep: false, kind: "anachronism", reason: `From ${item.year}, after the formative years (${startYear}-${endYear}).` };
     }
-    if (item.bornYear && item.bornYear > input.anchors.birthYear + 12) {
+    if (!llmOnly && item.bornYear && item.bornYear > input.anchors.birthYear + 12) {
       return { ref: item.ref, keep: false, kind: "anachronism", reason: `Born in ${item.bornYear}: too young to be a star of ${startYear}-${endYear}.` };
     }
     return { ref: item.ref, keep: true, kind: "none", reason: "Fits the era, the places and the notes." };
   });
   const dropped = verdicts.filter((v) => !v.keep).length;
-  return { verdicts, notes: [dropped ? `Removed ${dropped} item(s) that do not fit.` : "Everything fits the era and the notes."] };
+  const note = llmOnly
+    ? "LLM-only: era and locale are not cross-checked against Qloo, so nothing is dropped here."
+    : dropped
+      ? `Removed ${dropped} item(s) that do not fit.`
+      : "Everything fits the era and the notes.";
+  return { verdicts, notes: [note] };
 }
 
 const DOMAIN_KIND: Record<string, "listen" | "look" | "talk" | "taste"> = { music: "listen", sport: "talk", food: "taste" };
@@ -183,6 +202,22 @@ const DISCLAIMERS: Record<string, string> = {
 function composeSession(input: ComposeSessionInput): ComposeSessionOutput {
   const persona = personaByAnchors(input.anchors);
   const who = input.displayName ? ` ${input.displayName}` : "";
+  // In llm-only mode persona-matched runs skip verify, so every material is
+  // "llm-idea". When the persona has hand-authored llm-only body steps
+  // (anachronisms grounded Qloo would have caught), use them directly so the
+  // compare view shows a visibly different plan with "would have slipped"
+  // badges, not the same real-era plan twice.
+  if (persona?.llmOnlyBody && isLlmOnlyBatch(input.materials)) {
+    return {
+      title: persona.title,
+      disclaimer: DISCLAIMERS[input.caregiverLanguage.toLowerCase().split("-")[0]] ?? input.disclaimerEnglish,
+      steps: [
+        bookend("opening", persona, input, who),
+        ...persona.llmOnlyBody,
+        bookend("closing", persona, input, who),
+      ],
+    };
+  }
   // Persona plans are hand-curated: fill only the gaps left by missing materials.
   const slots = Math.min(Math.max(1, input.maxSteps - 2), persona ? persona.planOrder.length : Infinity);
   const chosen: ComposeMaterial[] = [];

@@ -5,6 +5,7 @@
  * summary), never by interpreting text.
  */
 import { SAMPLE_ANCHORS } from "@/lib/domain/sample-events";
+import type { ModelStep } from "@/lib/prompts/compose-session";
 import type { CritiqueItemsOutput } from "@/lib/prompts/critique-items";
 import type { ParseAnchorsOutput } from "@/lib/prompts/parse-anchors";
 import type { ProposeCandidatesOutput } from "@/lib/prompts/propose-candidates";
@@ -36,6 +37,13 @@ export interface PersonaFixture {
   /** Preferred materials, in plan order (by exact label). */
   planOrder: string[];
   steps: Record<string, StepTemplate>;
+  /**
+   * Hand-authored compose output for `mode: "llm-only"`: anachronisms and
+   * hallucinated song titles that grounded Qloo verification would catch.
+   * When unset, the mock falls back to the regular compose path. Opening and
+   * closing are prepended/appended by the mock.
+   */
+  llmOnlyBody?: ModelStep[];
 }
 
 type C = ProposeCandidatesOutput["candidates"][number];
@@ -161,6 +169,58 @@ const MARIA: PersonaFixture = {
       mediaHint: "Search 'Roberto Murolo Era de maggio'",
     },
   },
+  // The three anachronisms mirror SAMPLE_LLM_ONLY_PLAN in src/lib/domain/sample-events.ts:
+  // 'My Way' (1969) and 'Napoli Mia Bella' are the hallucinated/unverifiable
+  // titles the LLM slips in without Qloo, and Maradona's 1987 scudetto sits
+  // outside her 1952-1972 formative window. Grounded verification catches
+  // Maradona (persona critique) so the compare view flags that step as
+  // "would have slipped".
+  llmOnlyBody: [
+    {
+      kind: "listen",
+      title: "Frank Sinatra, 'My Way' (1969)",
+      materialRef: "",
+      prompt: "Ascoltiamo Sinatra. Le piaceva questa canzone?",
+      promptTranslation: "Let's listen to Sinatra. Did you like this song?",
+      followUps: [],
+      caregiverTip: "Play it softly and let her settle.",
+      durationMin: 4,
+      mediaHint: "Search 'Frank Sinatra My Way 1969'",
+    },
+    {
+      kind: "listen",
+      title: "Renato Carosone, 'Napoli Mia Bella' (1957)",
+      materialRef: "",
+      prompt: "Questa canzone di Carosone parla di Napoli. Cosa le fa pensare?",
+      promptTranslation: "This Carosone song is about Naples. What does it make you think of?",
+      followUps: [],
+      caregiverTip: "If she sings along, sing with her.",
+      durationMin: 4,
+      mediaHint: "Search 'Renato Carosone Napoli Mia Bella'",
+    },
+    {
+      kind: "talk",
+      title: "Maradona and the 1987 scudetto",
+      materialRef: "",
+      prompt: "Parliamo del Napoli di Maradona, se le va — che squadra, lo scudetto dell'87!",
+      promptTranslation: "Let's talk about Maradona's Napoli, if you like — what a side, the '87 scudetto!",
+      followUps: [],
+      caregiverTip: "Follow her lead; there is no wrong answer.",
+      durationMin: 4,
+      mediaHint: "",
+    },
+    {
+      kind: "taste",
+      title: "The smell of Sunday ragù",
+      materialRef: "",
+      prompt: "Senta che profumo di ragù! Mi racconti il suo ragù della domenica.",
+      promptTranslation: "Smell that ragù! Tell me about your Sunday ragù.",
+      followUps: [],
+      caregiverTip: "A small jar of tomato sauce or fresh basil to smell works well. Check any swallowing guidance before offering food.",
+      durationMin: 4,
+      mediaHint: "",
+    },
+  ],
 };
 
 const SEAMUS: PersonaFixture = {

@@ -40,13 +40,11 @@ exports[`golden mock run: maria > grounded: valid, era-correct, sensitivity-safe
 exports[`golden mock run: maria > llm-only: valid, era-correct, sensitivity-safe and stable 1`] = `
 [
   "0. [opening] Un caffè insieme | llm-only | 2 min",
-  "1. [listen] Frank Sinatra, 'Strangers in the Night' (1966) | llm-only | 3 min",
-  "2. [move] Clap along: Carosone, 'Tu vuò fà l'americano' | llm-only | 3 min",
-  "3. [look] Naples on screen: 'L'oro di Napoli' (1954) | llm-only | 3 min",
-  "4. [talk] Forza Napoli: the Sívori years | llm-only | 3 min",
-  "5. [taste] The smell of Sunday ragù | llm-only | 2 min",
-  "6. [listen] Listen: Domenico Modugno | llm-only | 2 min",
-  "7. [closing] Grazie, Maria | llm-only | 2 min",
+  "1. [listen] Frank Sinatra, 'My Way' (1969) | llm-only | 4 min",
+  "2. [listen] Renato Carosone, 'Napoli Mia Bella' (1957) | llm-only | 4 min",
+  "3. [talk] Maradona and the 1987 scudetto | llm-only | 4 min",
+  "4. [taste] The smell of Sunday ragù | llm-only | 4 min",
+  "5. [closing] Grazie, Maria | llm-only | 2 min",
 ]
 `;
 

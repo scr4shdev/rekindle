@@ -237,6 +237,7 @@ export const it: PartialMessages = {
     listen: "Ascolta",
     listenHint: (language: string) => `Ascolta la frase in ${language}`,
     listenNoVoice: (language: string) => `Nessuna voce in ${language} installata su questo dispositivo. Si userà la voce predefinita.`,
+    listenCloudVoice: (language: string) => `Riproduco una voce cloud per ${language}.`,
   },
   live: {
     title: "Modalità sessione",

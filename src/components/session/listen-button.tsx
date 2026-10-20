@@ -38,7 +38,7 @@ export function ListenButton({
   size?: "md" | "lg";
 }) {
   const t = useMessages().step;
-  const { speak, stop, isPlaying, hasVoiceFor, voiceLoaded, supported } = useSpeak();
+  const { speak, stop, isPlaying, hasVoiceFor, voiceLoaded, supported, source } = useSpeak();
   const human = useMemo(() => languageName(promptLang, caregiverLang), [promptLang, caregiverLang]);
   if (!supported || !text) return null;
   const Icon = isPlaying ? Volume1Icon : Volume2Icon;
@@ -46,6 +46,9 @@ export function ListenButton({
   // (first call to `getVoices` returns [] in some engines until the
   // voiceschanged event fires).
   const missing = voiceLoaded && !hasVoiceFor(promptLang);
+  // When the cloud path has already fired for this card, show the honest
+  // "cloud voice" line instead of the "no voice" fallback.
+  const cloud = missing && source === "gemini";
   const label = t.listenHint(human);
   const sizeClass = size === "lg" ? "size-12" : "size-9";
   const iconClass = size === "lg" ? "size-5" : "size-4";
@@ -70,11 +73,15 @@ export function ListenButton({
         <Icon className={iconClass} aria-hidden />
         <span className="sr-only">{t.listen}</span>
       </button>
-      {missing && (
+      {cloud ? (
+        <p className="text-xs text-muted-foreground" data-testid="step-listen-cloud-voice" lang={caregiverLang}>
+          {t.listenCloudVoice(human)}
+        </p>
+      ) : missing ? (
         <p className="text-xs text-muted-foreground" data-testid="step-listen-no-voice" lang={caregiverLang}>
           {t.listenNoVoice(human)}
         </p>
-      )}
+      ) : null}
     </div>
   );
 }

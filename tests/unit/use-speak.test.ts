@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
+
+import { getMessages } from "@/i18n";
 import { fetchCloudTts } from "@/components/session/use-speak";
 
 /**
@@ -60,5 +62,26 @@ describe("fetchCloudTts", () => {
     });
     const result = await fetchCloudTts("hi", "en", fetcher);
     expect(result).toEqual({ ok: false, error: "network" });
+  });
+});
+
+describe("listenErrors i18n copy", () => {
+  it("en: differentiates rate_limited, network, and unavailable", () => {
+    const t = getMessages("en").step.listenErrors;
+    expect(t.unavailable).toBe("Voice unavailable right now.");
+    expect(t.rate_limited).toBe("Taking a short rest; try again in a minute.");
+    expect(t.network).toBe("Voice offline; retry when the connection is back.");
+  });
+  it("it: all three branches present", () => {
+    const t = getMessages("it").step.listenErrors;
+    expect(t.unavailable).toContain("Voce");
+    expect(t.rate_limited).toContain("riposando");
+    expect(t.network).toContain("offline");
+  });
+  it("fr: all three branches present", () => {
+    const t = getMessages("fr").step.listenErrors;
+    expect(t.unavailable).toContain("Voix");
+    expect(t.rate_limited).toContain("répit");
+    expect(t.network).toContain("hors ligne");
   });
 });

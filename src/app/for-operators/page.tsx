@@ -216,7 +216,7 @@ export default function ForOperatorsPage() {
           id="operators-cta"
           className="text-xl font-semibold sm:text-2xl"
         >
-          Rekindle is in private pilot.
+          Private pilot opening November 2026.
         </h2>
         <p className="mt-2 text-muted-foreground">
           Operators, charities and researchers welcome.

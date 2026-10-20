@@ -90,14 +90,14 @@ export const it: PartialMessages = {
     stageHint: "Facoltativo. Aiuta a scegliere il ritmo giusto. Se non sei sicura, lascia vuoto.",
     stageOptions: {
       none: "Preferisco non dirlo",
-      early: "Iniziale (lieve)",
-      mid: "Intermedio (moderato)",
-      late: "Avanzato (grave)",
+      early: "Iniziale",
+      mid: "Intermedio",
+      late: "Avanzato",
     },
     stageTooltips: {
-      early: "Perlopiù autonoma, la conversazione scorre, piccoli vuoti di memoria. Ritmo predefinito.",
-      mid: "L'attenzione si restringe, le ripetizioni sono comuni, musica e immagini familiari contano più delle parole.",
-      late: "Il linguaggio spesso si perde. Brevi ancore sensoriali, niente domande complesse, passi da 90 secondi.",
+      early: "Iniziale: perlopiù autonoma; le routine di tutti i giorni funzionano.",
+      mid: "Intermedio: ha bisogno di più sostegno nelle attività quotidiane.",
+      late: "Avanzato: dipende dall'assistenza; la parola può essere limitata.",
     },
     sessionLanguage: "Lingua in cui si esprime meglio",
     caregiverLanguage: "La tua lingua",
@@ -280,6 +280,11 @@ export const it: PartialMessages = {
     listen: "Ascolta",
     listenHint: (language: string) => `Ascolta la frase in ${language}`,
     listenError: "Voce non disponibile al momento.",
+    listenErrors: {
+      unavailable: "Voce non disponibile al momento.",
+      rate_limited: "Si sta riposando un attimo; riprova fra un minuto.",
+      network: "Voce offline; riprova quando torna la connessione.",
+    },
   },
   live: {
     title: "Modalità sessione",
@@ -326,7 +331,7 @@ export const it: PartialMessages = {
     headline: (brought: number, caught: number, verified: number, name: string) => {
       if (brought > 0) {
         const clauses: string[] = [
-          `Qloo ha portato ${brought} ${brought === 1 ? "àncora culturale" : "àncore culturali"} che gli appunti su ${name} non nominavano`,
+          `Qloo ha trovato ${brought} ${brought === 1 ? "àncora culturale" : "àncore culturali"} che gli appunti su ${name} non menzionavano`,
         ];
         if (caught > 0) clauses.push(`ha intercettato ${caught} ${caught === 1 ? "svista d'epoca" : "sviste d'epoca"}`);
         if (verified > 0) clauses.push(`confermato ${verified} ${verified === 1 ? "corrispondenza reale" : "corrispondenze reali"}`);
@@ -334,8 +339,12 @@ export const it: PartialMessages = {
         if (clauses.length === 2) return `${clauses[0]} e ${clauses[1]}.`;
         return `${clauses[0]}, ${clauses[1]} e ${clauses[2]}.`;
       }
+      if (caught === 0) {
+        return "Ecco dove il modello sarebbe andato alla cieca, ed ecco dove Qloo è intervenuto.";
+      }
       return `L'agente ha intercettato ${caught} svist${caught === 1 ? "a" : "e"} e confermato ${verified} ${verified === 1 ? "corrispondenza reale" : "corrispondenze reali"}.`;
     },
+    headlineQlooQuiet: "Qloo stavolta non ha segnalato nuove scoperte; guarda le intercettazioni.",
     headlineNone: "Nessuna svista intercettata in questa esecuzione.",
     headlineBreakdown: (qloo: number, cultural: number, critique: number) => {
       const parts: string[] = [];

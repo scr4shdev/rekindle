@@ -29,7 +29,7 @@ test.describe("comparison mode", () => {
     const view = page.getByTestId("compare-view");
     await expect(view).toHaveAttribute("data-grounded-status", "done", { timeout: 25_000 });
     const headline = page.getByTestId("compare-headline");
-    await expect(headline).toContainText("Qloo brought 11 cultural anchors");
+    await expect(headline).toContainText("Qloo surfaced 11 cultural anchors");
     await expect(headline).toContainText("caught 5 era slips");
     await expect(headline).toContainText("confirmed 10 real matches");
   });

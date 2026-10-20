@@ -94,14 +94,14 @@ export const fr: PartialMessages = {
     stageHint: "Facultatif. Nous aide à choisir le bon rythme. Si vous n'êtes pas sûre, laissez vide.",
     stageOptions: {
       none: "Je préfère ne pas le dire",
-      early: "Débutant (léger)",
-      mid: "Intermédiaire (modéré)",
-      late: "Avancé (sévère)",
+      early: "Début",
+      mid: "Milieu",
+      late: "Avancé",
     },
     stageTooltips: {
-      early: "Globalement autonome, la conversation suit, de petits oublis apparaissent. Rythme par défaut.",
-      mid: "L'attention se resserre, les répétitions sont fréquentes, musique et images familières portent plus que les mots.",
-      late: "La parole se perd souvent. Courtes ancres sensorielles, pas de questions complexes, étapes de 90 secondes.",
+      early: "Début : encore largement autonome ; les habitudes du quotidien tiennent.",
+      mid: "Milieu : a besoin de plus de soutien pour les gestes du quotidien.",
+      late: "Avancé : dépendante des soins ; la parole peut être limitée.",
     },
     sessionLanguage: "La langue qu'elle parle le mieux",
     caregiverLanguage: "Votre langue",
@@ -287,6 +287,11 @@ export const fr: PartialMessages = {
     listen: "Écouter",
     listenHint: (language: string) => `Écouter la phrase en ${language}`,
     listenError: "Voix indisponible pour le moment.",
+    listenErrors: {
+      unavailable: "Voix indisponible pour le moment.",
+      rate_limited: "Elle prend un petit répit ; réessayez dans une minute.",
+      network: "Voix hors ligne ; réessayez quand la connexion revient.",
+    },
   },
   live: {
     title: "Mode séance",
@@ -334,7 +339,7 @@ export const fr: PartialMessages = {
     headline: (brought: number, caught: number, verified: number, name: string) => {
       if (brought > 0) {
         const clauses: string[] = [
-          `Qloo a apporté ${brought} ${brought === 1 ? "point d'ancrage culturel" : "points d'ancrage culturels"} que les notes sur ${name} ne nommaient pas`,
+          `Qloo a fait émerger ${brought} ${brought === 1 ? "ancre culturelle" : "ancres culturelles"} que les notes sur ${name} n'évoquaient pas`,
         ];
         if (caught > 0) clauses.push(`a rattrapé ${caught} erreur${caught === 1 ? "" : "s"} d'époque`);
         if (verified > 0) clauses.push(`confirmé ${verified} correspondance${verified === 1 ? "" : "s"} réelle${verified === 1 ? "" : "s"}`);
@@ -342,8 +347,12 @@ export const fr: PartialMessages = {
         if (clauses.length === 2) return `${clauses[0]} et ${clauses[1]}.`;
         return `${clauses[0]}, ${clauses[1]} et ${clauses[2]}.`;
       }
+      if (caught === 0) {
+        return "Voici où le modèle aurait avancé à l'aveugle, et voici où Qloo a pris le relais.";
+      }
       return `L'agent a rattrapé ${caught} erreur${caught === 1 ? "" : "s"} et confirmé ${verified} correspondance${verified === 1 ? "" : "s"} réelle${verified === 1 ? "" : "s"}.`;
     },
+    headlineQlooQuiet: "Qloo n'a rien ramené de nouveau cette fois ; regardez les rattrapages.",
     headlineNone: "Aucune erreur rattrapée pour cette exécution.",
     headlineBreakdown: (qloo: number, cultural: number, critique: number) => {
       const parts: string[] = [];

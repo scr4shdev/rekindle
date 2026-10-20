@@ -77,14 +77,14 @@ export const en = {
     stageHint: "Optional. Helps us pick the right pace. If unsure, leave blank.",
     stageOptions: {
       none: "Prefer not to say",
-      early: "Early (mild)",
-      mid: "Mid (moderate)",
-      late: "Late (severe)",
+      early: "Early",
+      mid: "Mid",
+      late: "Late",
     },
     stageTooltips: {
-      early: "Mostly independent, conversations flow, memory slips are noticeable. Default pace.",
-      mid: "Attention narrows, repetition is common, familiar music and images carry more than words.",
-      late: "Speech recall often fails. Short sensory anchors, no complex questions, 90 second steps.",
+      early: "Early: still mostly independent; routines feel normal.",
+      mid: "Mid: needs more support with everyday tasks.",
+      late: "Late: care-dependent, speech may be limited.",
     },
     sessionLanguage: "Language they speak best",
     caregiverLanguage: "Your language",
@@ -263,6 +263,11 @@ export const en = {
     listen: "Listen",
     listenHint: (language: string) => `Listen to the prompt in ${language}`,
     listenError: "Voice unavailable right now.",
+    listenErrors: {
+      unavailable: "Voice unavailable right now.",
+      rate_limited: "Taking a short rest; try again in a minute.",
+      network: "Voice offline; retry when the connection is back.",
+    },
   },
   live: {
     title: "Session mode",
@@ -308,7 +313,7 @@ export const en = {
     headline: (brought: number, caught: number, verified: number, name: string) => {
       if (brought > 0) {
         const clauses: string[] = [
-          `Qloo brought ${brought} cultural anchor${brought === 1 ? "" : "s"} ${name}'s notes didn't name`,
+          `Qloo surfaced ${brought} cultural anchor${brought === 1 ? "" : "s"} ${name}'s notes didn't mention`,
         ];
         if (caught > 0) clauses.push(`caught ${caught} era slip${caught === 1 ? "" : "s"}`);
         if (verified > 0) clauses.push(`confirmed ${verified} real match${verified === 1 ? "" : "es"}`);
@@ -316,8 +321,12 @@ export const en = {
         if (clauses.length === 2) return `${clauses[0]}, and ${clauses[1]}.`;
         return `${clauses[0]}, ${clauses[1]}, and ${clauses[2]}.`;
       }
+      if (caught === 0) {
+        return "Here is where the model would have run blind, and here is where Qloo stepped in.";
+      }
       return `The agent caught ${caught} slip${caught === 1 ? "" : "s"} and confirmed ${verified} real match${verified === 1 ? "" : "es"}.`;
     },
+    headlineQlooQuiet: "Qloo was quiet on new discoveries this run; see the catches.",
     headlineNone: "No slips caught on this run.",
     headlineBreakdown: (qloo: number, cultural: number, critique: number) => {
       const parts: string[] = [];
@@ -346,7 +355,7 @@ export const en = {
     caughtNone: "Nothing was set aside.",
     llmCaughtNone: "Nothing is checked, so nothing is caught.",
     llmBlind: "Nothing is cross-checked here. Era, place and emotional risks are not detected.",
-    llmOnlyBanner: "What a language model would suggest alone. Rekindle would never serve these to this person.",
+    llmOnlyBanner: "What a language model would suggest alone. Rekindle would never offer these to this person.",
     wouldSlip: "Would have slipped",
     glanceTitle: "At a glance: what Qloo caught",
     openGrounded: "Open the grounded session",

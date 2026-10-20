@@ -34,12 +34,20 @@ export const PERSONAS: readonly DemoPersona[] = [
       caregiverLanguage: "en",
       sessionMinutes: 20,
       stage: "mid",
+      culturalBackground:
+        "Moroccan family from the Fès medina, practising Muslim; darija at home with my father, French in Brussels since 1972. " +
+        "Nothing with alcohol, please.",
+      keyLifeEvents:
+        "Grew up in the medina of Fès in the 1950s and 60s. Arrived in Brussels in 1972 with my father, who worked in the Limburg " +
+        "mines and later at the STIB. First years in Brussels were very lonely.",
+      calmingCues:
+        "Oum Kalthoum and Abdelhalim Hafez on the radio, mint tea in a glass, the smell of orange blossom water on msemen in the morning.",
+      thingsToAvoid:
+        "The lonely early-Brussels years in the 1970s. Anything with alcohol. Loud political news.",
+      routines:
+        "Mint tea and msemen every morning. Black-and-white Egyptian films on the small television in the afternoon.",
       notes:
-        "Ma mère Fatima est née à Fès en 1950 et a grandi dans la médina. Elle est arrivée à Bruxelles en 1972 avec mon père, " +
-        "qui travaillait dans les mines du Limbourg puis à la STIB. Elle adore Oum Kalthoum, Abdelhalim Hafez et les films égyptiens " +
-        "en noir et blanc qu'elle regardait au cinéma à Fès. Elle prépare le thé à la menthe et les msemen chaque matin. " +
-        "Elle parle darija et français. She is a practising Muslim, so nothing with alcohol please. " +
-        "Her first years in Brussels were very lonely, so go gently around that time.",
+        "Ma mère Fatima aime les films égyptiens en noir et blanc qu'elle regardait au cinéma à Fès. Elle parle darija et français.",
     },
   },
   {
@@ -58,13 +66,20 @@ export const PERSONAS: readonly DemoPersona[] = [
       caregiverLanguage: "en",
       sessionMinutes: 20,
       stage: "early",
+      culturalBackground:
+        "Neapolitan family from the Spanish Quarter, Catholic. Mostly Neapolitan dialect and Italian at home.",
+      keyLifeEvents:
+        "Grew up in the Spanish Quarter of Naples. Worked as a seamstress from age 15. Married Gennaro in 1963. " +
+        "Gennaro passed away in 2015.",
+      calmingCues:
+        "Frank Sinatra on the record player. The Neapolitan songs her mother sang. The smell of Sunday ragù on the stove.",
+      thingsToAvoid:
+        "The war years: her father was away and it upsets her. Mentioning Gennaro's death directly; she smiles when he is " +
+        "mentioned warmly but can become tearful.",
+      routines:
+        "Sunday ragù at midday. Watching Napoli matches on television. A short walk after lunch when the weather allows.",
       notes:
-        "My grandmother Maria was born in 1942 in the Spanish Quarter of Naples and grew up there. " +
-        "She worked as a seamstress from age 15 and married my grandfather in 1963. She adores Frank Sinatra " +
-        "and Neapolitan songs her mother sang, follows Napoli football with passion, and loves cooking Sunday ragù. " +
-        "She still speaks mostly Neapolitan dialect and Italian. Please avoid talking about the war years, " +
-        "her father was away and it upsets her. Her husband Gennaro passed away in 2015; she smiles when he is mentioned " +
-        "but can become tearful.",
+        "She follows Napoli football with passion. Still prefers Neapolitan dialect to Italian with family.",
     },
   },
   {
@@ -83,11 +98,19 @@ export const PERSONAS: readonly DemoPersona[] = [
       caregiverLanguage: "en",
       sessionMinutes: 25,
       stage: "early",
+      culturalBackground:
+        "Irish Catholic family from the north side of Cork city. English at home with a bit of Irish from school.",
+      keyLifeEvents:
+        "Grew up on the north side of Cork. Over 30 years at the Ford factory on the Marina. Met Mam at a showband dance " +
+        "in the late 50s or 60s.",
+      calmingCues:
+        "Hurling commentary on the radio. Old showband records. The sound of rain on a tin roof.",
+      thingsToAvoid:
+        "His brother who emigrated to England in the 50s; they lost touch and it still stings.",
+      routines:
+        "The six o'clock news on the radio. A pint of stout at the weekend. Mass on Sunday morning when he feels up to it.",
       notes:
-        "Dad grew up on the north side of Cork city and worked at the Ford factory on the Marina for over 30 years. " +
-        "He was mad about hurling and the Glen Rovers club, and went dancing to the showbands every weekend in the late 50s and 60s, " +
-        "that's where he met Mam. He loved westerns at the pictures and listening to the radio. Speaks English, a bit of Irish from school. " +
-        "His brother emigrated to England in the 50s and they lost touch, so best not to bring that up.",
+        "Mad about hurling and the Glen Rovers club. Loved westerns at the pictures.",
     },
   },
 ];

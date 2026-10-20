@@ -37,6 +37,10 @@ export const RATE_LIMITS = {
   // and refill fast enough that a steady human cadence never hits the limit.
   session: { capacity: 20, refillPerMinute: 30 },
   replan: { capacity: 30, refillPerMinute: 30 },
+  // TTS is a cheap, cacheable fallback that fires on every unsupported-language
+  // step card the viewer taps. 60/min keeps a demo run comfortably clear of the
+  // limit while still blocking a loop.
+  tts: { capacity: 60, refillPerMinute: 60 },
 } as const;
 /** Clients tracked per instance; the least recently seen are forgotten first. */
 export const RATE_LIMIT_MAX_CLIENTS = 5_000;
@@ -78,6 +82,7 @@ export class RateLimiter {
 export const rateLimiters = {
   session: new RateLimiter(RATE_LIMITS.session),
   replan: new RateLimiter(RATE_LIMITS.replan),
+  tts: new RateLimiter(RATE_LIMITS.tts),
 };
 
 /** Client key from the proxy headers (Vercel sets x-forwarded-for). */

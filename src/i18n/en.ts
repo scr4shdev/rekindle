@@ -9,9 +9,9 @@ export const en = {
     theme: { toggle: "Switch light or dark theme", light: "Light", dark: "Dark" },
   },
   landing: {
-    title: "An agent that plans 20 quiet minutes for someone living with dementia.",
+    title: "A 20-minute reminiscence session a care aide can run bedside, in a culture they do not share.",
     leadShort:
-      "Every song, film and face from their era is checked against Qloo's taste graph, so nothing feels wrong for the person you care for.",
+      "A professional carer, a family member, anyone who sits by someone living with dementia: Rekindle plans a timed session grounded in Qloo's taste graph, so a 1960s Fès childhood is not met with a 1960s Hollywood classic.",
     agentFlowLabel: "How the agent works",
     agentFlow: "Parse → propose → verify in Qloo → compose. 6 phases, 10–20 Qloo calls per plan.",
     promises: {
@@ -23,7 +23,7 @@ export const en = {
     mockGateBody:
       "Live custom input needs an LLM key we don't have in this demo. Tap Maria, Fatima or Seamus below for a full agent run.",
     personasTitle: "Try it in one tap",
-    personasLead: "Three invented people from three places and eras. Pick one to see what a session for them would look like.",
+    personasLead: "Three invented people, three caregiver situations. Fatima is first: a Moroccan elder and an English-reading aide, the hardest case for a Western-leaning model and the one Qloo most clearly helps.",
     openSession: (name: string) => `Plan ${name}'s session`,
     sessionIn: (language: string) => `Session in ${language}`,
     minutes: (n: number) => `${n} min`,

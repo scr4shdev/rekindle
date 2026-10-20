@@ -4,6 +4,10 @@ A tool-using agent that helps a caregiver plan a 20-minute reminiscence activity
 
 Built for the Qloo Agentic Hackathon (submission deadline 2026-10-30). Non-medical: an activity planner, not therapy, not treatment, not diagnosis.
 
+## Who this is for
+
+A professional care aide, in a UK or EU care home, running a reminiscence activity with an elder whose culture, era and language the aide does not share. Think of Fatima, 76, who grew up in 1960s Fès and now lives in a Brussels care home, assigned to an English-reading aide who has never heard Oum Kalthoum. Without Rekindle, the aide spends 10 to 20 minutes Googling before the session, defaults to generic Western classics, or skips the activity entirely. Family caregivers who already know their elder's tastes are a second audience; the cross-cultural care aide is the primary one, and Fatima is the lead demo persona for that reason.
+
 ## The six-phase agent loop
 
 ```
@@ -121,12 +125,18 @@ Copy `.env.example` to `.env.local` and fill the keys you have. Each provider sw
 
 All variables and limits: [`.env.example`](.env.example). API contract: [`docs/api.md`](docs/api.md). Qloo API notes: [`docs/qloo-api.md`](docs/qloo-api.md). Submission checklist: [`docs/submission-requirements.md`](docs/submission-requirements.md).
 
-## Limitations
+## Known limitations
 
-- Not a medical device and not therapy. It suggests activities; the caregiver decides. Stop if the person is uncomfortable.
-- Qloo affinities are aggregate and say nothing certain about any one individual. Coverage of some regions and eras may be thin, especially outside the Anglophone West.
-- Qloo has no dish type and no year filter for music artists, so food steps are LLM-only (gated by a cuisine-tag side-lookup) and music era checks use decade tags plus the LLM critique.
-- LLM mistakes are reduced (verification, critique, provenance badges) but not eliminated.
+What Rekindle does not establish, and what we have not yet tested.
+
+- **Not a medical device, not therapy, not a diagnosis tool.** Rekindle plans an activity; a trained caregiver decides what to use and when to stop. Clinical outcomes are out of scope.
+- **Not a replacement for a caregiver who knows the person.** The plan is a well-researched starting point, not a lived relationship. The three big bedside reaction buttons exist because the plan will sometimes be wrong, and the caregiver, not the agent, is the ground truth.
+- **Qloo coverage is thinner outside the Anglophone West.** Fatima's run is the hard case: in the live probe, a Fès-filtered insights call for Oum Kalthoum returned zero rows until the location-drop fallback (F1) kicked in. The cultural-check LLM pass (F2) exists specifically because Qloo's expand step over Moroccan seeds still surfaces Western-drift candidates (Donald Trump, the Beatles) that would be absurd for a 1960s Fès childhood.
+- **Aggregate, not personal.** Qloo tells us what groups of people who enjoy X tend to also enjoy, not what this one person will enjoy. The provenance badges and UI copy say so; see "Social good" above.
+- **No outcome evidence yet.** We have not run a pilot. The next-step plan is a 50-session caregiver-rated engagement study with one UK dementia charity. Until that lands, every impact claim is a reasoned bet, not an evidence-backed result.
+- **Qloo has no dish type and no year filter for music artists.** Food steps are LLM-only, gated by a cuisine-tag side-lookup (F3) and dropped if that fails. Music era checks fall back to decade tags plus the LLM critique.
+- **The local Ollama path is slow on consumer hardware.** On a 6 GB consumer GPU with `qwen3:8b`, a full six-phase plan takes 90 to 100 seconds. Hosted LLM paths (Groq, Gemini, Anthropic) finish in 15 to 30 seconds.
+- **LLM mistakes are reduced, not eliminated.** Verification, critique and provenance badges catch most slips; the caregiver sees provenance and reacts. We expect residual slips, especially on non-Western catalogs.
 
 ## License
 

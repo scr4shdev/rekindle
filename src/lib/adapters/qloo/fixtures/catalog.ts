@@ -83,7 +83,7 @@ const SEAMUS = rows("seamus", [
   ["MOCK-MOVIE-MAGNIFICENT-SEVEN", "The Magnificent Seven", M, 0.69, 0.85, { releaseYear: 1960, description: "Seven gunfighters defend a village.", disambiguation: "1960, John Sturges" }],
   ["MOCK-MOVIE-FAR-AND-AWAY", "Far and Away", M, 0.5, 0.8, { releaseYear: 1992, description: "Irish emigrants seek land in America.", disambiguation: "1992, Ron Howard" }],
   ["MOCK-PERSON-CHRISTY-RING", "Christy Ring", P, 0.35, 0.88, { dateOfBirth: "1920-10-30", description: "Glen Rovers and Cork hurling legend." }],
-  ["MOCK-PERSON-JACK-LYNCH", "Jack Lynch", P, 0.4, 0.82, { dateOfBirth: "1917-08-15", description: "Glen Rovers hurler and later Taoiseach." }],
+  ["MOCK-PERSON-JACK-LYNCH", "Jack Lynch", P, 0.4, 0.82, { dateOfBirth: "1917-08-15", description: "Cork hurling hero, played for Glen Rovers alongside Christy Ring." }],
   ["MOCK-PERSON-JOHN-WAYNE", "John Wayne", P, 0.9, 0.84, { dateOfBirth: "1907-05-26", description: "Star of the classic westerns." }],
   ["MOCK-PERSON-MAUREEN-OHARA", "Maureen O'Hara", P, 0.7, 0.86, { dateOfBirth: "1920-08-17", description: "Dublin-born star of 'The Quiet Man'." }],
   ["MOCK-PERSON-GARY-COOPER", "Gary Cooper", P, 0.68, 0.83, { dateOfBirth: "1901-05-07", description: "Star of 'High Noon'." }],

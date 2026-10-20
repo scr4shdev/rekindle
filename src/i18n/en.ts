@@ -308,7 +308,7 @@ export const en = {
     headline: (brought: number, caught: number, verified: number, name: string) => {
       if (brought > 0) {
         const clauses: string[] = [
-          `Qloo brought ${brought} cultural anchor${brought === 1 ? "" : "s"} ${name}'s notes didn't name`,
+          `Qloo surfaced ${brought} cultural anchor${brought === 1 ? "" : "s"} ${name}'s notes didn't mention`,
         ];
         if (caught > 0) clauses.push(`caught ${caught} era slip${caught === 1 ? "" : "s"}`);
         if (verified > 0) clauses.push(`confirmed ${verified} real match${verified === 1 ? "" : "es"}`);
@@ -316,8 +316,12 @@ export const en = {
         if (clauses.length === 2) return `${clauses[0]}, and ${clauses[1]}.`;
         return `${clauses[0]}, ${clauses[1]}, and ${clauses[2]}.`;
       }
+      if (caught === 0) {
+        return "Here is where the model would have run blind, and here is where Qloo stepped in.";
+      }
       return `The agent caught ${caught} slip${caught === 1 ? "" : "s"} and confirmed ${verified} real match${verified === 1 ? "" : "es"}.`;
     },
+    headlineQlooQuiet: "Qloo was quiet on new discoveries this run; see the catches.",
     headlineNone: "No slips caught on this run.",
     headlineBreakdown: (qloo: number, cultural: number, critique: number) => {
       const parts: string[] = [];

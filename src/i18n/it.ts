@@ -326,7 +326,7 @@ export const it: PartialMessages = {
     headline: (brought: number, caught: number, verified: number, name: string) => {
       if (brought > 0) {
         const clauses: string[] = [
-          `Qloo ha portato ${brought} ${brought === 1 ? "àncora culturale" : "àncore culturali"} che gli appunti su ${name} non nominavano`,
+          `Qloo ha trovato ${brought} ${brought === 1 ? "àncora culturale" : "àncore culturali"} che gli appunti su ${name} non menzionavano`,
         ];
         if (caught > 0) clauses.push(`ha intercettato ${caught} ${caught === 1 ? "svista d'epoca" : "sviste d'epoca"}`);
         if (verified > 0) clauses.push(`confermato ${verified} ${verified === 1 ? "corrispondenza reale" : "corrispondenze reali"}`);
@@ -334,8 +334,12 @@ export const it: PartialMessages = {
         if (clauses.length === 2) return `${clauses[0]} e ${clauses[1]}.`;
         return `${clauses[0]}, ${clauses[1]} e ${clauses[2]}.`;
       }
+      if (caught === 0) {
+        return "Ecco dove il modello sarebbe andato alla cieca, ed ecco dove Qloo è intervenuto.";
+      }
       return `L'agente ha intercettato ${caught} svist${caught === 1 ? "a" : "e"} e confermato ${verified} ${verified === 1 ? "corrispondenza reale" : "corrispondenze reali"}.`;
     },
+    headlineQlooQuiet: "Qloo stavolta non ha segnalato nuove scoperte; guarda le intercettazioni.",
     headlineNone: "Nessuna svista intercettata in questa esecuzione.",
     headlineBreakdown: (qloo: number, cultural: number, critique: number) => {
       const parts: string[] = [];

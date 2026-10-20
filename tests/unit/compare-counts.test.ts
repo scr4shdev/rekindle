@@ -9,7 +9,7 @@
  * the view reducer and asserts the three surfaces agree, plus that the
  * per-source counts sum back to the total.
  *
- * The hero also now carries a "brought N cultural anchors" clause for the
+ * The hero also now carries a "surfaced N cultural anchors" clause for the
  * Qloo-DISCOVERY story. That count must match the "Taste discoveries from
  * Qloo" score row exactly (entities with provenance === "qloo-affinity").
  * Parity is asserted here so the hero and the row cannot drift.
@@ -78,7 +78,7 @@ describe("compare hero three-metric headline", () => {
       const view = viewFromEvents(loadEvents(slug));
       const entities = Object.values(view.entities);
       // The score row "Taste discoveries from Qloo" renders this exact
-      // number via metrics().discoveries. The hero "brought N" clause
+      // number via metrics().discoveries. The hero "surfaced N" clause
       // must read from the same source so the two surfaces agree.
       const scoreRowDiscoveries = entities.filter((e) => e.provenance === "qloo-affinity").length;
       expect(scoreRowDiscoveries).toBe(EXPECTED[slug].brought);
@@ -97,7 +97,7 @@ describe("compare hero three-metric headline", () => {
   it("Fatima headline leads with the Qloo-DISCOVERY frame, then catch and confirm", () => {
     const { brought, caught, verified, name } = EXPECTED.fatima;
     const headline = en.compare.headline(brought, caught, verified, name);
-    expect(headline).toContain("Qloo brought 7 cultural anchors Fatima's notes didn't name");
+    expect(headline).toContain("Qloo surfaced 7 cultural anchors Fatima's notes didn't mention");
     expect(headline).toContain("caught 1 era slip");
     expect(headline).toContain("confirmed 10 real matches");
     // Oxford comma on the three-clause form keeps the sentence legible.
@@ -108,27 +108,34 @@ describe("compare hero three-metric headline", () => {
     const { brought, caught, verified, name } = EXPECTED.maria;
     const headline = en.compare.headline(brought, caught, verified, name);
     expect(headline).toContain("caught 5 era slips");
-    expect(headline).toContain("Qloo brought 11");
+    expect(headline).toContain("Qloo surfaced 11");
     expect(headline).toContain("confirmed 10 real matches");
   });
 
   it("Seamus headline carries both discovery and catch clauses", () => {
     const { brought, caught, verified, name } = EXPECTED.seamus;
     const headline = en.compare.headline(brought, caught, verified, name);
-    expect(headline).toContain("Qloo brought 10 cultural anchors Seamus's notes didn't name");
+    expect(headline).toContain("Qloo surfaced 10 cultural anchors Seamus's notes didn't mention");
     expect(headline).toContain("caught 3 era slips");
     expect(headline).toContain("confirmed 12 real matches");
   });
 
-  it("falls back to the original 'caught/confirmed' form when brought is 0", () => {
+  it("falls back to the original 'caught/confirmed' form when brought is 0 and caught > 0", () => {
     const headline = en.compare.headline(0, 2, 5, "Fatima");
     expect(headline).toBe("The agent caught 2 slips and confirmed 5 real matches.");
+  });
+
+  it("leads with the 'run blind' line when brought and caught are both 0", () => {
+    const headline = en.compare.headline(0, 0, 5, "Fatima");
+    expect(headline).toBe(
+      "Here is where the model would have run blind, and here is where Qloo stepped in.",
+    );
   });
 
   it("singular/plural agrees across the three-clause form", () => {
     const headline = en.compare.headline(1, 1, 1, "Alex");
     expect(headline).toBe(
-      "Qloo brought 1 cultural anchor Alex's notes didn't name, caught 1 era slip, and confirmed 1 real match.",
+      "Qloo surfaced 1 cultural anchor Alex's notes didn't mention, caught 1 era slip, and confirmed 1 real match.",
     );
   });
 });

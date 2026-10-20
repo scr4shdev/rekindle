@@ -2,8 +2,9 @@
 
 import { ArrowLeftIcon, ArrowRightIcon, BotIcon, CircleSlashIcon, SearchCheckIcon, TriangleAlertIcon } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef } from "react";
+import { toast } from "sonner";
 import { wouldSlip } from "@/components/compare/would-slip";
 import { STEP_ICON } from "@/components/session/icons";
 import { RECORDED_PERSONA, resolveRequest } from "@/components/session/session-request";
@@ -87,20 +88,43 @@ function metrics(view: SessionView): Metrics {
   };
 }
 
+/**
+ * How long we wait on the Compare live stream after the first phase event
+ * before falling back to `source=replay`. Judges have less patience on the
+ * side-by-side than on a single session, so this is lower than
+ * SessionView's LIVE_TIMEOUT_MS (25 s): 15 s is enough to clear a fast cold
+ * start but short enough that a stall never leaves the Compare page sitting
+ * on zeros.
+ */
+const COMPARE_LIVE_TIMEOUT_MS = 15_000;
+const COMPARE_LIVE_TIMEOUT_TOAST_MS = 3_000;
+
 export function CompareView() {
   const params = useSearchParams();
+  const router = useRouter();
   const t = getMessages().compare;
   const ts = getMessages().session;
   const personaParam = params.get("persona");
   const sourceParam = parseSourceParam(params.get("source"));
+  const fromParam = params.get("from");
   const speed = Number(params.get("speed") ?? "1") || 1;
   const resolved = useMemo(() => resolveRequest(personaParam, "grounded"), [personaParam]);
   const hasRecording = resolved.ok && resolved.hasRecording;
-  const source = useMemo(() => resolveSource(sourceParam, { speed, hasRecording }), [sourceParam, speed, hasRecording]);
+  // Pass the persona slug so the replay source can swap in the fixture when
+  // the live-timeout fallback flips ?source=replay. Without it,
+  // resolveSource silently falls back to the live API and the Compare page
+  // would still sit on zeros after the swap.
+  const personaSlug = resolved.ok ? resolved.persona : undefined;
+  const source = useMemo(
+    () => resolveSource(sourceParam, { speed, hasRecording, personaSlug }),
+    [sourceParam, speed, hasRecording, personaSlug],
+  );
   const llm = useAgentStream(source);
   const grounded = useAgentStream(source);
   const startLlm = llm.start;
   const startGrounded = grounded.start;
+  const cancelLlm = llm.cancel;
+  const cancelGrounded = grounded.cancel;
 
   useEffect(() => {
     if (!resolved.ok) return;
@@ -112,6 +136,47 @@ export function CompareView() {
     startLlm(requests[0]);
     startGrounded(requests[1]);
   }, [resolved, startLlm, startGrounded]);
+
+  // Soft fallback: on a live run, if neither pane has finished composing
+  // within COMPARE_LIVE_TIMEOUT_MS of the first phase event on either side,
+  // swap both panes to `source=replay` so the judge sees two full plans
+  // instead of twin zeros. Replay/sample paths are never auto-switched
+  // (would loop).
+  const liveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const liveTimedOutRef = useRef(false);
+  const isLiveSource = sourceParam !== "replay" && sourceParam !== "sample";
+  const firstPhaseLanded = llm.view.phases.length > 0 || grounded.view.phases.length > 0;
+  const bothDone =
+    (Boolean(llm.view.plan) || llm.view.status === "done") &&
+    (Boolean(grounded.view.plan) || grounded.view.status === "done");
+
+  useEffect(() => {
+    if (!isLiveSource || !firstPhaseLanded || bothDone || liveTimedOutRef.current) return;
+    if (liveTimeoutRef.current) return;
+    liveTimeoutRef.current = setTimeout(() => {
+      liveTimedOutRef.current = true;
+      cancelLlm();
+      cancelGrounded();
+      const next = new URLSearchParams(params.toString());
+      next.set("source", "replay");
+      next.set("from", "live-timeout");
+      router.replace(`/compare?${next.toString()}`);
+    }, COMPARE_LIVE_TIMEOUT_MS);
+    return () => {
+      if (liveTimeoutRef.current) {
+        clearTimeout(liveTimeoutRef.current);
+        liveTimeoutRef.current = null;
+      }
+    };
+  }, [isLiveSource, firstPhaseLanded, bothDone, cancelLlm, cancelGrounded, params, router]);
+
+  // Show the fallback toast once per arrival on `?from=live-timeout`.
+  const toastShownRef = useRef(false);
+  useEffect(() => {
+    if (fromParam !== "live-timeout" || toastShownRef.current) return;
+    toastShownRef.current = true;
+    toast.info(ts.liveTimeoutToast, { duration: COMPARE_LIVE_TIMEOUT_TOAST_MS });
+  }, [fromParam, ts.liveTimeoutToast]);
 
   if (!resolved.ok) {
     return (
@@ -135,7 +200,7 @@ export function CompareView() {
   const groundedCaught = caughtRejections(grounded.view);
   // Discoveries land in the hero too: Qloo-expand surfaces anchors the
   // caregiver's notes never named, which is the Fatima money shot. The
-  // "brought N" clause in the hero reads from the same discoveries count
+  // "surfaced N" clause in the hero reads from the same discoveries count
   // the "Taste discoveries from Qloo" score row renders (see metrics()),
   // so the two surfaces always agree; the parity is asserted in
   // tests/unit/compare-counts.test.ts.
@@ -171,6 +236,14 @@ export function CompareView() {
           ) : (
             <>
               <p className="font-heading text-3xl leading-tight sm:text-5xl">{t.headline(b.discoveries, b.caught, b.verified, name)}</p>
+              {b.discoveries === 0 && b.caught > 0 && (
+                // Quiet-Qloo caption: discovery count 0 but catches present.
+                // Pairs with the headline's catch-only clause so the caregiver
+                // understands why the "Qloo surfaced N" clause is absent.
+                <p className="mt-2 text-base text-muted-foreground sm:text-lg" data-testid="compare-headline-qloo-quiet">
+                  {t.headlineQlooQuiet}
+                </p>
+              )}
               {(() => {
                 const breakdown = t.headlineBreakdown(bSources.qloo, bSources["cultural-check"], bSources["critique-llm"]);
                 return breakdown ? (

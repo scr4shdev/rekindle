@@ -8,6 +8,8 @@
  * Cache-through on an input-keyed sha256 key; `sensitive` requests stay in
  * memory-only caches (enforced by the cache adapters).
  */
+import { setTimeout as delay } from "node:timers/promises";
+
 import { createOpenAI } from "@ai-sdk/openai";
 import type { LanguageModel } from "ai";
 import { APICallError, generateText, NoObjectGeneratedError, Output, TypeValidationError } from "ai";
@@ -19,7 +21,7 @@ import { PortError } from "@/lib/ports/common";
 import type { LlmPort, LlmRequest, LlmResult } from "@/lib/ports/llm";
 
 import type { Sleep } from "@/lib/adapters/shared/backoff";
-import { abortableSleep, backoffMs } from "@/lib/adapters/shared/backoff";
+import { BACKOFF_MAX_MS } from "@/lib/adapters/shared/backoff";
 
 /**
  * The adapter is backend-agnostic: it carries only an OpenAI-compat baseUrl +
@@ -38,9 +40,58 @@ export interface AiSdkLlmConfig {
   apiKey: string;
   temperature: 0;
   timeoutMs: number;
-  maxRetries: number;
+  /**
+   * Bounded retry for transient failures. `maxAttempts` counts the first call
+   * (3 means up to 2 retries). Delays are `baseDelayMs`, then x4, with +-25% jitter.
+   */
+  retry: { maxAttempts: number; baseDelayMs: number };
   cacheTtlSeconds: number;
 }
+
+/** Why a failed attempt is worth retrying. Anything else (400, 401, 403, 404, timeouts, aborts) is final. */
+export type RetryReason = "5xx" | "429" | "network" | "empty_output";
+
+const JITTER = 0.25;
+const BACKOFF_FACTOR = 4;
+
+/**
+ * Classify a failed attempt. Returns undefined when retrying cannot help:
+ * 400 is our schema being rejected (retrying makes it worse), 401/403/404 are
+ * credentials or model config, and timeouts already burned their time budget.
+ */
+export function classifyRetry(error: unknown, timedOut = false): { reason: RetryReason; status?: number } | undefined {
+  if (timedOut || error instanceof PortError) return undefined;
+  if (APICallError.isInstance(error)) {
+    const status = error.statusCode;
+    if (status === undefined) return { reason: "network" };
+    if (status === 429) return { reason: "429", status };
+    if (status >= 500) return { reason: "5xx", status };
+    return undefined;
+  }
+  // Well-formed 200s that are empty, not JSON, or miss required fields.
+  if (NoObjectGeneratedError.isInstance(error) || TypeValidationError.isInstance(error) || isZodError(error)) {
+    return { reason: "empty_output" };
+  }
+  if (error instanceof Error && (error.name === "AbortError" || error.name === "TimeoutError")) return undefined;
+  // Remaining throws out of generateText are fetch-level failures (DNS, reset, TLS).
+  return { reason: "network" };
+}
+
+/** Delay before retry number `retry` (1-based): base, base x4, ... capped, with +-25% jitter. */
+export function retryDelayMs(retry: number, baseDelayMs: number, random: () => number = Math.random): number {
+  const nominal = Math.min(baseDelayMs * BACKOFF_FACTOR ** (retry - 1), BACKOFF_MAX_MS);
+  return Math.round(nominal * (1 + (random() * 2 - 1) * JITTER));
+}
+
+/** Sleep that resolves (never rejects) early when the signal aborts. */
+const defaultSleep: Sleep = async (ms, signal) => {
+  if (ms <= 0 || signal?.aborted) return;
+  try {
+    await delay(ms, undefined, { signal });
+  } catch (error) {
+    if (!(error instanceof Error && error.name === "AbortError")) throw error;
+  }
+};
 
 /** Build an AI-SDK LanguageModel against any OpenAI-compat endpoint. */
 export function createLanguageModel(config: AiSdkLlmConfig): LanguageModel {
@@ -82,18 +133,20 @@ export class AiSdkLlm implements LlmPort {
   private readonly baseUrlHost: string;
   private readonly keyPrefix?: string;
   private readonly sleep: Sleep;
+  private readonly random: () => number;
 
   constructor(
     private readonly config: AiSdkLlmConfig,
     private readonly cache: CachePort,
-    options: { languageModel?: LanguageModel; keyPrefix?: string; sleep?: Sleep } = {},
+    options: { languageModel?: LanguageModel; keyPrefix?: string; sleep?: Sleep; random?: () => number } = {},
   ) {
     this.provider = config.provider;
     this.model = config.model;
     this.languageModel = options.languageModel ?? createLanguageModel(config);
     this.baseUrlHost = hostOf(config.baseUrl);
     this.keyPrefix = options.keyPrefix;
-    this.sleep = options.sleep ?? abortableSleep;
+    this.sleep = options.sleep ?? defaultSleep;
+    this.random = options.random ?? Math.random;
   }
 
   async generateObject<T>(request: LlmRequest<T>, ctx: CallContext): Promise<LlmResult<T>> {
@@ -118,7 +171,7 @@ export class AiSdkLlm implements LlmPort {
       }
     }
 
-    const attempts = this.config.maxRetries + 1;
+    const attempts = Math.max(1, this.config.retry.maxAttempts);
     let lastError: PortError | undefined;
     for (let attempt = 1; attempt <= attempts; attempt++) {
       if (ctx.signal?.aborted) throw new PortError("llm", "timeout", "The language model call was cancelled", false);
@@ -131,7 +184,7 @@ export class AiSdkLlm implements LlmPort {
           prompt: request.prompt,
           output: Output.object({ schema: request.schema, name: request.promptId }),
           temperature: this.config.temperature,
-          // Retries are handled here so schema mismatches are retried too.
+          // Retries are handled by the loop above so schema mismatches are retried too.
           maxRetries: 0,
           abortSignal: signal,
         });
@@ -149,8 +202,11 @@ export class AiSdkLlm implements LlmPort {
         // request content, so we never log it.
         const status = APICallError.isInstance(error) ? error.statusCode : undefined;
         log.warn({ attempt, code: lastError.code, retryable: lastError.retryable, status }, "llm call failed");
-        if (!lastError.retryable || ctx.signal?.aborted) break;
-        if (attempt < attempts) await this.sleep(backoffMs(attempt), ctx.signal);
+        const retryable = classifyRetry(error, timeout.aborted && !ctx.signal?.aborted);
+        if (!retryable || attempt >= attempts || ctx.signal?.aborted) break;
+        const delayMs = retryDelayMs(attempt, this.config.retry.baseDelayMs, this.random);
+        log.info({ attempt, maxAttempts: attempts, reason: retryable.reason, status, delayMs }, "llm call retrying");
+        await this.sleep(delayMs, ctx.signal);
       }
     }
     throw lastError ?? new PortError("llm", "unavailable", "The language model is unavailable", true);

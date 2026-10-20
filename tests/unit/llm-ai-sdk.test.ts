@@ -18,7 +18,7 @@ const geminiConfig: AiSdkLlmConfig = {
   apiKey: "test-key-123456",
   temperature: 0,
   timeoutMs: 5_000,
-  maxRetries: 1,
+  retry: { maxAttempts: 2, baseDelayMs: 300 },
   cacheTtlSeconds: 60,
 };
 
@@ -103,16 +103,20 @@ describe("AiSdkLlm (OpenAI-compat)", () => {
     expect(model.doGenerateCalls).toHaveLength(2);
   });
 
-  it("backs off exponentially between retries and stops waiting when aborted", async () => {
+  it("backs off x4 between retries (capped) and stops waiting when aborted", async () => {
     const waits: number[] = [];
     const sleep = async (ms: number) => void waits.push(ms);
     const model = new MockLanguageModelV4({ doGenerate: async () => textResult("not json") });
-    const llm = new AiSdkLlm({ ...geminiConfig, maxRetries: 3 }, new MemoryCache(), { languageModel: model, sleep });
+    const llm = new AiSdkLlm({ ...geminiConfig, retry: { maxAttempts: 4, baseDelayMs: 300 } }, new MemoryCache(), {
+      languageModel: model,
+      sleep,
+      random: () => 0.5,
+    });
     await expect(llm.generateObject(request, testCtx())).rejects.toMatchObject({ code: "invalid_response" });
-    expect(waits).toEqual([300, 600, 1200]);
+    expect(waits).toEqual([300, 1200, 4000]);
 
     const controller = new AbortController();
-    const slow = new AiSdkLlm({ ...geminiConfig, maxRetries: 3 }, new MemoryCache(), {
+    const slow = new AiSdkLlm({ ...geminiConfig, retry: { maxAttempts: 4, baseDelayMs: 300 } }, new MemoryCache(), {
       languageModel: new MockLanguageModelV4({ doGenerate: async () => textResult("not json") }),
       sleep: async () => controller.abort(),
     });

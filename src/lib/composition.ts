@@ -75,7 +75,7 @@ export function selectLlmBackend(
         apiKey: llm.apiKey!,
         temperature: llm.temperature,
         timeoutMs: llm.timeoutMs,
-        maxRetries: llm.maxRetries,
+        retry: llm.retry,
         cacheTtlSeconds: llm.cacheTtlSeconds,
       },
     };
@@ -93,7 +93,7 @@ export function selectLlmBackend(
         apiKey: "ollama",
         temperature: llm.temperature,
         timeoutMs: llm.timeoutMs,
-        maxRetries: llm.maxRetries,
+        retry: llm.retry,
         cacheTtlSeconds: llm.cacheTtlSeconds,
       },
     };

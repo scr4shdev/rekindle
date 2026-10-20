@@ -37,6 +37,12 @@ const bool = (def: boolean) =>
 const int = (def: number, min: number, max: number) =>
   z.preprocess(emptyToUndefined, z.coerce.number().int().min(min).max(max).optional()).transform((v) => v ?? def);
 
+/** Integer env var that is clamped into [min, max] instead of rejected (unparseable values still fail fast). */
+const clampedInt = (def: number, min: number, max: number) =>
+  z
+    .preprocess(emptyToUndefined, z.coerce.number().int().optional())
+    .transform((v) => Math.min(max, Math.max(min, v ?? def)));
+
 /** Raw environment schema. Names here are the documented env vars (see .env.example). */
 const EnvSchema = z.object({
   NODE_ENV: z.preprocess(emptyToUndefined, z.enum(["development", "production", "test"]).default("development")),
@@ -66,7 +72,12 @@ const EnvSchema = z.object({
   GEMINI_API_KEY: optionalSecret,
   OLLAMA_BASE_URL: z.preprocess(emptyToUndefined, z.url().default(OLLAMA_DEFAULT_BASE_URL)),
   LLM_TIMEOUT_MS: int(30_000, 1_000, 120_000),
+  /** Retries for the TTS adapter. The LLM adapter uses LLM_RETRY_* below. */
   LLM_MAX_RETRIES: int(1, 0, 5),
+  /** Total LLM attempts (first call included) for transient failures. Clamped to 1..5. */
+  LLM_RETRY_MAX_ATTEMPTS: clampedInt(3, 1, 5),
+  /** Base backoff before the first LLM retry; later retries multiply by 4. Clamped to 0..5000. */
+  LLM_RETRY_BASE_DELAY_MS: clampedInt(500, 0, 5_000),
   LLM_CACHE_TTL_SECONDS: int(60 * 60 * 24 * 7, 0, 60 * 60 * 24 * 30),
 
   UPSTASH_REDIS_REST_URL: optionalUrl,
@@ -120,7 +131,10 @@ export interface AppConfig {
     /** Always 0: deterministic outputs. Not configurable on purpose. */
     temperature: 0;
     timeoutMs: number;
+    /** Retries for the TTS adapter only. */
     maxRetries: number;
+    /** Bounded retry policy for transient LLM failures (5xx, 429, network, empty output). */
+    retry: { maxAttempts: number; baseDelayMs: number };
     cacheTtlSeconds: number;
   };
   cache: {
@@ -193,6 +207,7 @@ export function loadConfig(source: Record<string, string | undefined> = process.
     temperature: 0 as const,
     timeoutMs: e.LLM_TIMEOUT_MS,
     maxRetries: e.LLM_MAX_RETRIES,
+    retry: { maxAttempts: e.LLM_RETRY_MAX_ATTEMPTS, baseDelayMs: e.LLM_RETRY_BASE_DELAY_MS },
     cacheTtlSeconds: e.LLM_CACHE_TTL_SECONDS,
     ollamaBaseUrl,
     baseUrlOverride: e.LLM_BASE_URL_OVERRIDE,

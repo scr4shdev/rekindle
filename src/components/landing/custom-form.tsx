@@ -33,15 +33,13 @@ type Field =
 type Errors = Partial<Record<Field, string>>;
 type Stage = "early" | "mid" | "late";
 
-/** Headings a pasted "This is Me" sheet is likely to use, mapped to form fields. */
-const PASTE_PATTERNS: Array<{ field: Field; patterns: RegExp[] }> = [
-  { field: "displayName", patterns: [/i (?:like to )?(?:be )?called\s*[:\-]?\s*(.+)/i, /preferred name\s*[:\-]?\s*(.+)/i, /name\s*[:\-]?\s*(.+)/i] },
-  { field: "culturalBackground", patterns: [/cultural (?:and|&) family background\s*[:\-]?\s*/i, /background\s*[:\-]?\s*/i, /heritage\s*[:\-]?\s*/i] },
-  { field: "keyLifeEvents", patterns: [/key life events?\s*[:\-]?\s*/i, /important (?:life )?events?\s*[:\-]?\s*/i, /life story\s*[:\-]?\s*/i] },
-  { field: "calmingCues", patterns: [/(?:things? that )?calm(?:s)? me\s*[:\-]?\s*/i, /what calms (?:me|them)\s*[:\-]?\s*/i, /things that calm\s*[:\-]?\s*/i] },
-  { field: "thingsToAvoid", patterns: [/(?:things? to )?avoid\s*[:\-]?\s*/i, /do(?:es)?n'?t like\s*[:\-]?\s*/i, /upsets?\s*[:\-]?\s*/i] },
-  { field: "routines", patterns: [/routines? (?:or rituals|and rituals)?\s*[:\-]?\s*/i, /daily routine\s*[:\-]?\s*/i, /rituals?\s*[:\-]?\s*/i] },
-];
+/**
+ * A pasted "This is Me" sheet used to be split into fields on the client with
+ * regex headings. That is semantic parsing (deciding which heading a line is
+ * from) and AGENTS.md bans it in deterministic code. The notes textarea now
+ * accepts the full sheet; the server-side parse-anchors prompt reads it with
+ * schema-validated structured output.
+ */
 
 function languageName(tag: string): string {
   try {
@@ -68,9 +66,6 @@ export function CustomForm() {
   const [calmingCues, setCalmingCues] = useState("");
   const [thingsToAvoid, setThingsToAvoid] = useState("");
   const [routines, setRoutines] = useState("");
-  const [pasteOpen, setPasteOpen] = useState(false);
-  const [pasteText, setPasteText] = useState("");
-  const [pasteNotice, setPasteNotice] = useState<"applied" | "fallback" | "">("");
   // Mock-mode gate. Probe /api/health once on mount. When the backend reports
   // llm.mode === "mock", custom notes would return a generic hard-coded plan
   // (Beatles, Piaf, Nat King Cole) regardless of what was pasted, so we keep the
@@ -127,55 +122,6 @@ export function CustomForm() {
     thingsToAvoid: t.errors.thingsToAvoid,
     routines: t.errors.routines,
   };
-
-  /**
-   * Try to split a pasted "This is Me" sheet into the structured fields. On a
-   * clean hit, populate the fields and clear the paste box. On a miss, drop
-   * the whole text into the notes block and tell the caregiver.
-   */
-  function applyPaste() {
-    const text = pasteText.trim();
-    if (!text) return;
-    const indices: Array<{ field: Field; start: number; end: number; headingEnd: number }> = [];
-    for (const { field, patterns } of PASTE_PATTERNS) {
-      for (const re of patterns) {
-        const m = re.exec(text);
-        if (m) {
-          indices.push({ field, start: m.index, end: m.index, headingEnd: m.index + m[0].length });
-          break;
-        }
-      }
-    }
-    if (indices.length < 2) {
-      // No recognisable structure: keep it all as notes.
-      setNotes((prev) => (prev ? `${prev}\n\n${text}` : text));
-      setPasteText("");
-      setPasteNotice("fallback");
-      return;
-    }
-    indices.sort((a, b) => a.start - b.start);
-    const bodies: Partial<Record<Field, string>> = {};
-    for (let i = 0; i < indices.length; i += 1) {
-      const nextStart = i + 1 < indices.length ? indices[i + 1].start : text.length;
-      const body = text.slice(indices[i].headingEnd, nextStart).trim();
-      if (body) bodies[indices[i].field] = body.slice(0, 400);
-    }
-    if (bodies.displayName) setNotes((prev) => prev); // name goes to its own field below
-    if (bodies.displayName) {
-      const nameInput = formRef.current?.querySelector<HTMLInputElement>('[name="displayName"]');
-      if (nameInput) nameInput.value = bodies.displayName.split(/\n|\./)[0].slice(0, 60);
-    }
-    if (bodies.culturalBackground) setCulturalBackground(bodies.culturalBackground);
-    if (bodies.keyLifeEvents) setKeyLifeEvents(bodies.keyLifeEvents);
-    if (bodies.calmingCues) setCalmingCues(bodies.calmingCues);
-    if (bodies.thingsToAvoid) setThingsToAvoid(bodies.thingsToAvoid);
-    if (bodies.routines) setRoutines(bodies.routines);
-    // Anything before the first heading: keep as notes.
-    const preamble = text.slice(0, indices[0].start).trim();
-    if (preamble) setNotes((prev) => (prev ? `${prev}\n\n${preamble}` : preamble));
-    setPasteText("");
-    setPasteNotice("applied");
-  }
 
   function submit(form: HTMLFormElement | null, target: "session" | "compare") {
     if (!form) return;
@@ -258,40 +204,11 @@ export function CustomForm() {
           </div>
         </div>
       )}
-      <section aria-labelledby={`${id}-tim-title`} className="grid gap-4 rounded-2xl border border-dashed border-border bg-muted/40 p-4">
-        <div className="grid gap-1">
-          <h3 id={`${id}-tim-title`} className="text-base font-semibold">
-            {t.thisIsMeTitle}
-          </h3>
-          <p className="text-[0.95rem] text-muted-foreground">{t.thisIsMeIntro}</p>
-        </div>
-        <details
-          className="grid gap-2 rounded-xl border border-border bg-card p-3"
-          open={pasteOpen}
-          onToggle={(e) => setPasteOpen((e.target as HTMLDetailsElement).open)}
-        >
-          <summary className="cursor-pointer font-semibold">{t.pasteTitle}</summary>
-          <p className="text-[0.95rem] text-muted-foreground">{t.pasteHint}</p>
-          <Textarea
-            name="thisIsMePaste"
-            value={pasteText}
-            onChange={(e) => setPasteText(e.target.value)}
-            placeholder={t.pastePlaceholder}
-            className="field-sizing-fixed"
-            rows={4}
-            disabled={mockMode}
-          />
-          <div className="flex items-center gap-3">
-            <Button type="button" variant="outline" size="sm" onClick={applyPaste} disabled={mockMode || pasteText.trim().length < 3}>
-              {t.pasteApply}
-            </Button>
-            {pasteNotice && (
-              <span className="text-sm text-muted-foreground" role="status">
-                {pasteNotice === "applied" ? t.pasteApplied : t.pasteFallback}
-              </span>
-            )}
-          </div>
-        </details>
+      <section aria-labelledby={`${id}-tim-title`} className="grid gap-2 rounded-2xl border border-dashed border-border bg-muted/40 p-4">
+        <h3 id={`${id}-tim-title`} className="text-base font-semibold">
+          {t.thisIsMeTitle}
+        </h3>
+        <p className="text-[0.95rem] text-muted-foreground">{t.thisIsMeIntro}</p>
       </section>
 
       <div className="grid gap-6 sm:grid-cols-3">

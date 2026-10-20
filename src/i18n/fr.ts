@@ -57,13 +57,6 @@ export const fr: PartialMessages = {
     thisIsMeTitle: "Une courte fiche 'This is Me'",
     thisIsMeIntro:
       "Le document 'This is Me' de l'Alzheimer's Society est le standard britannique pour les soins centrés sur la personne. Chaque champ est facultatif. Tout ce que vous ajoutez aide le planificateur à choisir musique, images et propositions qui lui correspondent vraiment.",
-    pasteTitle: "Coller depuis une fiche 'This is Me' existante",
-    pasteHint:
-      "Collez le texte d'un document 'This is Me' et nous essaierons de le répartir dans les champs ci-dessous. Si la structure ne correspond pas, votre texte reste dans le bloc de notes.",
-    pastePlaceholder: "Collez ici le texte complet d'une fiche 'This is Me'…",
-    pasteApply: "Remplir les champs",
-    pasteApplied: "Champs remplis à partir du texte collé.",
-    pasteFallback: "Le texte ne correspond pas à une fiche 'This is Me', nous l'avons donc gardé dans le bloc de notes ci-dessous.",
     displayName: "Comment l'appelez-vous ?",
     displayNameHint: "Facultatif. Utilisé uniquement dans les phrases à dire, jamais envoyé à Qloo.",
     notes: "Autre chose à savoir",

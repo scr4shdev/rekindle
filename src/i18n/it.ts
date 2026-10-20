@@ -53,13 +53,6 @@ export const it: PartialMessages = {
     thisIsMeTitle: "Una breve scheda 'This is Me'",
     thisIsMeIntro:
       "Il documento 'This is Me' dell'Alzheimer's Society è lo standard britannico per la cura centrata sulla persona. Ogni campo è facoltativo. Tutto ciò che aggiungi aiuta il pianificatore a scegliere musica, immagini e proposte più adatte.",
-    pasteTitle: "Incolla da una scheda 'This is Me' già esistente",
-    pasteHint:
-      "Incolla il testo di un documento 'This is Me' e proveremo a distribuirlo nei campi qui sotto. Se la struttura non corrisponde, il tuo testo resta nel blocco appunti.",
-    pastePlaceholder: "Incolla qui il testo completo di una scheda 'This is Me'…",
-    pasteApply: "Compila i campi",
-    pasteApplied: "Campi compilati dal testo incollato.",
-    pasteFallback: "Il testo non corrisponde a una scheda 'This is Me', quindi lo abbiamo tenuto nel blocco appunti qui sotto.",
     displayName: "Come la chiami?",
     displayNameHint: "Facoltativo. Usato solo nelle proposte da leggere, mai inviato a Qloo.",
     notes: "Altro da sapere",

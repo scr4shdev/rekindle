@@ -117,6 +117,13 @@ export function toVerifiedEntity(
 ): VerifiedEntity {
   const releaseYear = Year.safeParse(entity.releaseYear);
   const imageUrl = Url.safeParse(entity.imageUrl);
+  const bornYearRaw = entity.dateOfBirth ? Number(entity.dateOfBirth.slice(0, 4)) : NaN;
+  const bornYear = Number.isInteger(bornYearRaw) ? Year.safeParse(bornYearRaw) : undefined;
+  const tagLabels = (entity.tags ?? [])
+    .map((t) => t.name?.trim())
+    .filter((n): n is string => Boolean(n && n.length > 0))
+    .slice(0, 5);
+  const disambiguation = clip(entity.disambiguation, 240);
   return VerifiedEntitySchema.parse({
     id: run.deps.newId("ve"),
     qlooId: entity.qlooId.slice(0, 128),
@@ -126,6 +133,9 @@ export function toVerifiedEntity(
     affinity: unit(entity.affinity),
     popularity: unit(entity.popularity),
     releaseYear: releaseYear.success ? releaseYear.data : undefined,
+    bornYear: bornYear?.success ? bornYear.data : undefined,
+    disambiguation,
+    tagLabels: tagLabels.length ? tagLabels : undefined,
     imageUrl: imageUrl.success ? imageUrl.data : undefined,
     description: clip(entity.description, 600),
     ...(origin.provenance === "qloo-affinity"

@@ -9,13 +9,19 @@ export const en = {
     theme: { toggle: "Switch light or dark theme", light: "Light", dark: "Dark" },
   },
   landing: {
-    title: "Bring back the songs, films and faces of their youth.",
-    leadShort: "Write a few lines about them. We'll plan a quiet 20 minutes together — songs, photos, a question or two — from their own era.",
+    title: "An agent that plans 20 quiet minutes for someone living with dementia.",
+    leadShort:
+      "Every song, film and face from their era is checked against Qloo's taste graph — so nothing feels wrong for the person you care for.",
+    agentFlowLabel: "How the agent works",
+    agentFlow: "Parse → propose → verify in Qloo → compose. 6 phases, 10–20 Qloo calls per plan.",
     promises: {
       stored: "Nothing you type is stored",
       activity: "A shared activity, not therapy",
       grounded: "Ideas checked against Qloo",
     },
+    mockGateTitle: "Live custom input is off in this demo",
+    mockGateBody:
+      "Live custom input needs an LLM key we don't have in this demo. Tap Maria, Fatima or Seamus below for a full agent run.",
     personasTitle: "Try it in one tap",
     personasLead: "Three invented people from three places and eras. Pick one to see what a session for them would look like.",
     openSession: (name: string) => `Plan ${name}'s session`,
@@ -63,6 +69,7 @@ export const en = {
     privacy: "Kept only in this tab's memory. Reloading the page clears it. Only this tab remembers your draft notes.",
   },
   session: {
+    eraBandLabel: "Place and era",
     planningFor: (name: string) => `Planning a session for ${name}`,
     planningGeneric: "Planning your session",
     waitHint: "This usually takes 15–30 seconds. The agent will narrate as it works.",

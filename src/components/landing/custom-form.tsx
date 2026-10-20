@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRightIcon, LoaderCircleIcon, ScaleIcon } from "lucide-react";
+import { ArrowRightIcon, InfoIcon, LoaderCircleIcon, ScaleIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, type ComponentProps, type FormEvent, type ReactNode } from "react";
 import { setPendingPerson } from "@/components/session/pending-request";
@@ -32,6 +32,7 @@ function languageName(tag: string): string {
 
 export function CustomForm() {
   const t = getMessages().form;
+  const landing = getMessages().landing;
   const router = useRouter();
   const id = useId();
   const formRef = useRef<HTMLFormElement>(null);
@@ -40,6 +41,26 @@ export function CustomForm() {
   const [minutes, setMinutes] = useState(20);
   const [errors, setErrors] = useState<Errors>({});
   const [pending, setPending] = useState(false);
+  // Mock-mode gate. Probe /api/health once on mount. When the backend reports
+  // llm.mode === "mock", custom notes would return a generic hard-coded plan
+  // (Beatles, Piaf, Nat King Cole) regardless of what was pasted, so we keep the
+  // form visible but un-submittable and nudge judges to the demo personas.
+  const [mockMode, setMockMode] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/health", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { llm?: { mode?: string } } | null) => {
+        if (cancelled) return;
+        if (data?.llm?.mode === "mock") setMockMode(true);
+      })
+      .catch(() => {
+        // Health probe is a hint; if it fails, keep the form enabled.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Restore the in-progress notes draft so a reload or tab switch doesn't lose
   // what the caregiver was writing. Scoped to this tab only (sessionStorage),
@@ -126,11 +147,26 @@ export function CustomForm() {
       className="grid grid-cols-1 gap-6 rounded-3xl border border-border bg-card p-5 shadow-paper sm:p-8"
       aria-describedby={hasErrors ? `${id}-errors` : undefined}
       data-testid="custom-form"
+      data-mock-mode={mockMode || undefined}
     >
       {hasErrors && (
         <p id={`${id}-errors`} role="alert" className="rounded-2xl bg-rose-soft px-4 py-3 font-semibold text-rose-ink">
           {t.errorsTitle}
         </p>
+      )}
+      {mockMode && (
+        <div
+          id={`${id}-mock-gate`}
+          data-testid="custom-form-mock-gate"
+          role="note"
+          className="flex items-start gap-3 rounded-2xl border border-ochre bg-ochre-soft px-4 py-3 text-ochre-ink"
+        >
+          <InfoIcon className="mt-0.5 size-5 shrink-0" aria-hidden />
+          <div className="grid gap-0.5">
+            <p className="font-semibold">{landing.mockGateTitle}</p>
+            <p className="text-[0.95rem]">{landing.mockGateBody}</p>
+          </div>
+        </div>
       )}
       <FormField id={`${id}-notes`} label={t.notes} hint={t.notesHint} error={errors.notes}>
         {(props) => (
@@ -145,6 +181,7 @@ export function CustomForm() {
               placeholder={t.notesPlaceholder}
               className="field-sizing-fixed"
               rows={5}
+              disabled={mockMode}
             />
             <span className="text-right text-sm text-muted-foreground" aria-live="polite">
               {t.notesCount(notes.length, NOTES_MAX)}
@@ -206,7 +243,14 @@ export function CustomForm() {
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <Button type="submit" size="lg" data-icon="inline-end" disabled={pending} aria-busy={pending || undefined}>
+        <Button
+          type="submit"
+          size="lg"
+          data-icon="inline-end"
+          disabled={pending || mockMode}
+          aria-busy={pending || undefined}
+          aria-describedby={mockMode ? `${id}-mock-gate` : undefined}
+        >
           {pending ? t.submitPending : t.submit}
           {pending ? <LoaderCircleIcon className="animate-spin" aria-hidden /> : <ArrowRightIcon aria-hidden />}
         </Button>
@@ -216,7 +260,8 @@ export function CustomForm() {
           size="lg"
           onClick={() => submit(formRef.current, "compare")}
           data-icon="inline-start"
-          disabled={pending}
+          disabled={pending || mockMode}
+          aria-describedby={mockMode ? `${id}-mock-gate` : undefined}
         >
           <ScaleIcon aria-hidden />
           {t.compare}

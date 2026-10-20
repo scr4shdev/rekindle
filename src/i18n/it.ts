@@ -11,14 +11,20 @@ export const it: PartialMessages = {
     theme: { toggle: "Scegli tema chiaro o scuro", light: "Chiaro", dark: "Scuro" },
   },
   landing: {
-    title: "Riporta le canzoni, i film e i volti della loro giovinezza.",
+    title: "Un agente che pianifica 20 minuti sereni con chi vive con la demenza.",
     leadShort:
-      "Scrivi qualche riga su di loro. Pianifichiamo 20 minuti tranquilli insieme — canzoni, foto, una domanda o due — dalla loro epoca.",
+      "Ogni canzone, film e volto della loro epoca è verificato nel grafo dei gusti di Qloo — perché nulla stoni per la persona a cui tieni.",
+    agentFlowLabel: "Come lavora l'agente",
+    agentFlow:
+      "Leggi → immagina → verifica con Qloo → componi. 6 fasi, 10–20 richieste a Qloo per piano.",
     promises: {
       stored: "Nulla di ciò che scrivi viene salvato",
       activity: "Un'attività condivisa, non una terapia",
       grounded: "Idee verificate con Qloo",
     },
+    mockGateTitle: "In questa demo l'inserimento libero è disattivato",
+    mockGateBody:
+      "L'inserimento libero live richiede una chiave LLM che in questa demo non abbiamo. Tocca Maria, Fatima o Seamus qui sotto per una sessione completa dell'agente.",
     personasTitle: "Provalo in un tocco",
     personasLead:
       "Tre persone immaginate, da tre luoghi e tre epoche. Scegline una per vedere com'è una sessione pensata per lei.",
@@ -77,6 +83,7 @@ export const it: PartialMessages = {
       "Tenuto solo nella memoria di questa scheda. Ricaricando la pagina si cancella. Solo questa scheda ricorda i tuoi appunti.",
   },
   session: {
+    eraBandLabel: "Luogo ed epoca",
     planningFor: (name: string) => `Pianifico una sessione per ${name}`,
     planningGeneric: "Pianifico la sessione",
     waitHint: "Di solito servono 15–30 secondi. L'agente racconta mentre lavora.",

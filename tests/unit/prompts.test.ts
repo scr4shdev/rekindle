@@ -37,6 +37,42 @@ describe("prompt modules", () => {
     }
     expect(critique.system).toContain("alcohol");
   });
+
+  it("match-entity precedence prefers era+culture over popularity and renders anchors as data", () => {
+    expect(match.system).toContain("Era fit");
+    expect(match.system).toContain("Place and culture fit");
+    expect(match.system).toContain("most popular");
+    expect(match.system).toContain("rejection is better than a culturally wrong match");
+    const text = match.render({
+      candidate: { name: "Khaled", domain: "music", qlooType: "urn:entity:artist", year: 1985 },
+      origin: {
+        primaryPlace: "Casablanca",
+        primaryCountryCode: "MA",
+        culturalBackground: "Moroccan",
+        languages: ["ar-MA", "fr"],
+        formativeWindow: { startYear: 1972, endYear: 1992 },
+      },
+      results: [
+        { index: 0, name: "DJ Khaled", type: "urn:entity:artist", bornYear: 1975, description: "American rapper, record producer and DJ." },
+        { index: 1, name: "Khaled", type: "urn:entity:artist", bornYear: 1960, description: "Algerian rai singer, international star of North African music from the 1980s." },
+      ],
+    });
+    expect(text).toContain('<data name="origin">');
+    expect(text).toContain('"culturalBackground": "Moroccan"');
+    expect(text).toContain('<data name="results">');
+  });
+
+  it("propose-candidates instructs the LLM to emit disambiguated names", () => {
+    expect(propose.system).toContain("unambiguous in the person's culture");
+    expect(propose.system).toContain("Cheb Khaled");
+  });
+
+  it("compose-session requires specific entity+era rationale and forbids hedge sentences", () => {
+    expect(compose.system).toContain("names the specific grounded material");
+    expect(compose.system).toContain("Forbidden register");
+    expect(compose.system).toContain("selections reflect");
+    expect(compose.system).toContain("Required register");
+  });
 });
 
 describe("prompt renders (snapshots)", () => {
@@ -70,6 +106,13 @@ describe("prompt renders (snapshots)", () => {
     expect(
       match.render({
         candidate: { name: "Abdel Halim Hafez", domain: "music", qlooType: "urn:entity:artist", year: 1960 },
+        origin: {
+          primaryPlace: "Cairo",
+          primaryCountryCode: "EG",
+          culturalBackground: "Egyptian",
+          languages: ["ar", "ar-EG"],
+          formativeWindow: { startYear: 1950, endYear: 1970 },
+        },
         results: [{ index: 0, name: "Abdelhalim Hafez", type: "urn:entity:artist", bornYear: 1929 }],
       }),
     ).toMatchSnapshot();

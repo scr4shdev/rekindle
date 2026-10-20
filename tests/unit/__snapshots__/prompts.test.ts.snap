@@ -210,6 +210,22 @@ exports[`prompt renders (snapshots) > match-entity 1`] = `
 }
 </data>
 
+<data name="origin">
+{
+  "primaryPlace": "Cairo",
+  "primaryCountryCode": "EG",
+  "culturalBackground": "Egyptian",
+  "languages": [
+    "ar",
+    "ar-EG"
+  ],
+  "formativeWindow": {
+    "startYear": 1950,
+    "endYear": 1970
+  }
+}
+</data>
+
 <data name="results">
 [
   {

@@ -80,13 +80,14 @@ describe("MockLlm", () => {
       { index: 0, name: "Abdelhalim Hafez", type: "urn:entity:movie" },
       { index: 1, name: "Abdelhalim Hafez", type: "urn:entity:artist" },
     ];
+    const origin = { languages: ["ar"], formativeWindow: { startYear: 1950, endYear: 1970 } };
     const res = await llm.generateObject(
-      buildLlmRequest(matchEntityPrompt, { candidate: { name: "Abdel Halim Hafez", domain: "music", qlooType: "urn:entity:artist" }, results }),
+      buildLlmRequest(matchEntityPrompt, { candidate: { name: "Abdel Halim Hafez", domain: "music", qlooType: "urn:entity:artist" }, origin, results }),
       ctx,
     );
     expect(res.object.matchIndex).toBe(1);
     const none = await llm.generateObject(
-      buildLlmRequest(matchEntityPrompt, { candidate: { name: "Totally different", domain: "music", qlooType: "urn:entity:artist" }, results }),
+      buildLlmRequest(matchEntityPrompt, { candidate: { name: "Totally different", domain: "music", qlooType: "urn:entity:artist" }, origin, results }),
       ctx,
     );
     expect(none.object.matchIndex).toBe(-1);

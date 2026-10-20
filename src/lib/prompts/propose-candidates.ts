@@ -10,7 +10,7 @@ import type { PromptDefinition } from "@/lib/ports/llm";
 import { dataBlock, DATA_NOTICE, lines, ROLE } from "@/lib/prompts/shared";
 
 export const ID = "propose-candidates";
-export const VERSION = "1.0.0";
+export const VERSION = "1.1.0";
 
 export interface ProposeCandidatesInput {
   anchors: Anchors;
@@ -47,6 +47,7 @@ export const system = lines(
     "- Respect sensitivities: do not propose items centred on a topic marked 'avoid'.",
     "- For music propose artists (Qloo has no songs). Athletes and actors are persons. Dishes stay qlooType 'none'.",
     "- Use real, verifiable names only. At most maxPerDomain items per domain.",
+    "- Names must be unambiguous in the person's culture: use the full performing name the person's audience would recognise ('Cheb Khaled', not 'Khaled'; 'Oum Kalthoum', not 'Oum'). When several famous people share a short name, choose the one from the person's place and era and spell it so the Qloo search points at that one; do not emit a bare short name that could resolve to a different, better-known Western namesake.",
   ].join("\n"),
   DATA_NOTICE,
 );

@@ -7,6 +7,7 @@ import { useEffect, useMemo } from "react";
 import { wouldSlip } from "@/components/compare/would-slip";
 import { STEP_ICON } from "@/components/session/icons";
 import { RECORDED_PERSONA, resolveRequest } from "@/components/session/session-request";
+import { qlooNotFoundLine } from "@/components/session/qloo-citation";
 import { rejectionDisplay } from "@/components/session/rejection-display";
 import { parseSourceParam, resolveSource } from "@/components/session/source";
 import { ProvenanceBadge } from "@/components/session/step-card";
@@ -264,6 +265,7 @@ function ComparePlan({
           <ul className="flex flex-col gap-2.5">
             {caught.map((item) => {
               const display = rejectionDisplay(item);
+              const showQlooMiss = item.kind === "not_found" && item.catchSource === "qloo";
               return (
                 <li key={`${item.label}-${item.kind}`} className="flex flex-col gap-0.5">
                   <span className="flex flex-wrap items-center gap-2">
@@ -272,6 +274,11 @@ function ComparePlan({
                     <Badge variant="rose">{display.label}</Badge>
                   </span>
                   <span className="pl-6 text-[0.95rem] text-muted-foreground">{display.reason}</span>
+                  {showQlooMiss && (
+                    <span className="pl-6 text-xs break-words text-sage-ink" data-testid="caught-qloo-miss">
+                      {qlooNotFoundLine(item.label, item.qlooResultCount)}
+                    </span>
+                  )}
                 </li>
               );
             })}

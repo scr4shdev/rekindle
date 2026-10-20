@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { EraArt } from "@/components/era-art";
 import { DOMAIN_MOTIF, STEP_ICON, STEP_MOTIF } from "@/components/session/icons";
+import { qlooCitation } from "@/components/session/qloo-citation";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useMessages } from "@/i18n/provider";
@@ -171,6 +172,14 @@ export function StepCard({
         <h3 id={`step-${step.id}-title`} className="text-2xl leading-snug font-semibold">
           {step.title}
         </h3>
+        {(() => {
+          const citation = qlooCitation(step);
+          return citation ? (
+            <p className="text-xs text-sage-ink" data-testid="qloo-citation">
+              {citation}
+            </p>
+          ) : null;
+        })()}
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t.say}</p>
           <blockquote className="mt-1 border-l-4 border-primary/70 pl-4">

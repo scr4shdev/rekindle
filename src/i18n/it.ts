@@ -276,12 +276,23 @@ export const it: PartialMessages = {
     eyebrow: "Confronto",
     title: (name: string) => `Stessi appunti su ${name}, due pianificatori`,
     lead:
-      "Un piano del modello linguistico da solo, e lo stesso modello con ogni idea verificata con Qloo. La differenza è ciò che altrimenti ti sfuggirebbe.",
+      "A sinistra: un piano del modello linguistico da solo. A destra: lo stesso modello, con il grafo del gusto di Qloo che porta canzoni, film e volti precisi che gli appunti del caregiver non riuscivano a nominare, e intercetta quelli che non si sarebbero adattati.",
     llmOnly: "Solo modello linguistico",
     grounded: "Ancorato in Qloo",
     scoreTitle: "Cosa aggiunge l'ancoraggio",
-    headline: (caught: number, verified: number) =>
-      `L'agente ha intercettato ${caught} svist${caught === 1 ? "a" : "e"} e confermato ${verified} ${verified === 1 ? "corrispondenza reale" : "corrispondenze reali"}.`,
+    headline: (brought: number, caught: number, verified: number, name: string) => {
+      if (brought > 0) {
+        const clauses: string[] = [
+          `Qloo ha portato ${brought} ${brought === 1 ? "àncora culturale" : "àncore culturali"} che gli appunti su ${name} non nominavano`,
+        ];
+        if (caught > 0) clauses.push(`ha intercettato ${caught} ${caught === 1 ? "svista d'epoca" : "sviste d'epoca"}`);
+        if (verified > 0) clauses.push(`confermato ${verified} ${verified === 1 ? "corrispondenza reale" : "corrispondenze reali"}`);
+        if (clauses.length === 1) return `${clauses[0]}.`;
+        if (clauses.length === 2) return `${clauses[0]} e ${clauses[1]}.`;
+        return `${clauses[0]}, ${clauses[1]} e ${clauses[2]}.`;
+      }
+      return `L'agente ha intercettato ${caught} svist${caught === 1 ? "a" : "e"} e confermato ${verified} ${verified === 1 ? "corrispondenza reale" : "corrispondenze reali"}.`;
+    },
     headlineNone: "Nessuna svista intercettata in questa esecuzione.",
     headlineBreakdown: (qloo: number, cultural: number, critique: number) => {
       const parts: string[] = [];

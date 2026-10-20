@@ -284,12 +284,23 @@ export const fr: PartialMessages = {
     eyebrow: "Comparaison",
     title: (name: string) => `Mêmes notes sur ${name}, deux planificateurs`,
     lead:
-      "Un plan du modèle de langage seul, et le même modèle avec chaque idée vérifiée auprès de Qloo. La différence, c'est ce qui vous échapperait sinon.",
+      "À gauche : un plan du modèle de langage seul. À droite : le même modèle, avec le graphe de goûts de Qloo qui fait entrer les chansons, films et visages précis que les notes du proche aidant ne pouvaient nommer, et qui rattrape ceux qui n'auraient pas convenu.",
     llmOnly: "Modèle de langage seul",
     grounded: "Ancré dans Qloo",
     scoreTitle: "Ce que l'ancrage apporte",
-    headline: (caught: number, verified: number) =>
-      `L'agent a rattrapé ${caught} erreur${caught === 1 ? "" : "s"} et confirmé ${verified} correspondance${verified === 1 ? "" : "s"} réelle${verified === 1 ? "" : "s"}.`,
+    headline: (brought: number, caught: number, verified: number, name: string) => {
+      if (brought > 0) {
+        const clauses: string[] = [
+          `Qloo a apporté ${brought} ${brought === 1 ? "point d'ancrage culturel" : "points d'ancrage culturels"} que les notes sur ${name} ne nommaient pas`,
+        ];
+        if (caught > 0) clauses.push(`a rattrapé ${caught} erreur${caught === 1 ? "" : "s"} d'époque`);
+        if (verified > 0) clauses.push(`confirmé ${verified} correspondance${verified === 1 ? "" : "s"} réelle${verified === 1 ? "" : "s"}`);
+        if (clauses.length === 1) return `${clauses[0]}.`;
+        if (clauses.length === 2) return `${clauses[0]} et ${clauses[1]}.`;
+        return `${clauses[0]}, ${clauses[1]} et ${clauses[2]}.`;
+      }
+      return `L'agent a rattrapé ${caught} erreur${caught === 1 ? "" : "s"} et confirmé ${verified} correspondance${verified === 1 ? "" : "s"} réelle${verified === 1 ? "" : "s"}.`;
+    },
     headlineNone: "Aucune erreur rattrapée pour cette exécution.",
     headlineBreakdown: (qloo: number, cultural: number, critique: number) => {
       const parts: string[] = [];

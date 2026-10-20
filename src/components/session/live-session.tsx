@@ -21,6 +21,7 @@ import {
 import Link from "next/link";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { STEP_ICON } from "@/components/session/icons";
+import { ListenButton } from "@/components/session/listen-button";
 import { ProvenanceBadge, StepMedia } from "@/components/session/step-card";
 import type { SessionView } from "@/components/session/view-state";
 import { Badge } from "@/components/ui/badge";
@@ -269,13 +270,18 @@ export function LiveSession({
                   </span>
                 </div>
                 <h2 className="text-xl font-semibold text-muted-foreground sm:text-3xl">{step.title}</h2>
-                <DialogPrimitive.Description
-                  lang={plan.language}
-                  className="font-heading text-[2rem] leading-[1.2] font-medium sm:text-5xl"
-                  data-testid="live-prompt"
-                >
-                  {step.prompt}
-                </DialogPrimitive.Description>
+                <div className="flex items-start gap-3">
+                  <DialogPrimitive.Description
+                    lang={plan.language}
+                    className="min-w-0 flex-1 font-heading text-[2rem] leading-[1.2] font-medium sm:text-5xl"
+                    data-testid="live-prompt"
+                  >
+                    {step.prompt}
+                  </DialogPrimitive.Description>
+                  {step.prompt && (step.kind === "listen" || step.kind === "look" || step.kind === "talk" || step.kind === "move") && (
+                    <ListenButton text={step.prompt} promptLang={plan.language} caregiverLang={plan.caregiverLanguage} size="lg" />
+                  )}
+                </div>
                 {showTranslation && hasTranslation && (
                   <p lang={plan.caregiverLanguage} className="text-xl text-muted-foreground sm:text-2xl" data-testid="live-translation">
                     {step.promptTranslation}

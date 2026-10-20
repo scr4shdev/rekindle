@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { EraArt } from "@/components/era-art";
 import { DOMAIN_MOTIF, STEP_ICON, STEP_MOTIF } from "@/components/session/icons";
+import { ListenButton } from "@/components/session/listen-button";
 import { qlooCitation } from "@/components/session/qloo-citation";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -182,17 +183,24 @@ export function StepCard({
         })()}
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t.say}</p>
-          <blockquote className="mt-1 border-l-4 border-primary/70 pl-4">
-            <p lang={language} className="font-heading text-xl leading-snug">
-              “{step.prompt}”
-            </p>
-            {step.promptTranslation && (
-              <p lang={caregiverLanguage} className="mt-1.5 text-muted-foreground">
-                <span className="sr-only">{t.translation}: </span>
-                {step.promptTranslation}
+          <div className="mt-1 flex items-start gap-3">
+            <blockquote className="min-w-0 flex-1 border-l-4 border-primary/70 pl-4">
+              <p lang={language} className="font-heading text-xl leading-snug">
+                “{step.prompt}”
               </p>
+              {step.promptTranslation && (
+                <p lang={caregiverLanguage} className="mt-1.5 text-muted-foreground">
+                  <span className="sr-only">{t.translation}: </span>
+                  {step.promptTranslation}
+                </p>
+              )}
+            </blockquote>
+            {step.prompt && (step.kind === "listen" || step.kind === "look" || step.kind === "talk" || step.kind === "move") && (
+              <div className="shrink-0 print:hidden">
+                <ListenButton text={step.prompt} promptLang={language} caregiverLang={caregiverLanguage} />
+              </div>
             )}
-          </blockquote>
+          </div>
         </div>
         {step.followUps.length > 0 && (
           <div>

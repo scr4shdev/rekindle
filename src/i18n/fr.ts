@@ -241,6 +241,9 @@ export const fr: PartialMessages = {
       later_life: "Des années récentes",
     },
     lifePhaseHint: (ageRange: string) => `Un souvenir autour de ${ageRange} ans.`,
+    listen: "Écouter",
+    listenHint: (language: string) => `Écouter la phrase en ${language}`,
+    listenNoVoice: (language: string) => `Aucune voix ${language} installée sur cet appareil. La voix par défaut sera utilisée.`,
   },
   live: {
     title: "Mode séance",

@@ -238,6 +238,7 @@ export const en = {
       upset: "Calm things down",
     },
     recorded: (label: string) => `Noted: ${label}`,
+    hearingYou: "Hearing you",
     adapting: "Adjusting what comes next…",
     adapted: (title: string) => `Plan adapted. Next up: ${title}`,
     unchanged: "Plan checked. Nothing needed to change.",

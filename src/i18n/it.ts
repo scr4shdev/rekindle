@@ -254,6 +254,7 @@ export const it: PartialMessages = {
       upset: "Calmate le acque",
     },
     recorded: (label: string) => `Annotato: ${label}`,
+    hearingYou: "Ti ascolto",
     adapting: "Sto adattando ciò che viene dopo…",
     adapted: (title: string) => `Piano adattato. Prossima tappa: ${title}`,
     unchanged: "Piano verificato. Non serviva cambiare nulla.",

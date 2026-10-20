@@ -261,6 +261,7 @@ export const fr: PartialMessages = {
       upset: "Apaisez le moment",
     },
     recorded: (label: string) => `Noté : ${label}`,
+    hearingYou: "Je vous écoute",
     adapting: "J'ajuste ce qui vient après…",
     adapted: (title: string) => `Plan adapté. Vient ensuite : ${title}`,
     unchanged: "Plan vérifié. Rien n'avait besoin de changer.",

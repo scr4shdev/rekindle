@@ -32,42 +32,49 @@ export function ProvenanceBadge({ step }: { step: SessionStep }) {
   );
 }
 
-/** Entity image when Qloo has one, otherwise an era-styled illustration. */
+/**
+ * Entity image when Qloo has one, otherwise an era-styled illustration. The
+ * motif is always rendered as the background so a slow, broken or silently
+ * empty image never shows an empty frame; the loaded image overlays it.
+ */
 export function StepMedia({ step, className, large = false }: { step: SessionStep; className?: string; large?: boolean }) {
-  const src = step.entity?.imageUrl ?? step.mediaUrl;
+  const rawSrc = step.entity?.imageUrl ?? step.mediaUrl;
+  const src = rawSrc && /^https?:\/\//.test(rawSrc) ? rawSrc : undefined;
+  const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
   const year = step.entity?.releaseYear;
-  if (src && !failed) {
-    return (
-      <div className={cn("relative overflow-hidden bg-muted", className)}>
+  const motif = step.entity ? DOMAIN_MOTIF[step.entity.domain] : STEP_MOTIF[step.kind];
+  const showImage = Boolean(src) && !failed;
+  return (
+    <div className={cn("relative overflow-hidden", className)}>
+      <EraArt motif={motif} className="absolute inset-0 flex items-end">
+        {(step.entity || year) && (
+          <span
+            aria-hidden
+            className={cn(
+              "m-3 max-w-[85%] rounded-xl bg-card/95 px-3 py-1.5 font-heading leading-tight font-semibold shadow-paper transition-opacity duration-200",
+              loaded ? "opacity-0" : "opacity-100",
+              large ? "text-2xl" : "text-base",
+            )}
+          >
+            {step.entity?.name}
+            {year && <span className="ml-2 font-sans text-[0.8em] font-normal text-muted-foreground">{year}</span>}
+          </span>
+        )}
+      </EraArt>
+      {showImage && (
         <Image
-          src={src}
+          src={src!}
           alt={step.entity?.name ?? step.title}
           fill
           unoptimized
           sizes={large ? "(min-width: 1024px) 50vw, 100vw" : "(min-width: 640px) 220px, 100vw"}
-          className="object-cover sepia-[.15]"
+          className={cn("object-cover sepia-[.15] transition-opacity duration-200", loaded ? "opacity-100" : "opacity-0")}
+          onLoad={() => setLoaded(true)}
           onError={() => setFailed(true)}
         />
-      </div>
-    );
-  }
-  const motif = step.entity ? DOMAIN_MOTIF[step.entity.domain] : STEP_MOTIF[step.kind];
-  return (
-    <EraArt motif={motif} className={cn("flex items-end", className)}>
-      {(step.entity || year) && (
-        <span
-          aria-hidden
-          className={cn(
-            "m-3 max-w-[85%] rounded-xl bg-card/95 px-3 py-1.5 font-heading leading-tight font-semibold shadow-paper",
-            large ? "text-2xl" : "text-base",
-          )}
-        >
-          {step.entity?.name}
-          {year && <span className="ml-2 font-sans text-[0.8em] font-normal text-muted-foreground">{year}</span>}
-        </span>
       )}
-    </EraArt>
+    </div>
   );
 }
 

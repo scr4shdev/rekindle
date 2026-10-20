@@ -94,14 +94,14 @@ export const fr: PartialMessages = {
     stageHint: "Facultatif. Nous aide à choisir le bon rythme. Si vous n'êtes pas sûre, laissez vide.",
     stageOptions: {
       none: "Je préfère ne pas le dire",
-      early: "Débutant (léger)",
-      mid: "Intermédiaire (modéré)",
-      late: "Avancé (sévère)",
+      early: "Début",
+      mid: "Milieu",
+      late: "Avancé",
     },
     stageTooltips: {
-      early: "Globalement autonome, la conversation suit, de petits oublis apparaissent. Rythme par défaut.",
-      mid: "L'attention se resserre, les répétitions sont fréquentes, musique et images familières portent plus que les mots.",
-      late: "La parole se perd souvent. Courtes ancres sensorielles, pas de questions complexes, étapes de 90 secondes.",
+      early: "Début : encore largement autonome ; les habitudes du quotidien tiennent.",
+      mid: "Milieu : a besoin de plus de soutien pour les gestes du quotidien.",
+      late: "Avancé : dépendante des soins ; la parole peut être limitée.",
     },
     sessionLanguage: "La langue qu'elle parle le mieux",
     caregiverLanguage: "Votre langue",
@@ -287,6 +287,11 @@ export const fr: PartialMessages = {
     listen: "Écouter",
     listenHint: (language: string) => `Écouter la phrase en ${language}`,
     listenError: "Voix indisponible pour le moment.",
+    listenErrors: {
+      unavailable: "Voix indisponible pour le moment.",
+      rate_limited: "Elle prend un petit répit ; réessayez dans une minute.",
+      network: "Voix hors ligne ; réessayez quand la connexion revient.",
+    },
   },
   live: {
     title: "Mode séance",

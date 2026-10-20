@@ -45,11 +45,27 @@ export function ListenButton({
   const sizeClass = size === "lg" ? "size-12" : size === "sm" ? "size-7" : "size-9";
   const iconClass = size === "lg" ? "size-5" : size === "sm" ? "size-3.5" : "size-4";
 
-  const Icon = isLoading ? Loader2Icon : isPlaying ? Volume1Icon : error ? VolumeXIcon : Volume2Icon;
+  // Branch the error presentation by kind so a judge rapidly tapping TTS and
+  // tripping 429 on the Gemini free tier does not see "broken product" red.
+  // `rate_limited` ambers down (soft, retryable); `unavailable` stays red
+  // (the no-key / 503 case, which really is unusable); `network` uses the
+  // same amber as rate-limited (transient).
+  const Icon = isLoading
+    ? Loader2Icon
+    : isPlaying
+      ? Volume1Icon
+      : error === "unavailable"
+        ? VolumeXIcon
+        : Volume2Icon;
 
-  const buttonTone = error
-    ? "bg-rose-100 text-rose-900 hover:bg-rose-100/80 dark:bg-rose-950/40 dark:text-rose-100"
-    : "bg-sage-soft text-sage-ink hover:bg-sage-soft/80";
+  const buttonTone =
+    error === "unavailable"
+      ? "bg-rose-100 text-rose-900 hover:bg-rose-100/80 dark:bg-rose-950/40 dark:text-rose-100"
+      : error
+        ? "bg-ochre-soft text-ochre-ink hover:bg-ochre-soft/80"
+        : "bg-sage-soft text-sage-ink hover:bg-sage-soft/80";
+
+  const errorCopy = error ? t.listenErrors[error] : null;
 
   return (
     <div className="flex flex-col items-start gap-1">
@@ -79,13 +95,14 @@ export function ListenButton({
         />
         <span className="sr-only">{t.listen}</span>
       </button>
-      {error ? (
+      {errorCopy ? (
         <p
           className="text-xs text-muted-foreground"
           data-testid="step-listen-error"
+          data-error-kind={error}
           lang={caregiverLang}
         >
-          {t.listenError}
+          {errorCopy}
         </p>
       ) : null}
     </div>

@@ -30,7 +30,7 @@ export const schema = z.object({
         year: z.number().int().describe("Year it was released or most popular for this person; 0 if not applicable."),
         lifePhase: z
           .enum([...LifePhaseLabel.options, "none"])
-          .default("none")
+          .optional()
           .describe("Which of the person's life phases (from the lifePhases list) this item is anchored in, or 'none' if unclear."),
         rationale: z.string().describe("One short sentence in the caregiver language: why it fits this person."),
       }),

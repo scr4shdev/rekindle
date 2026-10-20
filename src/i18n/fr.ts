@@ -243,8 +243,7 @@ export const fr: PartialMessages = {
     lifePhaseHint: (ageRange: string) => `Un souvenir autour de ${ageRange} ans.`,
     listen: "Écouter",
     listenHint: (language: string) => `Écouter la phrase en ${language}`,
-    listenNoVoice: (language: string) => `Aucune voix ${language} installée sur cet appareil. La voix par défaut sera utilisée.`,
-    listenCloudVoice: (language: string) => `Lecture d'une voix cloud en ${language}.`,
+    listenError: "Voix indisponible pour le moment.",
   },
   live: {
     title: "Mode séance",

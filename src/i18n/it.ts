@@ -236,8 +236,7 @@ export const it: PartialMessages = {
     lifePhaseHint: (ageRange: string) => `Un ricordo intorno ai ${ageRange} anni.`,
     listen: "Ascolta",
     listenHint: (language: string) => `Ascolta la frase in ${language}`,
-    listenNoVoice: (language: string) => `Nessuna voce in ${language} installata su questo dispositivo. Si userà la voce predefinita.`,
-    listenCloudVoice: (language: string) => `Riproduco una voce cloud per ${language}.`,
+    listenError: "Voce non disponibile al momento.",
   },
   live: {
     title: "Modalità sessione",

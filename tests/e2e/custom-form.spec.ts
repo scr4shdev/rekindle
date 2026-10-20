@@ -16,7 +16,7 @@ test.describe("custom person form", () => {
     await form.getByLabel("Birth year").fill("1700");
     await form.getByRole("button", { name: "Plan the session" }).click();
     await expect(form.getByRole("alert")).toContainText("Please check the highlighted fields.");
-    const notes = form.getByLabel("Tell us about them");
+    const notes = form.getByLabel("Anything else to know");
     await expect(notes).toHaveAttribute("aria-invalid", "true");
     await expect(notes).toBeFocused();
     await expect(form.getByText("Please write at least a sentence")).toBeVisible();
@@ -32,7 +32,7 @@ test.describe("custom person form", () => {
     });
     await page.goto("/");
     const form = page.getByTestId("custom-form");
-    await form.getByLabel("Tell us about them").fill(NOTES);
+    await form.getByLabel("Anything else to know").fill(NOTES);
     await form.getByLabel("What do you call them?").fill("Papa");
     await form.getByLabel("Birth year").fill("1946");
     await form.getByLabel("Where they grew up").fill("Lyon, France");
@@ -63,7 +63,7 @@ test.describe("custom person form", () => {
     });
     await page.goto("/");
     const form = page.getByTestId("custom-form");
-    await form.getByLabel("Tell us about them").fill(NOTES);
+    await form.getByLabel("Anything else to know").fill(NOTES);
     await form.getByRole("switch", { name: "Check every idea against Qloo" }).click();
     await form.getByRole("button", { name: "Plan the session" }).click();
     await expect(page).toHaveURL(/mode=llm-only/);
@@ -78,7 +78,7 @@ test.describe("custom person form", () => {
     );
     await page.goto("/");
     const form = page.getByTestId("custom-form");
-    await form.getByLabel("Tell us about them").fill(NOTES);
+    await form.getByLabel("Anything else to know").fill(NOTES);
     await form.getByRole("button", { name: "Compare with and without Qloo" }).click();
     await expect(page).toHaveURL(/\/compare\?persona=custom$/);
     await expect(page.getByTestId("compare-view")).toHaveAttribute("data-grounded-status", "done");

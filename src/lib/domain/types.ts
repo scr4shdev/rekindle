@@ -108,7 +108,22 @@ export const TASTE_DOMAIN_QLOO_TYPES: Record<TasteDomain, readonly QlooEntityTyp
 // Input
 // ---------------------------------------------------------------------------
 
-/** What the caregiver types. Freeform `notes` is the main signal; the rest are optional hints. */
+/**
+ * Dementia stage, as a soft caregiver hint (not a diagnosis). The compose
+ * phase tunes pace, step count and prompt style per stage: evidence is
+ * strongest for mild to moderate dementia (Cochrane 2018, IRISS Scotland),
+ * and later-stage sessions benefit from shorter steps, more music and no
+ * complex questions.
+ */
+export const DementiaStage = z.enum(["early", "mid", "late"]);
+export type DementiaStage = z.infer<typeof DementiaStage>;
+
+/**
+ * What the caregiver types. Freeform `notes` is the main signal; the
+ * structured "This is Me" fields (Alzheimer's Society / Royal College of
+ * Nursing standard) mirror the person-centred-care sheet practitioners
+ * recognise, and are all optional hints the agent weaves into prompts.
+ */
 export const PersonInput = z.object({
   /** What to call them during the session ("Nonna Maria"). Never logged. */
   displayName: z.string().trim().min(1).max(60).optional(),
@@ -116,6 +131,22 @@ export const PersonInput = z.object({
   notes: z.string().trim().min(10).max(2000),
   birthYear: Year.optional(),
   birthPlace: z.string().trim().min(1).max(120).optional(),
+  /** "This is Me" cultural and family background: short freeform hint. */
+  culturalBackground: z.string().trim().min(1).max(400).optional(),
+  /** "This is Me" key life events: short freeform hint. */
+  keyLifeEvents: z.string().trim().min(1).max(400).optional(),
+  /** "This is Me" things that calm them: short freeform hint. */
+  calmingCues: z.string().trim().min(1).max(400).optional(),
+  /** "This is Me" things to avoid: short freeform hint. */
+  thingsToAvoid: z.string().trim().min(1).max(400).optional(),
+  /** "This is Me" routines or rituals they value: short freeform hint. */
+  routines: z.string().trim().min(1).max(400).optional(),
+  /**
+   * Optional dementia-stage hint. The agent softens pace and lifts music
+   * weight at mid-stage, and strips complex questions at late-stage.
+   * Absent means "unsure, use the early-stage defaults".
+   */
+  stage: DementiaStage.optional(),
   /** Language the prompts are spoken in (the person's language). */
   sessionLanguage: LanguageTag.default("en"),
   /** Language of the UI, caregiver tips and prompt translations. */

@@ -9,7 +9,7 @@ import { CULTURAL_MISMATCH_PREFIX, rejectionDisplay } from "@/components/session
 import type { RejectedItem } from "@/lib/domain/types";
 
 const base = {
-  label: "Donald Trump",
+  label: "A US public figure",
   domain: "public_figure" as const,
   phase: "critique" as const,
   refId: "m1",

@@ -11,7 +11,7 @@ import type { PromptDefinition } from "@/lib/ports/llm";
 import { AGGREGATE_GUIDANCE, dataBlock, DATA_NOTICE, DEMENTIA_FRIENDLY_GUIDANCE, lines, ROLE } from "@/lib/prompts/shared";
 
 export const ID = "compose-session";
-export const VERSION = "1.6.0";
+export const VERSION = "1.6.1";
 
 /** English source of the non-medical disclaimer; the model translates it to the caregiver language. */
 export const DISCLAIMER_EN =
@@ -140,7 +140,8 @@ export const system = lines(
     "- If the primary verified anchor for a required domain is missing or weak (not in `materials`, or a poor fit), build the step on the next-best verified entity of that SAME domain from `materials` (read the structured `domain` field, never guess from the name) and set fallbackReason to 'primary_not_verified'.",
     "- If no material of that domain is left, still emit the required step as a generic, era-appropriate one: materialRef empty, a category and era instead of a specific title (for example a dance tune of the person's youth), and set fallbackReason to 'no_viable_alternative'.",
     "- Steps on a primary anchor, and every opening and closing step, use fallbackReason 'none'. Never use a fallback marker to excuse omitting a required step.",
-    "- Worked example. stage_minimums: music >= 2 (listen, move). The person loves showband music, but no showband artist is in `materials`; the list holds one verified Irish folk artist (domain: music). RIGHT: one listen step on that folk artist with fallbackReason 'primary_not_verified', plus a second generic listen step (materialRef empty, 'a dance-hall tune from the 1960s') with fallbackReason 'no_viable_alternative'. WRONG: a plan with no listen or move step.",
+    "- Worked example (fallback for a missing primary). stage_minimums: music >= 2 (listen, move). The person loves showband music, but no showband artist is in `materials`; the list holds one verified Irish folk artist (domain: music). RIGHT: one listen step on that folk artist with fallbackReason 'primary_not_verified', plus a second generic listen step (materialRef empty, 'a dance-hall tune from the 1960s') with fallbackReason 'no_viable_alternative'. WRONG: a plan with no listen or move step.",
+    "- Worked example (mid-stage min 3 music, three verified music entities, 6-step budget). stage_minimums: music >= 3 (listen, move). `materials` has three verified music entities and one each of taste, look, place. RIGHT: opening + listen on music_1 + taste + listen on music_2 + listen (or move) on music_3 + closing. That is 3 music and 1 non-music body step. The music minimum is met before any sensory variety. WRONG: opening + listen on music_1 + taste + look + listen on music_2 + closing (only 2 music; coverage gap composer_omitted). When a minimum conflicts with 'lean on sensory variety', the minimum wins every time.",
   ].join("\n"),
   [
     "Stage tuning (follow the stage carried in `session.stage`, when present):",

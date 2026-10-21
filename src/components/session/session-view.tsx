@@ -301,9 +301,17 @@ function SessionViewBody({
                   <PlayIcon aria-hidden />
                   {t.start}
                 </Button>
-                <Button variant="outline" size="icon-lg" onClick={() => window.print()} aria-label={t.print} title={t.print}>
+                <Link
+                  href={`/plan/${resolved.persona}/print${resolved.request.mode ? `?mode=${resolved.request.mode}` : ""}`}
+                  target="_blank"
+                  rel="noopener"
+                  className={cn(buttonVariants({ variant: "outline", size: "icon-lg" }))}
+                  aria-label={t.print}
+                  title={t.print}
+                  data-testid="open-print-card"
+                >
                   <PrinterIcon aria-hidden />
-                </Button>
+                </Link>
               </>
             )}
             {!streaming && (

@@ -140,6 +140,8 @@ export const fr: PartialMessages = {
     planningFor: (name: string) => `Je prépare une séance pour ${name}`,
     planningGeneric: "Je prépare votre séance",
     waitHint: "Cela prend d'habitude 15 à 30 secondes. L'agent raconte au fil de son travail.",
+    callbacksHeading: "Ce que nous avons retenu",
+    callbacksLabel: "Détails précis de votre saisie et ce que nous en avons fait",
     someone: "une personne aimée",
     back: "Toutes les personnes",
     era: (from: number, to: number) => `${from}–${to}`,

@@ -10,7 +10,7 @@ import type { PromptDefinition } from "@/lib/ports/llm";
 import { dataBlock, DATA_NOTICE, lines, ROLE } from "@/lib/prompts/shared";
 
 export const ID = "parse-anchors";
-export const VERSION = "1.2.0";
+export const VERSION = "1.3.0";
 
 export interface ParseAnchorsInput {
   /** Free-text notes blob. Falls back when structured fields are empty. */
@@ -76,6 +76,12 @@ export const schema = z.object({
     .max(20)
     .describe("Names of private people in the notes (the person, family, friends, carers). Never public figures."),
   notes: z.array(z.string()).max(3).describe("Up to 3 short lines for the caregiver, in the caregiver language."),
+  callbacks: z
+    .array(z.string())
+    .max(4)
+    .describe(
+      "2 to 4 short 'I heard you' lines, in the caregiver language, under 20 words each. Each quotes a specific detail from the caregiver's own notes (a stated love, a sensitivity, a place, a routine, a relationship) and names what you did with it: how you understood it or where it will anchor the session. These render as a visible contract above the plan so the caregiver sees that their specifics shaped the output.",
+    ),
 });
 export type ParseAnchorsOutput = z.infer<typeof schema>;
 
@@ -92,7 +98,8 @@ export const system = lines(
     "- Worked example (religion as a stated anchor, not a trigger). cultural_background: 'Pentecostal church was his community for sixty years.' calming_cues: 'her Bible, gospel hymns.' things_to_avoid: '' (empty). CORRECT: add 'Pentecostal church community' and 'gospel hymns' and 'the Bible' to loves (domain 'other' or 'music' for hymns); do NOT add 'religion', 'Pentecostal' or 'the Bible' to sensitivities. INCORRECT: adding {topic: 'Pentecostal', severity: 'handle_gently'} or {topic: 'religion', severity: 'avoid'} based on the topic alone.",
     "- privateNames: list every private person's name you see, so it can be kept out of external lookups.",
     "- Places: public names only, never street addresses.",
-    "- Write reasons and notes in the caregiver language given in the input.",
+    "- Write reasons, notes, and callbacks in the caregiver language given in the input.",
+    "- callbacks: 2 to 4 short lines that quote back a specific detail the caregiver typed (not a summary of all of it) and name what you did with it. Example inputs and good callbacks: (a) notes mention 'Oum Kalthoum' -> 'You mentioned Oum Kalthoum. She is anchored as the main music love.' (b) things_to_avoid: 'no politics' -> 'You asked us to avoid politics. No public figures tied to political history will appear.' (c) key_life_events mentions 'Ford plant on the Marina' -> 'You named the Ford plant on the Marina. It is kept as a mid-life work anchor.' Keep each line under 20 words. Do not quote private names.",
   ].join("\n"),
   DATA_NOTICE,
 );

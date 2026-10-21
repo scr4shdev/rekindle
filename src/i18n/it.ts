@@ -136,6 +136,8 @@ export const it: PartialMessages = {
     planningFor: (name: string) => `Pianifico una sessione per ${name}`,
     planningGeneric: "Pianifico la sessione",
     waitHint: "Di solito servono 15–30 secondi. L'agente racconta mentre lavora.",
+    callbacksHeading: "Ciò che abbiamo colto",
+    callbacksLabel: "Dettagli specifici dai tuoi appunti e cosa ne abbiamo fatto",
     someone: "una persona cara",
     back: "Tutte le persone",
     era: (from: number, to: number) => `${from}–${to}`,

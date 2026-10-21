@@ -238,6 +238,12 @@ export const Anchors = z.object({
   culturalBackground: z.string().max(200).optional(),
   /** One-paragraph neutral summary for downstream prompts. Never logged. */
   summary: z.string().min(1).max(600),
+  /**
+   * Short "I heard you" lines in the caregiver language, each quoting a specific
+   * detail from the intake and naming what the system did with it. Rendered as
+   * a visible contract on the session view. Optional and additive.
+   */
+  callbacks: z.array(z.string().min(1).max(240)).max(4).optional(),
 });
 export type Anchors = z.infer<typeof Anchors>;
 

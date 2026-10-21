@@ -117,6 +117,10 @@ export function toAnchors(out: ParseAnchorsOutput, person: PersonInput, run: Run
     occupation: clip(out.occupation, 120),
     culturalBackground: clip(out.culturalBackground, 200),
     summary: clip(out.summary, 600) ?? `Person born in ${birthYear}.`,
+    callbacks: out.callbacks
+      ?.map((c) => clip(c, 240))
+      .filter((c): c is string => Boolean(c))
+      .slice(0, 4),
   });
 }
 

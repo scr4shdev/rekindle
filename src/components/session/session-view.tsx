@@ -335,6 +335,23 @@ function SessionViewBody({
         )}
       </header>
 
+      {anchors?.callbacks && anchors.callbacks.length > 0 && (
+        <aside
+          aria-label={t.callbacksLabel}
+          data-testid="plan-callbacks"
+          className="rounded-2xl border border-sage-soft/60 bg-sage-soft/30 px-5 py-4"
+        >
+          <p className="text-xs font-semibold tracking-wide text-sage-ink/70 uppercase">{t.callbacksHeading}</p>
+          <ul className="mt-2 space-y-1.5">
+            {anchors.callbacks.map((line, i) => (
+              <li key={i} lang={resolved.request.person.caregiverLanguage ?? "en"} className="text-sm text-sage-ink">
+                {line}
+              </li>
+            ))}
+          </ul>
+        </aside>
+      )}
+
       <div className={cn("grid items-start gap-6 print:block", !traceWide && "lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]")}>
         <ReasoningTrace
           view={view}

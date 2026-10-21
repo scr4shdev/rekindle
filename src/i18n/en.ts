@@ -121,6 +121,8 @@ export const en = {
     planningFor: (name: string) => `Planning a session for ${name}`,
     planningGeneric: "Planning your session",
     waitHint: "This usually takes 15–30 seconds. The agent will narrate as it works.",
+    callbacksHeading: "What we heard",
+    callbacksLabel: "Specific details from your intake and what we did with each",
     someone: "someone you care for",
     back: "All people",
     era: (from: number, to: number) => `${from} to ${to}`,

@@ -158,6 +158,15 @@ export const en = {
     revision: (n: number) => `Adapted ${n === 1 ? "once" : `${n} times`}`,
     stopped: "Stopped. Nothing was kept.",
     degraded: "Some checks could not run, so part of this plan is from the language model alone.",
+    feedbackHeading: "How did each step go?",
+    feedbackButtonSparked: "Sparked",
+    feedbackButtonDidNotLand: "Did not land",
+    feedbackButtonWalkedAway: "Walked away",
+    feedbackInputPlaceholder: "What stood out?",
+    feedbackSaveButton: "Save notes",
+    feedbackSavedConfirmation: "Notes saved on this device.",
+    feedbackLastTimeHeading: (name: string) => `Last time with ${name}`,
+    feedbackLastTimeIntro: "The agent will read this on the next plan.",
   },
   trace: {
     title: "How the agent is thinking",
@@ -371,6 +380,32 @@ export const en = {
     reactions: "How did they respond?",
     notes: "Notes",
     footer: "Printed from Rekindle. Nothing you typed was stored.",
+    /** Button in the on-screen preview, hidden when printing. */
+    printButton: "Print",
+    /** Tab title and screen-only label above the paper. */
+    printTitle: "Session card",
+    /** Section heading for the anchors.callbacks lines. */
+    printWhatWeHeard: "What we heard",
+    /** Label before each step's synthesized refusal fallback. */
+    printIfTheySayNo: "If they say no",
+    /** Footer disclaimer, non-medical framing. */
+    printFooter: "Rekindle session plan. Not medical advice.",
+    /** Date line in the footer, built from today's UTC date. */
+    printSessionDate: (date: string) => `Printed ${date}.`,
+    /** Shown when the plan cannot be hydrated (unknown id, cleared memory). */
+    printNotFound: "Session not found. Open the planner and try again.",
+    /** Header meta line: year and spoken language. */
+    printPersonMeta: (year: number, language: string) => `Born ${year} · session in ${language}`,
+    /** Synthesized gentle redirect, keyed by step kind. */
+    printFallbacks: {
+      opening: "Sit a moment longer, no questions.",
+      listen: "Offer a quiet moment, no music.",
+      look: "Fold the photo away and sit together.",
+      talk: "Let the question go, hold the quiet.",
+      taste: "Swap for a familiar scent.",
+      move: "A slower movement, or just resting hands.",
+      closing: "A short, warm goodbye.",
+    },
   },
   notFound: {
     title: "This page is not here",

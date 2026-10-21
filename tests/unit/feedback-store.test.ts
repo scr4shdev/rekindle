@@ -64,6 +64,29 @@ describe("personKeyFromDisplayName", () => {
     expect(a).toBe(b);
     expect(a).toMatch(/^[0-9a-f]{64}$/);
   });
+
+  it("falls back to the pure-JS sha256 when Web Crypto is unavailable and matches it", async () => {
+    // The canonical sha256 of "nonna maria" (verified against Node crypto).
+    const expected = "82893169fdede02e7e6b3a669021456e066a298fbb87e75a280125bd31dbd810";
+    const nativeKey = await personKeyFromDisplayName("nonna maria");
+    expect(nativeKey).toBe(expected);
+    const original = globalThis.crypto;
+    try {
+      // Blank out subtle so the module falls back; crypto itself must stay
+      // defined so vitest internals do not crash.
+      Object.defineProperty(globalThis, "crypto", {
+        value: { ...(original ?? {}), subtle: undefined },
+        configurable: true,
+        writable: true,
+      });
+      const fallbackKey = await personKeyFromDisplayName("nonna maria");
+      expect(fallbackKey).toBe(expected);
+    } finally {
+      if (original) {
+        Object.defineProperty(globalThis, "crypto", { value: original, configurable: true, writable: true });
+      }
+    }
+  });
 });
 
 describe("summarizeFeedback", () => {

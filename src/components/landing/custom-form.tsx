@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { getMessages } from "@/i18n";
 import { PersonInput, type PersonInputDraft } from "@/lib/domain/types";
+import { loadLatestFeedback, personKeyFromDisplayName, summarizeFeedback } from "@/lib/feedback-store";
 
 /** Spoken-language choices (BCP 47). Free text is not needed for the demo. */
 const LANGUAGES = ["en", "it", "fr", "es", "de", "pt", "nl", "pl", "ga", "el", "ar", "tr", "ur", "hi", "zh", "ja"];
@@ -66,6 +67,12 @@ export function CustomForm() {
   const [calmingCues, setCalmingCues] = useState("");
   const [thingsToAvoid, setThingsToAvoid] = useState("");
   const [routines, setRoutines] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  // "Last time" preview: a short summary of the most recent saved feedback
+  // for this displayName (local-only). Prepended to notes on submission so
+  // the parse agent can adjust. Caregiver can clear it for this one run.
+  const [lastTimeSummary, setLastTimeSummary] = useState<string | null>(null);
+  const [lastTimeDismissed, setLastTimeDismissed] = useState(false);
   // Mock-mode gate. Probe /api/health once on mount. When the backend reports
   // llm.mode !== "live" (either a legacy "mock" value or the new "unavailable"
   // state when no GEMINI_API_KEY is set), custom notes cannot be planned, so
@@ -112,6 +119,26 @@ export function CustomForm() {
     }
   }, [notes]);
 
+  // Look up any prior saved feedback for this displayName. localStorage is
+  // an external store, so we subscribe to it when the name changes. State
+  // writes happen inside the async callback (not synchronously in the
+  // effect body), which the hook linter accepts. Dismissal is reset here
+  // too so retyping shows the fresh match.
+  useEffect(() => {
+    let cancelled = false;
+    const trimmed = displayName.trim();
+    personKeyFromDisplayName(trimmed).then((key) => {
+      if (cancelled) return;
+      const latest = key ? loadLatestFeedback(key) : null;
+      const summary = latest ? summarizeFeedback(latest.entries) : "";
+      setLastTimeSummary(summary.length > 0 ? summary : null);
+      setLastTimeDismissed(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [displayName]);
+
   const errorText: Record<Field, string> = {
     notes: t.errors.notes,
     birthYear: t.errors.birthYear(MAX_YEAR),
@@ -133,9 +160,16 @@ export function CustomForm() {
       return value === "" ? undefined : value;
     };
     const year = text("birthYear");
+    // Prepend the "last time" one-liner so the parse agent can adjust.
+    // Only when the caregiver has not dismissed it for this submission and
+    // the displayName is non-empty. Clipped to the notes max (2000).
+    const rawNotes = String(data.get("notes") ?? "");
+    const useLastTime = Boolean(lastTimeSummary) && !lastTimeDismissed && text("displayName") !== undefined;
+    const prepended = useLastTime && lastTimeSummary ? `Last time: ${lastTimeSummary}\n${rawNotes}` : rawNotes;
+    const finalNotes = prepended.length > 2000 ? prepended.slice(0, 2000) : prepended;
     const draft: PersonInputDraft = {
       displayName: text("displayName"),
-      notes: String(data.get("notes") ?? ""),
+      notes: finalNotes,
       birthYear: year === undefined ? undefined : Number(year),
       birthPlace: text("birthPlace"),
       culturalBackground: text("culturalBackground"),
@@ -215,7 +249,16 @@ export function CustomForm() {
 
       <div className="grid gap-6 sm:grid-cols-3">
         <FormField id={`${id}-name`} label={t.displayName} hint={t.displayNameHint} error={errors.displayName}>
-          {(props) => <Input {...props} name="displayName" maxLength={60} autoComplete="off" />}
+          {(props) => (
+            <Input
+              {...props}
+              name="displayName"
+              maxLength={60}
+              autoComplete="off"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+            />
+          )}
         </FormField>
         <FormField id={`${id}-year`} label={t.birthYear} error={errors.birthYear}>
           {(props) => <Input {...props} name="birthYear" type="number" inputMode="numeric" min={1880} max={MAX_YEAR} placeholder="e.g. 1946" />}
@@ -307,6 +350,32 @@ export function CustomForm() {
           </div>
         </fieldset>
       </div>
+
+      {lastTimeSummary && !lastTimeDismissed && displayName.trim().length > 0 && (
+        <aside
+          data-testid="last-time-preview"
+          className="rounded-2xl border border-sage-soft/60 bg-sage-soft/30 px-5 py-4"
+          aria-label={getMessages().session.feedbackLastTimeHeading(displayName.trim())}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="grid gap-1">
+              <p className="text-xs font-semibold tracking-wide text-sage-ink/70 uppercase">
+                {getMessages().session.feedbackLastTimeHeading(displayName.trim())}
+              </p>
+              <p className="text-[0.95rem] text-sage-ink">{lastTimeSummary}</p>
+              <p className="text-[0.9rem] text-sage-ink/80">{getMessages().session.feedbackLastTimeIntro}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setLastTimeDismissed(true)}
+              className="shrink-0 text-sm font-semibold text-sage-ink underline-offset-4 hover:underline"
+              data-testid="last-time-clear"
+            >
+              Clear
+            </button>
+          </div>
+        </aside>
+      )}
 
       <FormField id={`${id}-notes`} label={t.notes} hint={t.notesHint} error={errors.notes}>
         {(props) => (

@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { EraHero } from "@/components/session/era-hero";
+import { FeedbackPanel } from "@/components/session/feedback-panel";
 import { LiveSession } from "@/components/session/live-session";
 import { PlanTimeline } from "@/components/session/plan-timeline";
 import { ReasoningTrace } from "@/components/session/reasoning-trace";
@@ -375,6 +376,9 @@ function SessionViewBody({
           />
         )}
       </div>
+      {plan && view.status === "done" && (
+        <FeedbackPanel plan={plan} displayName={resolved.request.person.displayName} />
+      )}
       {plan && (
         <LiveSession
           open={liveOpen}

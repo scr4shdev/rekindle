@@ -180,6 +180,15 @@ export const fr: PartialMessages = {
     stopped: "Arrêté. Rien n'a été gardé.",
     degraded:
       "Certaines vérifications n'ont pas pu aboutir, une partie de ce plan vient donc du modèle de langage seul.",
+    feedbackHeading: "Comment chaque étape s'est-elle passée ?",
+    feedbackButtonSparked: "A fait réagir",
+    feedbackButtonDidNotLand: "Est tombée à plat",
+    feedbackButtonWalkedAway: "A fait partir",
+    feedbackInputPlaceholder: "Qu'est-ce qui a marqué ?",
+    feedbackSaveButton: "Enregistrer les notes",
+    feedbackSavedConfirmation: "Notes enregistrées sur cet appareil.",
+    feedbackLastTimeHeading: (name: string) => `La dernière fois avec ${name}`,
+    feedbackLastTimeIntro: "L'agent lira ceci avant le prochain plan.",
   },
   trace: {
     title: "Comment l'agent réfléchit",

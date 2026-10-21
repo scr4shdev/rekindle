@@ -175,6 +175,15 @@ export const it: PartialMessages = {
     stopped: "Fermato. Niente è stato tenuto.",
     degraded:
       "Alcune verifiche non sono riuscite, quindi parte di questo piano viene solo dal modello linguistico.",
+    feedbackHeading: "Com'è andata ogni tappa?",
+    feedbackButtonSparked: "L'ha accesa",
+    feedbackButtonDidNotLand: "Non ha preso",
+    feedbackButtonWalkedAway: "Si è allontanata",
+    feedbackInputPlaceholder: "Cosa è rimasto?",
+    feedbackSaveButton: "Salva le note",
+    feedbackSavedConfirmation: "Note salvate su questo dispositivo.",
+    feedbackLastTimeHeading: (name: string) => `L'ultima volta con ${name}`,
+    feedbackLastTimeIntro: "L'agente lo leggerà prima del prossimo piano.",
   },
   trace: {
     title: "Come sta ragionando l'agente",

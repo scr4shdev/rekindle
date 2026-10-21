@@ -10,7 +10,7 @@ import type { PromptDefinition } from "@/lib/ports/llm";
 import { dataBlock, DATA_NOTICE, lines, ROLE } from "@/lib/prompts/shared";
 
 export const ID = "parse-anchors";
-export const VERSION = "1.3.0";
+export const VERSION = "1.4.0";
 
 export interface ParseAnchorsInput {
   /** Free-text notes blob. Falls back when structured fields are empty. */
@@ -91,6 +91,7 @@ export const system = lines(
   [
     "Rules:",
     "- Input precedence: structured 'This is Me' fields (cultural_background, key_life_events, calming_cues, things_to_avoid, routines) are the primary signal when provided; the free-text 'notes' is a supplementary hint. When the two conflict, prefer the structured fields.",
+    "- The notes field may begin with a single 'Last time: ...' line summarising reactions from a previous session (anchor labels and whether they sparked, did not land, or walked away). Treat it as a soft adjustment hint: lean away from items that walked away or did not land, lean toward threads near items that sparked. It is not a sensitivity in itself and does not override things_to_avoid.",
     "- Extract only what the input states or clearly implies; mark inferences as 'inferred'.",
     "- Loves: concrete cultural things (artists, songs' artists, films, teams, dishes, places, crafts, communities a person belonged to). Prefer entries that appear in cultural_background, key_life_events, calming_cues or routines. Use the closest domain, 'other' if none fits.",
     "- Sensitivities: a topic is a sensitivity only when the caregiver explicitly places it under things_to_avoid, uses an avoidance verb for it ('do not mention', 'stays away from', 'triggers her', 'upsets him'), or the context makes clear it caused this person distress (bereavement, war, illness, separation, a specific person who hurt them). The topic itself does not decide: the caregiver's framing does.",

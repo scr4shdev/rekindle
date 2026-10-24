@@ -107,6 +107,56 @@ describe("summarizeFeedback", () => {
     expect(summarizeFeedback([{ stepId: "s1", stepLabel: "x", reaction: null, note: "note", savedAt: now }])).toBe("");
   });
 
+  it("inlines caregiver notes as a short parenthetical digest beside the reaction", () => {
+    const now = new Date().toISOString();
+    const entries: FeedbackEntry[] = [
+      { stepId: "s1", stepLabel: "the showband record", reaction: "sparked", note: "She sang along", savedAt: now },
+      { stepId: "s2", stepLabel: "the taste step", reaction: "walked_away", note: null, savedAt: now },
+    ];
+    expect(summarizeFeedback(entries)).toBe(
+      "sparked on the showband record (she sang along), and walked away during the taste step",
+    );
+  });
+
+  it("flattens multi-line notes and truncates very long ones with an ellipsis", () => {
+    const now = new Date().toISOString();
+    const entries: FeedbackEntry[] = [
+      {
+        stepId: "s1",
+        stepLabel: "the beach photo",
+        reaction: "sparked",
+        note: "She smiled\nand hummed the whole time, then asked for more songs from the summer by the sea",
+        savedAt: now,
+      },
+    ];
+    const line = summarizeFeedback(entries);
+    expect(line.startsWith("sparked on the beach photo (she smiled and hummed")).toBe(true);
+    expect(line.endsWith("…)")).toBe(true);
+    expect(line).not.toContain("\n");
+  });
+
+  it("drops note digests oldest first when the summary would bust the cap", () => {
+    const now = new Date().toISOString();
+    const bigNote = "x".repeat(50);
+    // Five short labels plus 50-char notes bust the 400-char cap only
+    // slightly, so we expect the oldest note to drop while the newest one
+    // keeps its parenthetical.
+    const entries: FeedbackEntry[] = Array.from({ length: 5 }, (_, i) => ({
+      stepId: `s${i}`,
+      stepLabel: `anchor number ${i} with a reasonably long label`,
+      reaction: "sparked" as const,
+      note: bigNote,
+      savedAt: now,
+    }));
+    const line = summarizeFeedback(entries);
+    expect(line.length).toBeLessThanOrEqual(SUMMARY_MAX);
+    // The newest label keeps its parenthetical because we drop oldest first.
+    expect(line).toContain(`anchor number 4 with a reasonably long label (${bigNote})`);
+    // The oldest label kept its text but lost its parenthetical.
+    expect(line).toContain("anchor number 0 with a reasonably long label,");
+    expect(line).not.toContain(`anchor number 0 with a reasonably long label (${bigNote})`);
+  });
+
   it("caps summaries at SUMMARY_MAX characters", () => {
     const now = new Date().toISOString();
     const entries: FeedbackEntry[] = Array.from({ length: 20 }, (_, i) => ({

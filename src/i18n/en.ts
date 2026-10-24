@@ -36,6 +36,7 @@ export const en = {
     ],
     customTitle: "Or describe someone you care for",
     customLead: "A few sentences are enough. Your words go to the planner once and are never saved.",
+    recordedTraceLink: "Watch a recorded trace of a Rekindle session.",
   },
   form: {
     thisIsMeTitle: "A short 'This is Me' sheet",

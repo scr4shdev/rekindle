@@ -45,6 +45,7 @@ export const it: PartialMessages = {
         body: "Una proposta per volta, con un timer. Tocca come ha reagito e il piano si adatta.",
       },
     ],
+    recordedTraceLink: "Guarda una traccia registrata di una sessione Rekindle.",
     customTitle: "Oppure descrivi una persona a cui tieni",
     customLead:
       "Bastano poche frasi. Le tue parole vanno al pianificatore una volta sola e non vengono mai salvate.",

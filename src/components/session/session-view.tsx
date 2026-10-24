@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { writeStoredPlan } from "@/components/print/print-handoff";
 import { EraHero } from "@/components/session/era-hero";
 import { FeedbackPanel } from "@/components/session/feedback-panel";
 import { LiveSession } from "@/components/session/live-session";
@@ -120,6 +121,26 @@ export function SessionView() {
   useEffect(() => {
     if (resolved.ok) start(resolved.request);
   }, [resolved, start, runId]);
+
+  // Hand the composed plan to a future /plan/[id]/print tab via sessionStorage,
+  // so the print view does not re-run the agent. Writes happen whenever the
+  // plan or anchors change (initial compose, replan). The payload is lean on
+  // purpose: nothing from the caregiver's raw notes, only what the sheet
+  // actually renders.
+  useEffect(() => {
+    if (!resolved.ok) return;
+    if (!view.plan || !view.anchors) return;
+    writeStoredPlan(resolved.persona, {
+      plan: view.plan,
+      anchors: {
+        birthYear: view.anchors.birthYear,
+        callbacks: view.anchors.callbacks,
+      },
+      displayName: resolved.name,
+      sessionLanguage: resolved.request.person.sessionLanguage ?? "en",
+      caregiverLanguage: resolved.request.person.caregiverLanguage ?? "en",
+    });
+  }, [resolved, view.plan, view.anchors]);
 
   if (!resolved.ok) {
     return <SessionResolveError reason={resolved.reason} />;
@@ -303,7 +324,7 @@ function SessionViewBody({
                   {t.start}
                 </Button>
                 <Link
-                  href={`/plan/${resolved.persona}/print${resolved.request.mode ? `?mode=${resolved.request.mode}` : ""}`}
+                  href={printHref(resolved.persona, resolved.request.mode, sourceParam)}
                   target="_blank"
                   rel="noopener"
                   className={cn(buttonVariants({ variant: "outline", size: "icon-lg" }))}
@@ -393,6 +414,20 @@ function SessionViewBody({
       )}
     </div>
   );
+}
+
+/**
+ * Build the href for the Print tab. We pass the current `source` through so
+ * the print page honors the mode the caregiver is already watching (replay
+ * or sample) instead of forcing a fresh live run. "auto" is the default and
+ * is left off the URL.
+ */
+function printHref(persona: string, mode: SessionMode | undefined, sourceParam: SourceParam): string {
+  const params = new URLSearchParams();
+  if (mode) params.set("mode", mode);
+  if (sourceParam !== "auto") params.set("source", sourceParam);
+  const qs = params.toString();
+  return `/plan/${persona}/print${qs ? `?${qs}` : ""}`;
 }
 
 function SourceBadge({ kind }: { kind: SourceKind }) {

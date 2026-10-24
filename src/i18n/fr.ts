@@ -66,6 +66,8 @@ export const fr: PartialMessages = {
     notesPlaceholder:
       "Par exemple : Papa est né en 1946 à Lyon et travaillait aux chemins de fer. Il adorait Johnny Hallyday, le Tour de France à la radio et le gratin de sa mère. Merci d'éviter de parler de son frère.",
     notesCount: (n: number, max: number) => `${n} sur ${max} caractères`,
+    notesCapped: (budget: number) =>
+      `Les notes sont limitées à ${budget} caractères lorsqu'une ligne "la dernière fois" est incluse. Le texte le plus ancien a été raccourci pour tenir.`,
     birthYear: "Année de naissance",
     birthPlace: "Où elle a grandi",
     birthPlacePlaceholder: "ex. Lyon, France",
@@ -411,7 +413,7 @@ export const fr: PartialMessages = {
     llmBlind:
       "Ici rien n'est croisé. Les risques d'époque, de lieu et d'émotion ne sont pas repérés.",
     llmOnlyBanner:
-      "Ce qu'un modèle de langage proposerait seul. Rekindle ne les proposerait jamais à cette personne.",
+      "Ce qu'un modèle de langage proposerait seul. Rekindle les a signalés comme hors époque ou culturellement décalés avant de les afficher.",
     wouldSlip: "Serait passé",
     glanceTitle: "D'un coup d'œil : ce que Qloo a rattrapé",
     openGrounded: "Ouvrir la séance ancrée",

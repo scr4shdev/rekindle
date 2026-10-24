@@ -207,32 +207,82 @@ export function loadLatestFeedback(personKey: string | null): FeedbackSession | 
 
 /**
  * Build a short, lowercase, non-medical one-liner the caregiver and the
- * parse agent will both read. Mentions anchor labels and reactions only.
+ * parse agent will both read. Mentions anchor labels, reactions and (when
+ * budget allows) a short digest of each caregiver note in parentheses so
+ * the free-text feedback actually influences the next session plan.
  * Capped at SUMMARY_MAX. Returns an empty string if nothing useful was
- * captured.
+ * captured. The caller is responsible for any framing prefix (e.g.
+ * "Last time: ") since this is a formatter.
  */
 export function summarizeFeedback(entries: FeedbackEntry[]): string {
   if (!Array.isArray(entries) || entries.length === 0) return "";
-  const sparked: string[] = [];
-  const didNotLand: string[] = [];
-  const walkedAway: string[] = [];
-  for (const entry of entries) {
+  type Item = { label: string; note: string | null; index: number };
+  const sparked: Item[] = [];
+  const didNotLand: Item[] = [];
+  const walkedAway: Item[] = [];
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i];
     const label = (entry.stepLabel ?? "").trim();
     if (!label || !entry.reaction) continue;
-    const soft = label.toLowerCase();
-    if (entry.reaction === "sparked") sparked.push(soft);
-    else if (entry.reaction === "did_not_land") didNotLand.push(soft);
-    else if (entry.reaction === "walked_away") walkedAway.push(soft);
+    const item: Item = { label: label.toLowerCase(), note: cleanNoteForSummary(entry.note), index: i };
+    if (entry.reaction === "sparked") sparked.push(item);
+    else if (entry.reaction === "did_not_land") didNotLand.push(item);
+    else if (entry.reaction === "walked_away") walkedAway.push(item);
   }
+  if (sparked.length === 0 && didNotLand.length === 0 && walkedAway.length === 0) return "";
+  // Drop note digests from the oldest entries first if we would otherwise
+  // bust the summary cap. We keep the reactions themselves intact; only the
+  // parenthetical note hints are optional.
+  const notesInOrder = [...sparked, ...walkedAway, ...didNotLand]
+    .filter((item) => item.note)
+    .sort((a, b) => a.index - b.index);
+  const dropped = new Set<Item>();
+  for (;;) {
+    const line = renderSummaryLine(sparked, walkedAway, didNotLand, dropped);
+    if (line.length <= SUMMARY_MAX) return line;
+    const next = notesInOrder.find((item) => !dropped.has(item));
+    if (!next) {
+      // All notes dropped and still over budget: hard-truncate without a
+      // trailing partial word.
+      return line.slice(0, SUMMARY_MAX).replace(/[,\s]+\S*$/, "");
+    }
+    dropped.add(next);
+  }
+}
+
+/**
+ * Per-entry note cap when inlined into the summary. Keeps a single
+ * reasonable chunk so a long note cannot dominate the one-liner. The note
+ * itself is already clipped to NOTE_MAX on save.
+ */
+const NOTE_DIGEST_MAX = 60;
+
+function cleanNoteForSummary(note: string | null | undefined): string | null {
+  if (!note) return null;
+  // Collapse any newline or run of whitespace to a single space so the
+  // summary stays one line.
+  const flat = note.replace(/\s+/g, " ").trim().toLowerCase();
+  if (flat.length === 0) return null;
+  if (flat.length <= NOTE_DIGEST_MAX) return flat;
+  return `${flat.slice(0, NOTE_DIGEST_MAX).replace(/[,\s]+\S*$/, "")}…`;
+}
+
+function renderItem(item: { label: string; note: string | null }, dropped: Set<unknown>): string {
+  if (!item.note || dropped.has(item)) return item.label;
+  return `${item.label} (${item.note})`;
+}
+
+function renderSummaryLine(
+  sparked: { label: string; note: string | null }[],
+  walkedAway: { label: string; note: string | null }[],
+  didNotLand: { label: string; note: string | null }[],
+  dropped: Set<unknown>,
+): string {
   const parts: string[] = [];
-  if (sparked.length > 0) parts.push(`sparked on ${joinList(sparked)}`);
-  if (walkedAway.length > 0) parts.push(`walked away during ${joinList(walkedAway)}`);
-  if (didNotLand.length > 0) parts.push(`did not land on ${joinList(didNotLand)}`);
-  if (parts.length === 0) return "";
-  const line = `last time ${parts.join(", and ")}`;
-  // Clip; add an ellipsis-free truncation to stay well-formed.
-  if (line.length <= SUMMARY_MAX) return line;
-  return line.slice(0, SUMMARY_MAX).replace(/[,\s]+\S*$/, "");
+  if (sparked.length > 0) parts.push(`sparked on ${joinList(sparked.map((i) => renderItem(i, dropped)))}`);
+  if (walkedAway.length > 0) parts.push(`walked away during ${joinList(walkedAway.map((i) => renderItem(i, dropped)))}`);
+  if (didNotLand.length > 0) parts.push(`did not land on ${joinList(didNotLand.map((i) => renderItem(i, dropped)))}`);
+  return parts.join(", and ");
 }
 
 function joinList(items: string[]): string {

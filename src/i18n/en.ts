@@ -49,6 +49,8 @@ export const en = {
     notesPlaceholder:
       "For example: Dad was born in 1946 in Lyon and worked on the railways. He loved Johnny Hallyday, Tour de France on the radio, and his mother's gratin. Please avoid talking about his brother.",
     notesCount: (n: number, max: number) => `${n} of ${max} characters`,
+    notesCapped: (budget: number) =>
+      `Notes are capped at ${budget} characters when a "last time" line is included. The oldest text was shortened to fit.`,
     birthYear: "Birth year",
     birthPlace: "Where they grew up",
     birthPlacePlaceholder: "e.g. Lyon, France",
@@ -391,7 +393,7 @@ export const en = {
     caughtNone: "Nothing was set aside.",
     llmCaughtNone: "Nothing is checked, so nothing is caught.",
     llmBlind: "Nothing is cross-checked here. Era, place and emotional risks are not detected.",
-    llmOnlyBanner: "What a language model would suggest alone. Rekindle would never offer these to this person.",
+    llmOnlyBanner: "What a language model would suggest alone. Rekindle flagged these as era-wrong or culturally off before showing them.",
     wouldSlip: "Would have slipped",
     glanceTitle: "At a glance: what Qloo caught",
     openGrounded: "Open the grounded session",

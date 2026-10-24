@@ -165,8 +165,13 @@ export function CustomForm() {
     // the displayName is non-empty. Clipped to the notes max (2000).
     const rawNotes = String(data.get("notes") ?? "");
     const useLastTime = Boolean(lastTimeSummary) && !lastTimeDismissed && text("displayName") !== undefined;
-    const prepended = useLastTime && lastTimeSummary ? `Last time: ${lastTimeSummary}\n${rawNotes}` : rawNotes;
-    const finalNotes = prepended.length > 2000 ? prepended.slice(0, 2000) : prepended;
+    const prepend = useLastTime && lastTimeSummary ? `Last time: ${lastTimeSummary}\n` : "";
+    // Clip only the caregiver's own notes to the remaining budget so the
+    // "last time" line never silently eats their text. Keep the newest
+    // content (slice from the end) and surface a caption near the textarea.
+    const budget = Math.max(0, NOTES_MAX - prepend.length);
+    const clippedNotes = rawNotes.length > budget ? rawNotes.slice(rawNotes.length - budget) : rawNotes;
+    const finalNotes = `${prepend}${clippedNotes}`;
     const draft: PersonInputDraft = {
       displayName: text("displayName"),
       notes: finalNotes,
@@ -207,6 +212,12 @@ export function CustomForm() {
   }
 
   const hasErrors = Object.keys(errors).length > 0;
+  // Budget preview mirroring the submit-time computation so the caregiver
+  // sees that long notes will be clipped before they tap submit.
+  const lastTimeActive = Boolean(lastTimeSummary) && !lastTimeDismissed && displayName.trim().length > 0;
+  const prependPreviewLength = lastTimeActive && lastTimeSummary ? `Last time: ${lastTimeSummary}\n`.length : 0;
+  const notesBudget = Math.max(0, NOTES_MAX - prependPreviewLength);
+  const notesOverBudget = prependPreviewLength > 0 && notes.length > notesBudget;
 
   return (
     <form
@@ -395,6 +406,15 @@ export function CustomForm() {
             <span className="text-right text-sm text-muted-foreground" aria-live="polite">
               {t.notesCount(notes.length, NOTES_MAX)}
             </span>
+            {notesOverBudget && (
+              <p
+                data-testid="notes-capped-caption"
+                role="status"
+                className="text-[0.9rem] font-semibold text-ochre-ink"
+              >
+                {t.notesCapped(notesBudget)}
+              </p>
+            )}
           </>
         )}
       </FormField>

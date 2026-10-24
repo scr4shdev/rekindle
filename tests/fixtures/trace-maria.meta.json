@@ -1,22 +1,23 @@
 {
   "promptVersions": {
-    "parse-anchors": "1.1.0",
+    "parse-anchors": "1.4.0",
     "propose-candidates": "1.2.1",
     "match-entity": "1.1.0",
     "cultural-check": "1.0.1",
-    "critique-items": "1.0.0",
-    "compose-session": "1.5.0",
+    "critique-items": "1.1.0",
+    "compose-session": "1.6.1",
     "replan-session": "1.1.0"
   },
   "qloo": {
-    "mode": "mock"
+    "mode": "live"
   },
   "llm": {
-    "provider": "mock",
-    "model": "mock-llm"
+    "provider": "gemini",
+    "model": "gemini-3.1-flash-lite"
   },
-  "recordedAt": "2026-10-18T19:00:00.000Z",
-  "totalDurationMs": 2040,
-  "eventCount": 84,
-  "sha256": "5c70833346fe39b07a8e9c3bd58f4955e3065588bda0224178f69238ec365058"
+  "recordedAt": "2026-10-24T10:17:15.992Z",
+  "totalDurationMs": 43129,
+  "eventCount": 64,
+  "sha256": "0fc067dab829f41e59dff364f3e4209f5b4cbc05a60d04907b5711afa083a41b",
+  "sourceUrl": "http://100.97.114.27:3300/api/session"
 }

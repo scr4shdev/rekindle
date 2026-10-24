@@ -85,7 +85,7 @@ Rekindle plans a shared activity. It is not therapy, it does not treat or diagno
 
 ## License
 
-License: see LICENSE (to be chosen before public release). `[LICENSE PLACEHOLDER]`
+License: see LICENSE (to be chosen before public release). `MIT. See [LICENSE](LICENSE).`
 
 ## Credits
 

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { SAMPLE_ANCHORS } from "@/lib/domain/sample-events";
 import * as compose from "@/lib/prompts/compose-session";
 import * as critique from "@/lib/prompts/critique-items";
+import * as cultural from "@/lib/prompts/cultural-check";
 import { PROMPTS } from "@/lib/prompts";
 import * as match from "@/lib/prompts/match-entity";
 import * as parse from "@/lib/prompts/parse-anchors";
@@ -36,6 +37,19 @@ describe("prompt modules", () => {
       expect(m.system).toContain("people who enjoy X also tend to enjoy Y");
     }
     expect(critique.system).toContain("alcohol");
+  });
+
+  it("shared ROLE guards every importing prompt against em dashes and the word 'patient'", () => {
+    // Prompts that embed the shared ROLE constant get the style guard for free.
+    const withRole = [parse, propose, critique, compose, replan, cultural];
+    for (const m of withRole) {
+      expect(m.system).toContain("U+2014");
+      expect(m.system.toLowerCase()).toContain("patient");
+      // The forbidden character itself must not sneak into the prompt text.
+      // Built as String.fromCharCode so the literal U+2014 never appears in this file.
+      const emDash = String.fromCharCode(0x2014);
+      expect(m.system).not.toContain(emDash);
+    }
   });
 
   it("match-entity precedence prefers era+culture over popularity and renders anchors as data", () => {
@@ -101,6 +115,37 @@ describe("prompt modules", () => {
     expect(compose.system).toContain("stage_minimums");
     expect(compose.system).toContain("primary_not_verified");
     expect(compose.system).toContain("no_viable_alternative");
+  });
+
+  it("compose-session output accepts a structured mediaHost enum alongside the freeform mediaHint", () => {
+    const sample = {
+      kind: "listen" as const,
+      title: "Oum Kalthoum",
+      materialRef: "m1",
+      prompt: "Let us listen together.",
+      promptTranslation: "",
+      followUps: [],
+      caregiverTip: "A tip.",
+      durationMin: 3,
+      mediaHint: "Search 'Oum Kalthoum Enta Omri 1964' on YouTube",
+      mediaHost: "youtube",
+      lifePhase: "none",
+      fallbackReason: "none",
+    };
+    expect(compose.ComposeStep.safeParse(sample).success).toBe(true);
+    for (const host of ["youtube", "spotify", "google_images", "wikimedia", "imdb", "other", "none"] as const) {
+      expect(compose.ComposeStep.safeParse({ ...sample, mediaHost: host }).success).toBe(true);
+    }
+    expect(compose.ComposeStep.safeParse({ ...sample, mediaHost: "bing" }).success).toBe(false);
+    expect(compose.ComposeStep.safeParse({ ...sample, mediaHost: undefined }).success).toBe(false);
+    expect(compose.system).toContain("mediaHost");
+    expect(compose.system).toContain("'youtube'");
+    expect(compose.system).toContain("'google_images'");
+  });
+
+  it("compose-session ModelFallbackReason does not leak the code-only min_enforcement marker to the model", () => {
+    expect(compose.ModelFallbackReason.options).toEqual(["none", "primary_not_verified", "no_viable_alternative", "composer_omitted"]);
+    expect(compose.ModelFallbackReason.safeParse("min_enforcement").success).toBe(false);
   });
 
   it("parse-anchors treats religion in culturalBackground / calmingCues / keyLifeEvents as a positive anchor", () => {

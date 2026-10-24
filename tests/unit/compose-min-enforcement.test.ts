@@ -40,6 +40,7 @@ const step = (s: ModelStepInput): ComposeSessionOutput["steps"][number] => ({
   caregiverTip: "A tip.",
   durationMin: 3,
   mediaHint: "",
+  mediaHost: "none",
   lifePhase: "none",
   fallbackReason: "none",
   ...s,

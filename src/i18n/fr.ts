@@ -307,6 +307,20 @@ export const fr: PartialMessages = {
       network: "Voix hors ligne ; réessayez quand la connexion revient.",
     },
   },
+  enforcement: {
+    music: {
+      listen: {
+        prompt: (label: string) => `Écoutons ${label} ensemble.`,
+        tip: (label: string) => `${label} fait partie de leur monde musical ; restez bref et laissez-les guider.`,
+        mediaHint: (label: string) => `Chercher '${label}' sur YouTube`,
+      },
+      move: {
+        prompt: (label: string) => `Bougeons doucement sur ${label}.`,
+        tip: (label: string) => `${label} fait partie de leur monde musical ; restez bref et laissez-les guider.`,
+        mediaHint: (label: string) => `Chercher '${label}' sur YouTube`,
+      },
+    },
+  },
   live: {
     title: "Mode séance",
     close: "Fermer le mode séance",

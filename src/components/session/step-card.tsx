@@ -97,24 +97,38 @@ function imdbSearch(query: string) {
 }
 
 /**
- * Pick the destination for the step's "search media" link. The agent emits a
- * mediaHint shaped like "Search '<query>' on <host>" per kind: honour the
- * host when present. For body steps without a host hint, use the sensible
- * default for that step kind. Talk, opening and closing have no outside
- * media to look up, so they return undefined and the link is hidden.
+ * Pick the destination for the step's "search media" link. The compose model
+ * emits a structured `mediaHost` enum alongside the freeform `mediaHint`; the
+ * UI builds the URL from the enum, never by matching keywords in the hint
+ * (AGENTS.md: no regex or keyword lists for semantics over LLM-authored
+ * text). The hint stays caregiver-facing prose only. For body steps without
+ * an enum value, fall back to the sensible per-kind default. Talk, opening,
+ * closing, and anything with mediaHost === "none" have no outside media to
+ * look up, so they return undefined and the link is hidden.
  */
 export function mediaUrl(step: SessionStep): string | undefined {
   if (step.kind === "talk" || step.kind === "opening" || step.kind === "closing") return undefined;
-  const hint = step.mediaHint ?? "";
   const q = step.title;
-  if (hint.includes("Google Images")) return googleImagesSearch(q);
-  if (hint.includes("Wikimedia Commons")) return wikimediaSearch(q);
-  if (hint.includes("Spotify")) return spotifySearch(q);
-  if (hint.includes("IMDb")) return imdbSearch(q);
-  if (hint.includes("YouTube")) return youtubeSearch(q);
-  if (step.kind === "listen" || step.kind === "move") return youtubeSearch(q);
-  if (step.kind === "look") return googleImagesSearch(q);
-  return undefined;
+  switch (step.mediaHost) {
+    case "youtube":
+      return youtubeSearch(q);
+    case "spotify":
+      return spotifySearch(q);
+    case "google_images":
+      return googleImagesSearch(q);
+    case "wikimedia":
+      return wikimediaSearch(q);
+    case "imdb":
+      return imdbSearch(q);
+    case "none":
+    case "other":
+      return undefined;
+    case undefined:
+      // Legacy or model-silent step: fall back to the per-kind default.
+      if (step.kind === "listen" || step.kind === "move") return youtubeSearch(q);
+      if (step.kind === "look") return googleImagesSearch(q);
+      return undefined;
+  }
 }
 
 export function StepCard({

@@ -284,6 +284,27 @@ export const en = {
       network: "Voice offline; retry when the connection is back.",
     },
   },
+  /**
+   * Deterministic post-compose step fills (code-authored, no LLM call). Keys
+   * are nested by taste domain and step kind. `prompt` is read aloud in the
+   * session language; `tip` and `mediaHint` are shown to the caregiver in the
+   * caregiver language. Keep every string calm, present-tense, and free of
+   * operator jargon ("flex step", "minimum", "anchor").
+   */
+  enforcement: {
+    music: {
+      listen: {
+        prompt: (label: string) => `Let us listen together to ${label}.`,
+        tip: (label: string) => `${label} is a familiar piece from their world; keep it short and let them lead.`,
+        mediaHint: (label: string) => `Search '${label}' on YouTube`,
+      },
+      move: {
+        prompt: (label: string) => `Let us move gently to ${label}.`,
+        tip: (label: string) => `${label} is a familiar piece from their world; keep it short and let them lead.`,
+        mediaHint: (label: string) => `Search '${label}' on YouTube`,
+      },
+    },
+  },
   live: {
     title: "Session mode",
     close: "Close session mode",

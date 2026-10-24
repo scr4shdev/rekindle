@@ -300,6 +300,20 @@ export const it: PartialMessages = {
       network: "Voce offline; riprova quando torna la connessione.",
     },
   },
+  enforcement: {
+    music: {
+      listen: {
+        prompt: (label: string) => `Ascoltiamo ${label} insieme.`,
+        tip: (label: string) => `${label} fa parte del loro mondo musicale; mantieni il momento breve e lascia che siano loro a guidare.`,
+        mediaHint: (label: string) => `Cerca '${label}' su YouTube`,
+      },
+      move: {
+        prompt: (label: string) => `Muoviamoci dolcemente con ${label}.`,
+        tip: (label: string) => `${label} fa parte del loro mondo musicale; mantieni il momento breve e lascia che siano loro a guidare.`,
+        mediaHint: (label: string) => `Cerca '${label}' su YouTube`,
+      },
+    },
+  },
   live: {
     title: "Modalità sessione",
     close: "Chiudi la modalità sessione",

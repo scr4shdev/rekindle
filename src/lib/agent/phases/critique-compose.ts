@@ -3,6 +3,7 @@
  * (LLM writes the timed session). Code decides provenance, attaches
  * entities, enforces limits and makes durations add up.
  */
+import { getMessages } from "@/i18n";
 import type { AgentEventPayload, Anchors, LifePhaseLabel, PersonInput, SessionMode, SessionPlan, SessionStep, StepKind, TasteDomain } from "@/lib/domain/types";
 import { LifePhaseLabel as LifePhaseLabelSchema, SessionPlan as SessionPlanSchema, SessionStep as SessionStepSchema } from "@/lib/domain/types";
 import { PortError } from "@/lib/ports";
@@ -297,24 +298,36 @@ export const sameLanguage = (a: string, b: string) => a.toLowerCase().split("-")
 
 /**
  * Build a deterministic step on a verified material to meet a stage-required
- * domain minimum. No LLM call: the prompt and tip are short, present-tense,
- * and name the entity directly. The step inherits the replaced step's slot
+ * domain minimum. No LLM call: the prompt, caregiver tip and media hint are
+ * read from the per-locale i18n enforcement table so a French or Italian
+ * session never gets English copy. The step inherits the replaced step's slot
  * (order, duration, lifePhase) so the plan budget stays untouched. Marked
  * fallbackReason "min_enforcement" so the trace can account for the swap.
+ *
+ * Only (domain, kind) pairs listed under `enforcement` in i18n can be filled
+ * this way; today that is music / listen and music / move. Everything else
+ * returns undefined so the caller leaves the plan alone and the honest
+ * coverage gap surfaces instead.
  */
 function buildEnforcedStep(
   run: Run,
   anchors: Anchors,
+  person: PersonInput,
   kind: StepKind,
   material: Material,
   replaced: SessionStep,
   grounded: boolean,
 ): SessionStep | undefined {
   if (!material.entity) return undefined;
+  if (material.domain !== "music" || (kind !== "listen" && kind !== "move")) return undefined;
   const label = clip(material.label, 120) ?? material.entity.name;
-  const prompt = kind === "move" ? `Let us move gently to ${label}.` : `Let us listen together to ${label}.`;
-  const tip = `${label} is a verified ${material.domain} anchor added to meet this stage's ${material.domain} minimum.`;
-  const mediaHint = kind === "listen" || kind === "move" ? `Search '${label}' on YouTube` : "";
+  const sessionCopy = getMessages(person.sessionLanguage).enforcement.music[kind];
+  const caregiverCopy = getMessages(person.caregiverLanguage).enforcement.music[kind];
+  const same = sameLanguage(person.sessionLanguage, person.caregiverLanguage);
+  const prompt = sessionCopy.prompt(label);
+  const promptTranslation = same ? undefined : clip(caregiverCopy.prompt(label), 600);
+  const tip = caregiverCopy.tip(label);
+  const mediaHint = caregiverCopy.mediaHint(label);
   const phases = anchors.lifePhases;
   const fw = anchors.formativeWindow;
   const midYear = Math.round((fw.startYear + fw.endYear) / 2);
@@ -332,6 +345,7 @@ function buildEnforcedStep(
     title: clip(label, 120)!,
     entity,
     prompt,
+    promptTranslation,
     followUps: [],
     caregiverTip: clip(tip, 300),
     durationMin: replaced.durationMin,
@@ -424,7 +438,7 @@ export function enforceStageMinimums(
       if (idx < 0) break;
       const material = pool.shift()!;
       const kind: StepKind = min.stepKinds[0] ?? "listen";
-      const next = buildEnforcedStep(run, anchors, kind, material, steps[idx], grounded);
+      const next = buildEnforcedStep(run, anchors, person, kind, material, steps[idx], grounded);
       if (!next) break;
       steps[idx] = next;
       cov[idx] = { kind: next.kind, materialDomain: material.domain };

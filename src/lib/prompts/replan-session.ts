@@ -11,7 +11,7 @@ import { ModelStep } from "@/lib/prompts/compose-session";
 import { AGGREGATE_GUIDANCE, dataBlock, DATA_NOTICE, DEMENTIA_FRIENDLY_GUIDANCE, lines, ROLE } from "@/lib/prompts/shared";
 
 export const ID = "replan-session";
-export const VERSION = "1.1.0";
+export const VERSION = "1.2.0";
 
 export interface ReplanStepSummary {
   id: string;

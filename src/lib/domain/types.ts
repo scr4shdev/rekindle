@@ -424,6 +424,17 @@ export type FallbackReason = z.infer<typeof FallbackReason>;
 export const CoverageReason = z.enum(["primary_not_verified", "no_viable_alternative", "composer_omitted"]);
 export type CoverageReason = z.infer<typeof CoverageReason>;
 
+/**
+ * Structured host for the step's "search media" link. The compose model emits
+ * this alongside the freeform `mediaHint`; the UI routes to a URL by this
+ * enum, never by substring-matching `mediaHint`. Keep additive and optional:
+ * absent means the UI falls back to the per-kind default (YouTube for listen
+ * and move, Google Images for look). "other" means a hint exists but points
+ * nowhere the UI builds a link for; "none" means no outside media applies.
+ */
+export const MediaHost = z.enum(["youtube", "spotify", "google_images", "wikimedia", "imdb", "other", "none"]);
+export type MediaHost = z.infer<typeof MediaHost>;
+
 /** A stage-minimum domain count the plan did not reach. Shown in the trace, not on the main plan view. */
 export const CoverageGap = z.object({
   domain: TasteDomain,
@@ -452,8 +463,15 @@ export const SessionStep = z.object({
   durationMin: z.number().min(1).max(30),
   /** Image or media to show/play (usually entity.imageUrl). */
   mediaUrl: z.url().optional(),
-  /** Hint for finding the media, e.g. "Search 'Modugno Volare 1958' on YouTube". */
+  /** Hint for finding the media, e.g. "Search 'Modugno Volare 1958' on YouTube". Display-only prose; the UI routes outbound links by `mediaHost`. */
   mediaHint: z.string().max(200).optional(),
+  /**
+   * Structured host for the "search media" link. Set by the compose model
+   * alongside `mediaHint`; the UI builds the URL from this enum, never by
+   * matching keywords in `mediaHint`. Optional and additive: absent means
+   * the UI uses the per-kind default.
+   */
+  mediaHost: MediaHost.optional(),
   /**
    * Life phase this step is anchored in (childhood, youth, early_adulthood,
    * mid_life, later_life). Optional and additive: when present the UI shows

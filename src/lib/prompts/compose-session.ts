@@ -5,13 +5,13 @@
  */
 import { z } from "zod";
 
-import { FallbackReason, LifePhaseLabel, StepKind } from "@/lib/domain/types";
+import { LifePhaseLabel, MediaHost, StepKind } from "@/lib/domain/types";
 import type { Anchors, DementiaStage, TasteDomain } from "@/lib/domain/types";
 import type { PromptDefinition } from "@/lib/ports/llm";
 import { AGGREGATE_GUIDANCE, dataBlock, DATA_NOTICE, DEMENTIA_FRIENDLY_GUIDANCE, lines, ROLE } from "@/lib/prompts/shared";
 
 export const ID = "compose-session";
-export const VERSION = "1.6.1";
+export const VERSION = "1.7.0";
 
 /** English source of the non-medical disclaimer; the model translates it to the caregiver language. */
 export const DISCLAIMER_EN =
@@ -71,6 +71,9 @@ export const ModelStep = z.object({
   caregiverTip: z.string().describe("One practical tip in the caregiver language."),
   durationMin: z.number().int().describe("Minutes for this step (1-10)."),
   mediaHint: z.string().describe("How to find the song, film still or photo (e.g. a search phrase); empty if none."),
+  mediaHost: MediaHost.describe(
+    "Which outside service the mediaHint points to, so the UI can build the right search link without parsing the hint text. 'youtube' or 'spotify' for a listen or move step on a song; 'google_images' or 'wikimedia' for a look step on a photograph or place; 'youtube' or 'imdb' for a look step on a film; 'none' when the step is a greeting, close, open conversation or a taste step with no outside media; 'other' when the mediaHint points somewhere the UI does not build a link for.",
+  ),
   lifePhase: z
     .enum([...LifePhaseLabel.options, "none"])
     .default("none")
@@ -81,9 +84,13 @@ export type ModelStep = z.infer<typeof ModelStep>;
 /**
  * "none" is the sentinel for "this step is on its primary anchor"; strict
  * provider schemas need every property present, so the field is not optional.
- * Code maps "none" to an absent domain field.
+ * Code maps "none" to an absent domain field. `min_enforcement` lives in the
+ * domain FallbackReason enum as a code-only marker set by the deterministic
+ * post-compose pass (see `enforceStageMinimums`): it is never exposed to the
+ * model, so this enum is defined explicitly rather than derived from the
+ * domain one. Widen deliberately alongside a VERSION bump.
  */
-export const ModelFallbackReason = z.enum(["none", ...FallbackReason.options]);
+export const ModelFallbackReason = z.enum(["none", "primary_not_verified", "no_viable_alternative", "composer_omitted"]);
 
 /** A compose step: the shared model step plus an honest fallback marker. */
 export const ComposeStep = ModelStep.extend({
@@ -166,15 +173,16 @@ export const system = lines(
     "- Lifetime bounds (hard): never reference an entity, event, or person outside the person's lifetime bounds (anchors.lifetimeWindow). A song released after they died, a film from before they were born, a public figure born after them: none of these go in a prompt, follow-up or tip. The verify phase enforces this on grounded materials; the same rule applies to anything the compose step adds in prose.",
   ].join("\n"),
   [
-    "Media hint (per step kind):",
-    "- listen (music): \"Search '<Artist Title Year>' on YouTube\" or \"...on Spotify\". Both work for a song.",
-    "- look at a photograph of a place or face: \"Search '<Place Year>' on Google Images\" or \"...on Wikimedia Commons\".",
-    "- look at a film: \"Search '<Film Year>' on YouTube\" when a full film or clip is available; otherwise \"...on IMDb\" for a trailer or stills.",
-    "- move (gentle movement to music): \"Search '<song or routine>' on YouTube\".",
-    "- talk, opening, closing: omit mediaHint (empty string). The step either has no media to show or is a greeting/close.",
-    "- taste: omit mediaHint unless a specific recipe or image is useful.",
-    "- Never say 'search on YouTube' for a photograph. Pick the source that actually fits the step kind.",
-    "- If the material already has an entity.imageUrl (surfaced by Qloo), the UI shows it directly; the mediaHint is the fallback.",
+    "Media hint and media host (per step kind):",
+    "- Every step carries two linked fields: `mediaHint` (short freeform search phrase in the caregiver language) and `mediaHost` (one enum value from 'youtube', 'spotify', 'google_images', 'wikimedia', 'imdb', 'other', 'none'). The UI builds the outbound search link from `mediaHost`; the hint is display text only.",
+    "- listen (music): mediaHint \"Search '<Artist Title Year>' on YouTube\" or \"...on Spotify\" and set mediaHost to 'youtube' or 'spotify' to match.",
+    "- look at a photograph of a place or face: mediaHint \"Search '<Place Year>' on Google Images\" or \"...on Wikimedia Commons\" and set mediaHost to 'google_images' or 'wikimedia'.",
+    "- look at a film: mediaHint \"Search '<Film Year>' on YouTube\" when a full film or clip is available (mediaHost 'youtube'); otherwise \"...on IMDb\" for a trailer or stills (mediaHost 'imdb').",
+    "- move (gentle movement to music): mediaHint \"Search '<song or routine>' on YouTube\" and mediaHost 'youtube'.",
+    "- talk, opening, closing: mediaHint empty string, mediaHost 'none'. The step either has no media to show or is a greeting / close.",
+    "- taste: mediaHint empty unless a specific recipe or image is useful; set mediaHost to 'none' when the hint is empty, or 'other' when the hint points somewhere the UI does not build a link for (for example a cookbook or local shop).",
+    "- Never say 'search on YouTube' for a photograph. Keep mediaHint and mediaHost consistent with each other and with the step kind.",
+    "- If the material already has an entity.imageUrl (surfaced by Qloo), the UI shows it directly; the mediaHint and mediaHost are the fallback.",
   ].join("\n"),
   DEMENTIA_FRIENDLY_GUIDANCE,
   AGGREGATE_GUIDANCE,

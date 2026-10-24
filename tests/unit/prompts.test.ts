@@ -103,6 +103,37 @@ describe("prompt modules", () => {
     expect(compose.system).toContain("no_viable_alternative");
   });
 
+  it("compose-session output accepts a structured mediaHost enum alongside the freeform mediaHint", () => {
+    const sample = {
+      kind: "listen" as const,
+      title: "Oum Kalthoum",
+      materialRef: "m1",
+      prompt: "Let us listen together.",
+      promptTranslation: "",
+      followUps: [],
+      caregiverTip: "A tip.",
+      durationMin: 3,
+      mediaHint: "Search 'Oum Kalthoum Enta Omri 1964' on YouTube",
+      mediaHost: "youtube",
+      lifePhase: "none",
+      fallbackReason: "none",
+    };
+    expect(compose.ComposeStep.safeParse(sample).success).toBe(true);
+    for (const host of ["youtube", "spotify", "google_images", "wikimedia", "imdb", "other", "none"] as const) {
+      expect(compose.ComposeStep.safeParse({ ...sample, mediaHost: host }).success).toBe(true);
+    }
+    expect(compose.ComposeStep.safeParse({ ...sample, mediaHost: "bing" }).success).toBe(false);
+    expect(compose.ComposeStep.safeParse({ ...sample, mediaHost: undefined }).success).toBe(false);
+    expect(compose.system).toContain("mediaHost");
+    expect(compose.system).toContain("'youtube'");
+    expect(compose.system).toContain("'google_images'");
+  });
+
+  it("compose-session ModelFallbackReason does not leak the code-only min_enforcement marker to the model", () => {
+    expect(compose.ModelFallbackReason.options).toEqual(["none", "primary_not_verified", "no_viable_alternative", "composer_omitted"]);
+    expect(compose.ModelFallbackReason.safeParse("min_enforcement").success).toBe(false);
+  });
+
   it("parse-anchors treats religion in culturalBackground / calmingCues / keyLifeEvents as a positive anchor", () => {
     expect(parse.system).toContain("POSITIVE anchor");
     expect(parse.system).toContain("Pentecostal");

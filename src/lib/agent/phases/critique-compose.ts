@@ -281,13 +281,17 @@ export function toStep(run: Run, anchors: Anchors, model: ModelStep & { fallback
     durationMin: Math.min(30, Math.max(1, Math.round(model.durationMin) || 1)),
     mediaUrl: entity?.imageUrl,
     mediaHint: clip(model.mediaHint, 200),
+    // "none" is a sentinel meaning "no outside media"; map it to an absent
+    // field so the UI falls back to the per-kind default only when the model
+    // genuinely did not pick a host.
+    mediaHost: model.mediaHost && model.mediaHost !== "none" ? model.mediaHost : undefined,
     lifePhase,
     provenance: entity ? "qloo-grounded" : "llm-only",
     // Only body steps can be fallbacks; "none" (the strict-schema sentinel) maps
-    // to absent. "min_enforcement" is a code-only marker set by the deterministic
-    // enforcement pass, never trusted from the model.
+    // to absent. The code-only "min_enforcement" marker is excluded from the
+    // model-facing ModelFallbackReason enum so it can never arrive here.
     fallbackReason:
-      isBody && model.fallbackReason && model.fallbackReason !== "none" && model.fallbackReason !== "min_enforcement"
+      isBody && model.fallbackReason && model.fallbackReason !== "none"
         ? model.fallbackReason
         : undefined,
   });
@@ -351,6 +355,10 @@ function buildEnforcedStep(
     durationMin: replaced.durationMin,
     mediaUrl: entity?.imageUrl,
     mediaHint: clip(mediaHint, 200),
+    // Deterministic enforcement for music/listen and music/move always points
+    // at YouTube: the hint is a plain search phrase and the UI builds the link
+    // from this enum.
+    mediaHost: "youtube",
     lifePhase,
     provenance: entity ? "qloo-grounded" : "llm-only",
     fallbackReason: "min_enforcement",

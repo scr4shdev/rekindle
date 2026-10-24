@@ -49,6 +49,7 @@ export const fr: PartialMessages = {
         body: "Une proposition à la fois, avec un minuteur. Indiquez comment elle a réagi et le plan s'adapte.",
       },
     ],
+    recordedTraceLink: "Voir une trace enregistrée d'une séance Rekindle.",
     customTitle: "Ou décrivez une personne qui vous est chère",
     customLead:
       "Quelques phrases suffisent. Vos mots partent au planificateur une seule fois et ne sont jamais conservés.",

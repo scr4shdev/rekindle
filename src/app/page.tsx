@@ -32,6 +32,15 @@ export default function Home() {
             </li>
           ))}
         </ul>
+        <a
+          href="/session?persona=fatima&source=replay"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-testid="landing-replay-fallback"
+          className="animate-rise self-start text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground focus-visible:text-foreground"
+        >
+          {t.recordedTraceLink}
+        </a>
       </section>
 
       <section className="flex flex-col gap-4 sm:gap-5" aria-labelledby="personas-title">

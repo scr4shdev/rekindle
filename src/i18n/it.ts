@@ -35,7 +35,7 @@ export const it: PartialMessages = {
     era: (from: string, to: string) => (from === to ? from : `${from}–${to}`),
     howTitle: "Come funziona",
     how: [
-      { title: "Raccontaci qualcosa", body: "Anno di nascita, dov'è cresciuta, ciò che amava e cosa evitare." },
+      { title: "Raccontaci qualcosa", body: "Anno di nascita, dove la persona è cresciuta, ciò che amava e cosa evitare." },
       {
         title: "Guarda l'agente ragionare",
         body: "Le idee vengono proposte, verificate con Qloo, ampliate per affinità di gusto, e gli anacronismi vengono rimossi.",
@@ -58,12 +58,12 @@ export const it: PartialMessages = {
     displayNameHint: "Facoltativo. Usato solo nelle proposte da leggere, mai inviato a Qloo.",
     notes: "Altro da sapere",
     notesHint:
-      "Appunti liberi: tutto ciò che non è entrato nei campi qui sopra. Dove e quando è cresciuta, il lavoro, le parole di famiglia, cosa evitare.",
+      "Appunti liberi: tutto ciò che non è entrato nei campi qui sopra. Dove e quando la persona è cresciuta, il lavoro, le parole di famiglia, cosa evitare.",
     notesPlaceholder:
       "Per esempio: Papà è nato nel 1946 a Lione e lavorava alle ferrovie. Amava Johnny Hallyday, il Tour de France alla radio e il gratin di sua madre. Per favore, non parlare di suo fratello.",
     notesCount: (n: number, max: number) => `${n} di ${max} caratteri`,
     birthYear: "Anno di nascita",
-    birthPlace: "Dov'è cresciuta",
+    birthPlace: "Dove la persona è cresciuta",
     birthPlacePlaceholder: "es. Lione, Francia",
     culturalBackground: "Contesto culturale e familiare",
     culturalBackgroundHint: "Da dove viene la famiglia, la religione se conta, la lingua di casa.",
@@ -71,17 +71,17 @@ export const it: PartialMessages = {
     keyLifeEvents: "Eventi di vita importanti",
     keyLifeEventsHint: "Pochi punti di svolta: matrimonio, figli, trasferimenti, un lavoro amato.",
     keyLifeEventsPlaceholder: "es. Sposata con Gennaro nel 1963, due figli, sarta per trent'anni.",
-    calmingCues: "Cose che la calmano",
-    calmingCuesHint: "Una canzone, un profumo, un tocco, una vista che la fa stare bene.",
+    calmingCues: "Cose che aiutano a stare in pace",
+    calmingCuesHint: "Una canzone, un profumo, un tocco, una vista che aiuta a ritrovare la calma.",
     calmingCuesPlaceholder: "es. Canticchiare canzoni napoletane, l'odore del basilico, tenere una coperta morbida.",
     thingsToAvoid: "Cose da evitare",
-    thingsToAvoidHint: "Argomenti, suoni o situazioni che la agitano.",
+    thingsToAvoidHint: "Argomenti, suoni o situazioni che agitano la persona.",
     thingsToAvoidPlaceholder: "es. Gli anni della guerra, i rumori forti improvvisi, parlare del marito scomparso se non lo nomina lei.",
     routines: "Routine o rituali a cui tiene",
     routinesHint: "Facoltativo. Il piccolo rito che segna una parte della giornata.",
     routinesPlaceholder: "es. Caffè del mattino con la radio, rosario prima di dormire, pranzo della domenica a mezzogiorno.",
     stage: "Stadio indicativo della demenza",
-    stageHint: "Facoltativo. Aiuta a scegliere il ritmo giusto. Se non sei sicura, lascia vuoto.",
+    stageHint: "Facoltativo. Aiuta a scegliere il ritmo giusto. Se hai dubbi, lascia vuoto.",
     stageOptions: {
       none: "Preferisco non dirlo",
       early: "Iniziale",
@@ -89,9 +89,9 @@ export const it: PartialMessages = {
       late: "Avanzato",
     },
     stageTooltips: {
-      early: "Iniziale: perlopiù autonoma; le routine di tutti i giorni funzionano.",
-      mid: "Intermedio: ha bisogno di più sostegno nelle attività quotidiane.",
-      late: "Avanzato: dipende dall'assistenza; la parola può essere limitata.",
+      early: "Iniziale: con buona autonomia; le routine di tutti i giorni funzionano.",
+      mid: "Intermedio: serve più sostegno nelle attività quotidiane.",
+      late: "Avanzato: serve assistenza continua; la parola può essere limitata.",
     },
     sessionLanguage: "Lingua in cui si esprime meglio",
     caregiverLanguage: "La tua lingua",
@@ -177,9 +177,9 @@ export const it: PartialMessages = {
     degraded:
       "Alcune verifiche non sono riuscite, quindi parte di questo piano viene solo dal modello linguistico.",
     feedbackHeading: "Com'è andata ogni tappa?",
-    feedbackButtonSparked: "L'ha accesa",
+    feedbackButtonSparked: "Ha fatto scintille",
     feedbackButtonDidNotLand: "Non ha preso",
-    feedbackButtonWalkedAway: "Si è allontanata",
+    feedbackButtonWalkedAway: "Ha preferito andare",
     feedbackInputPlaceholder: "Cosa è rimasto?",
     feedbackSaveButton: "Salva le note",
     feedbackSavedConfirmation: "Note salvate su questo dispositivo.",
@@ -226,7 +226,7 @@ export const it: PartialMessages = {
     replanStarted: {
       lit_up: "Mi appoggio su questo filo…",
       neutral: "Provo qualcosa di diverso…",
-      upset: "Sembra turbata. Rallento con qualcosa di calmo e familiare…",
+      upset: "La persona sembra turbata. Rallento con qualcosa di calmo e familiare…",
     },
     results: (n: number) => (n === 0 ? "nessuna corrispondenza" : n === 1 ? "trovato 1" : `trovati ${n}`),
     cached: "in cache",
@@ -329,12 +329,12 @@ export const it: PartialMessages = {
     reset: "Azzera timer",
     timeUp: "Tempo scaduto. Passa oltre quando sembra giusto.",
     remaining: (time: string) => `${time} rimasti`,
-    howDidItGo: "Come ha risposto?",
-    reactions: { lit_up: "Si è illuminata", neutral: "Tranquilla", upset: "Turbata" },
+    howDidItGo: "Come ha risposto la persona?",
+    reactions: { lit_up: "Ha brillato", neutral: "Tranquillità", upset: "Momento difficile" },
     reactionHints: {
       lit_up: "Appoggiati a questo filo",
       neutral: "Prova qualcos'altro",
-      upset: "Calmate le acque",
+      upset: "Calma le acque",
     },
     recorded: (label: string) => `Annotato: ${label}`,
     hearingYou: "Ti ascolto",
@@ -388,7 +388,7 @@ export const it: PartialMessages = {
     metrics: {
       verified: "Canzoni, film e volti confermati reali",
       discoveries: "Scoperte di gusto da Qloo",
-      caught: "Svista di epoca, luogo o rischio evitate",
+      caught: "Sviste di epoca, luogo o rischio evitate",
       anchored: "Tappe ancorate a qualcosa di reale",
       images: "Tappe con un'immagine reale da guardare",
       calls: "Richieste fatte a Qloo",
@@ -401,7 +401,7 @@ export const it: PartialMessages = {
     caughtNone: "Niente è stato messo da parte.",
     llmCaughtNone: "Niente è verificato, quindi niente viene intercettato.",
     llmBlind:
-      "Qui niente viene incrociato. I rischi di epoca, luogo e emotivi non vengono rilevati.",
+      "Qui niente viene incrociato. I rischi legati a epoca, luogo ed emozioni non vengono rilevati.",
     llmOnlyBanner:
       "Cosa suggerirebbe da solo un modello linguistico. Rekindle non li proporrebbe mai a questa persona.",
     wouldSlip: "Sarebbe sfuggito",
@@ -411,7 +411,7 @@ export const it: PartialMessages = {
   },
   print: {
     sheet: "Scheda della sessione",
-    reactions: "Come ha risposto?",
+    reactions: "Come ha risposto la persona?",
     notes: "Note",
     footer: "Stampato da Rekindle. Nulla di ciò che hai scritto è stato salvato.",
     printButton: "Stampa",
@@ -425,7 +425,7 @@ export const it: PartialMessages = {
       "Nessuna sessione da stampare per ora. Componi la sessione nella scheda dove hai scritto gli appunti, poi riapri la stampa da lì.",
     printError: "Il pianificatore non ha potuto terminare questa scheda. Riprova.",
     printRetry: "Riprova",
-    printPersonMeta: (year: number, language: string) => `Nata nel ${year} · sessione in ${language}`,
+    printPersonMeta: (year: number, language: string) => `Nat·a nel ${year} · sessione in ${language}`,
     printFallbacks: {
       opening: "Restare ancora un momento, senza domande.",
       listen: "Offrire un momento di quiete, senza musica.",
@@ -465,11 +465,11 @@ export const it: PartialMessages = {
     replanStarted: {
       lit_up: "Ha funzionato. Mi appoggio su questo filo…",
       neutral: "Nessuna reazione stavolta. Provo un momento diverso adesso…",
-      upset: "Sembra turbata. Rallento con qualcosa di calmo e familiare…",
+      upset: "La persona sembra turbata. Rallento con qualcosa di calmo e familiare…",
     },
     replanNote:
       "Demo registrata: il piano resta com'è. Collega il pianificatore live per adattarlo davvero.",
-    replanCompleted: "Piano verificato. Prosegui quando ti senti pronta.",
+    replanCompleted: "Piano verificato. Prosegui quando vuoi.",
   },
   footer: {
     disclaimer:

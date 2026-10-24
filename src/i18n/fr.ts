@@ -37,7 +37,7 @@ export const fr: PartialMessages = {
     how: [
       {
         title: "Dites-nous un peu",
-        body: "L'année de naissance, l'endroit où elle a grandi, ce qu'elle aimait, et ce qu'il vaut mieux éviter.",
+        body: "L'année de naissance, l'endroit où la personne a grandi, ce qu'elle aimait, et ce qu'il vaut mieux éviter.",
       },
       {
         title: "Regardez l'agent réfléchir",
@@ -46,7 +46,7 @@ export const fr: PartialMessages = {
       },
       {
         title: "Vivez-la ensemble",
-        body: "Une proposition à la fois, avec un minuteur. Indiquez comment elle a réagi et le plan s'adapte.",
+        body: "Une proposition à la fois, avec un minuteur. Indiquez comment la personne a réagi et le plan s'adapte.",
       },
     ],
     recordedTraceLink: "Voir une trace enregistrée d'une séance Rekindle.",
@@ -62,12 +62,12 @@ export const fr: PartialMessages = {
     displayNameHint: "Facultatif. Utilisé uniquement dans les phrases à dire, jamais envoyé à Qloo.",
     notes: "Autre chose à savoir",
     notesHint:
-      "Notes libres : tout ce qui n'est pas entré dans les champs ci-dessus. Où et quand elle a grandi, le travail, les mots de famille, ce qu'il vaut mieux éviter.",
+      "Notes libres : tout ce qui n'est pas entré dans les champs ci-dessus. Où et quand la personne a grandi, le travail, les mots de famille, ce qu'il vaut mieux éviter.",
     notesPlaceholder:
       "Par exemple : Papa est né en 1946 à Lyon et travaillait aux chemins de fer. Il adorait Johnny Hallyday, le Tour de France à la radio et le gratin de sa mère. Merci d'éviter de parler de son frère.",
     notesCount: (n: number, max: number) => `${n} sur ${max} caractères`,
     birthYear: "Année de naissance",
-    birthPlace: "Où elle a grandi",
+    birthPlace: "Où la personne a grandi",
     birthPlacePlaceholder: "ex. Lyon, France",
     culturalBackground: "Origines culturelles et familiales",
     culturalBackgroundHint: "D'où vient la famille, la religion si elle compte, la langue de la maison.",
@@ -79,13 +79,13 @@ export const fr: PartialMessages = {
     calmingCuesHint: "Une chanson, un parfum, un toucher, une vue qui l'aide à se poser.",
     calmingCuesPlaceholder: "ex. Fredonner des chansons napolitaines, l'odeur du basilic, tenir une couverture douce.",
     thingsToAvoid: "Ce qu'il vaut mieux éviter",
-    thingsToAvoidHint: "Sujets, sons ou situations qui la bouleversent.",
+    thingsToAvoidHint: "Sujets, sons ou situations qui bouleversent la personne.",
     thingsToAvoidPlaceholder: "ex. Les années de guerre, les bruits forts soudains, parler de son défunt mari avant qu'elle ne l'évoque.",
-    routines: "Routines ou rituels auxquels elle tient",
+    routines: "Routines ou rituels auxquels la personne tient",
     routinesHint: "Facultatif. Le petit rituel qui marque un moment de la journée.",
     routinesPlaceholder: "ex. Café du matin avec la radio, chapelet avant de dormir, déjeuner du dimanche à midi.",
     stage: "Stade approximatif de la démence",
-    stageHint: "Facultatif. Nous aide à choisir le bon rythme. Si vous n'êtes pas sûre, laissez vide.",
+    stageHint: "Facultatif. Nous aide à choisir le bon rythme. Si vous avez un doute, laissez vide.",
     stageOptions: {
       none: "Je préfère ne pas le dire",
       early: "Début",
@@ -95,9 +95,9 @@ export const fr: PartialMessages = {
     stageTooltips: {
       early: "Début : encore largement autonome ; les habitudes du quotidien tiennent.",
       mid: "Milieu : a besoin de plus de soutien pour les gestes du quotidien.",
-      late: "Avancé : dépendante des soins ; la parole peut être limitée.",
+      late: "Avancé : dépend d'une aide quotidienne ; la parole peut être limitée.",
     },
-    sessionLanguage: "La langue qu'elle parle le mieux",
+    sessionLanguage: "La langue que la personne parle le mieux",
     caregiverLanguage: "Votre langue",
     minutes: "Durée de la séance",
     minutesOption: (n: number) => `${n} min`,
@@ -232,7 +232,7 @@ export const fr: PartialMessages = {
     replanStarted: {
       lit_up: "Je m'appuie sur ce fil…",
       neutral: "J'essaie autre chose…",
-      upset: "Elle a l'air bouleversée. Je ralentis avec quelque chose de calme et familier…",
+      upset: "La personne a l'air bouleversée. Je ralentis avec quelque chose de calme et familier…",
     },
     results: (n: number) => (n === 0 ? "rien de correspondant" : n === 1 ? "1 trouvé" : `${n} trouvés`),
     cached: "en cache",
@@ -336,8 +336,8 @@ export const fr: PartialMessages = {
     reset: "Remettre le minuteur à zéro",
     timeUp: "Le temps est écoulé. Passez quand ça vous semble juste.",
     remaining: (time: string) => `${time} restantes`,
-    howDidItGo: "Comment a-t-elle répondu ?",
-    reactions: { lit_up: "S'est illuminée", neutral: "Tranquille", upset: "Bouleversée" },
+    howDidItGo: "Quelle a été la réaction ?",
+    reactions: { lit_up: "A rayonné", neutral: "Tranquille", upset: "Troublé·e" },
     reactionHints: {
       lit_up: "Appuyez-vous sur ce fil",
       neutral: "Essayez autre chose",
@@ -419,7 +419,7 @@ export const fr: PartialMessages = {
   },
   print: {
     sheet: "Feuille de séance",
-    reactions: "Comment a-t-elle répondu ?",
+    reactions: "Quelle a été la réaction ?",
     notes: "Notes",
     footer: "Imprimé depuis Rekindle. Rien de ce que vous avez écrit n'a été conservé.",
     printButton: "Imprimer",
@@ -433,7 +433,7 @@ export const fr: PartialMessages = {
       "Aucune séance à imprimer pour l'instant. Composez la séance dans l'onglet où vous avez écrit les notes, puis rouvrez l'impression depuis cet onglet.",
     printError: "Le planificateur n'a pas pu terminer cette fiche. Réessayez.",
     printRetry: "Réessayer",
-    printPersonMeta: (year: number, language: string) => `Née en ${year} · séance en ${language}`,
+    printPersonMeta: (year: number, language: string) => `Né·e en ${year} · séance en ${language}`,
     printFallbacks: {
       opening: "Rester encore un moment, sans questions.",
       listen: "Offrir un moment de calme, sans musique.",
@@ -473,11 +473,11 @@ export const fr: PartialMessages = {
     replanStarted: {
       lit_up: "C'est bien passé. Je m'appuie sur ce fil…",
       neutral: "Pas de réaction cette fois. J'essaie un autre moment ensuite…",
-      upset: "Elle a l'air bouleversée. Je ralentis avec quelque chose de calme et familier…",
+      upset: "La personne a l'air bouleversée. Je ralentis avec quelque chose de calme et familier…",
     },
     replanNote:
       "Démo enregistrée : le plan reste tel quel. Branchez le planificateur en direct pour l'adapter pour de vrai.",
-    replanCompleted: "Plan vérifié. Reprenez quand vous êtes prête.",
+    replanCompleted: "Plan vérifié. Reprenez quand vous voulez.",
   },
   footer: {
     disclaimer:

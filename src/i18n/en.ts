@@ -478,4 +478,18 @@ export const en = {
     qloo: "Cultural suggestions are grounded in Qloo's taste graph, which describes what groups of people who enjoy one thing also tend to enjoy.",
     credit: "Built for the Qloo Agentic Hackathon.",
   },
+  /**
+   * Judge-tour overlay strings. The caption bar reuses `trace.phases.*`;
+   * nothing here duplicates a phase label. The badge template keeps the
+   * caregiver-facing voice (name first, position next, no colons after the
+   * current count so it reads as one phrase).
+   */
+  tour: {
+    badge: ({ name, current, total }: { name: string; current: number; total: number }) =>
+      `Tour: ${name} ${current} of ${total}`,
+    pause: "Pause",
+    play: "Play",
+    next: "Next",
+    returnHome: "Return home",
+  },
 } as const;

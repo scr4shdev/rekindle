@@ -490,4 +490,12 @@ export const fr: PartialMessages = {
       "Les suggestions culturelles sont ancrées dans le graphe des goûts de Qloo, qui décrit ce qu'aiment aussi les groupes de personnes qui apprécient une chose donnée.",
     credit: "Construit pour le Qloo Agentic Hackathon.",
   },
+  tour: {
+    badge: ({ name, current, total }: { name: string; current: number; total: number }) =>
+      `Visite : ${name}, ${current} sur ${total}`,
+    pause: "Pause",
+    play: "Lecture",
+    next: "Suivant",
+    returnHome: "Retour à l'accueil",
+  },
 };

@@ -413,7 +413,7 @@ export const fr: PartialMessages = {
     llmBlind:
       "Ici rien n'est croisé. Les risques d'époque, de lieu et d'émotion ne sont pas repérés.",
     llmOnlyBanner:
-      "Ce qu'un modèle de langage proposerait seul. Rekindle ne les proposerait jamais à cette personne.",
+      "Ce qu'un modèle de langage proposerait seul. Rekindle les a signalés comme hors époque ou culturellement décalés avant de les afficher.",
     wouldSlip: "Serait passé",
     glanceTitle: "D'un coup d'œil : ce que Qloo a rattrapé",
     openGrounded: "Ouvrir la séance ancrée",

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { EraArt } from "@/components/era-art";
 import { DOMAIN_MOTIF, STEP_ICON, STEP_MOTIF } from "@/components/session/icons";
 import { ListenButton } from "@/components/session/listen-button";
+import { QlooChip } from "@/components/session/qloo-chip";
 import { qlooCitation } from "@/components/session/qloo-citation";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -195,6 +196,7 @@ export function StepCard({
             </p>
           ) : null;
         })()}
+        <QlooChip step={step} />
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t.say}</p>
           <div className="mt-1 flex items-start gap-3">

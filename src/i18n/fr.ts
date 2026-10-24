@@ -481,6 +481,11 @@ export const fr: PartialMessages = {
       "Démo enregistrée : le plan reste tel quel. Branchez le planificateur en direct pour l'adapter pour de vrai.",
     replanCompleted: "Plan vérifié. Reprenez quand vous voulez.",
   },
+  qloo: {
+    chipLinked: (context: string) => `Qloo : liens avec ${context}`,
+    chipConfirmed: (context: string) => `Qloo : ${context} confirmé`,
+    chipEra: (year: number) => `époque ${year}`,
+  },
   footer: {
     disclaimer:
       "Rekindle propose des activités de réminiscence. Ce n'est ni un conseil médical, ni une thérapie, ni un outil de diagnostic. Suivez le rythme de la personne, arrêtez-vous si elle semble mal à l'aise, et parlez de toute question de santé avec son équipe de soin.",

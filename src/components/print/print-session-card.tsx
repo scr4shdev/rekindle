@@ -27,6 +27,7 @@ import { PrinterIcon, RotateCcwIcon, TriangleAlertIcon } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { readStoredPlan, type StoredPrintPlan } from "@/components/print/print-handoff";
+import { qlooChipSpec } from "@/components/session/qloo-chip";
 import { resolveRequest } from "@/components/session/session-request";
 import { parseSourceParam, resolveSource } from "@/components/session/source";
 import { Button } from "@/components/ui/button";
@@ -263,9 +264,17 @@ function PrintStep({
   index: number;
   sessionLanguage: string;
 }) {
-  const t = useMessages().print;
+  const messages = useMessages();
+  const t = messages.print;
+  const qloo = messages.qloo;
   const { prompt, swap } = pickPromptAndSwap(step);
   const fallback = fallbackLine(step, t);
+  const chip = qlooChipSpec(step, qloo.chipEra);
+  const chipText = chip
+    ? chip.variant === "linked"
+      ? qloo.chipLinked(chip.tokens.join(", "))
+      : qloo.chipConfirmed(chip.tokens.join(", "))
+    : undefined;
 
   return (
     <li className="break-inside-avoid">
@@ -280,6 +289,11 @@ function PrintStep({
           {step.durationMin} min
         </span>
       </div>
+      {chipText && (
+        <p className="mt-0.5 text-neutral-700" style={{ fontSize: "10pt" }} data-testid="print-qloo-chip">
+          {chipText}
+        </p>
+      )}
       <p className="mt-1 text-neutral-900" lang={sessionLanguage}>
         {prompt}
       </p>

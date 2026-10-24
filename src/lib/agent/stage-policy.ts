@@ -6,7 +6,7 @@
  * Only structured fields decide anything here: a step's kind and the domain of
  * the material it is built on. No name matching.
  */
-import type { CoverageGap, DementiaStage, FallbackReason, StepKind, TasteDomain } from "@/lib/domain/types";
+import type { CoverageGap, CoverageReason, DementiaStage, StepKind, TasteDomain } from "@/lib/domain/types";
 
 export interface StageMinimum {
   domain: TasteDomain;
@@ -69,7 +69,7 @@ export function computeCoverageGaps(input: CoverageInput): CoverageGap[] {
     const actualCount = countDomainSteps(input.steps, minimum);
     if (actualCount >= minimum.minSteps) continue;
     const viable = input.availableDomains.filter((d) => d === minimum.domain).length;
-    const reason: FallbackReason =
+    const reason: CoverageReason =
       viable === 0 ? "no_viable_alternative" : input.unverifiedDomains.has(minimum.domain) ? "primary_not_verified" : "composer_omitted";
     gaps.push({ domain: minimum.domain, requiredCount: minimum.minSteps, actualCount, reason });
   }

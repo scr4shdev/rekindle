@@ -408,16 +408,28 @@ export type StepProvenance = z.infer<typeof StepProvenance>;
  * - `no_viable_alternative`: no verified entity in the domain survived, so the
  *   step is generic (no specific title) or missing.
  * - `composer_omitted`: viable entities existed but the composer did not use enough of them.
+ * - `min_enforcement`: deterministic post-compose fill. The composer undershot
+ *   a stage-required domain minimum although unused verified entities were
+ *   available, so code replaced a flex body step with a step on one of those
+ *   entities. Marker only, never emitted by the LLM.
  */
-export const FallbackReason = z.enum(["primary_not_verified", "no_viable_alternative", "composer_omitted"]);
+export const FallbackReason = z.enum(["primary_not_verified", "no_viable_alternative", "composer_omitted", "min_enforcement"]);
 export type FallbackReason = z.infer<typeof FallbackReason>;
+
+/**
+ * Subset of FallbackReason that can surface on a plan-level CoverageGap row.
+ * "min_enforcement" is a step marker (deterministic fill) and never a reason a
+ * minimum could not be met, so it is excluded here.
+ */
+export const CoverageReason = z.enum(["primary_not_verified", "no_viable_alternative", "composer_omitted"]);
+export type CoverageReason = z.infer<typeof CoverageReason>;
 
 /** A stage-minimum domain count the plan did not reach. Shown in the trace, not on the main plan view. */
 export const CoverageGap = z.object({
   domain: TasteDomain,
   requiredCount: z.number().int().min(0),
   actualCount: z.number().int().min(0),
-  reason: FallbackReason,
+  reason: CoverageReason,
 });
 export type CoverageGap = z.infer<typeof CoverageGap>;
 

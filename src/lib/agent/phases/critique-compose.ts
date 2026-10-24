@@ -3,7 +3,7 @@
  * (LLM writes the timed session). Code decides provenance, attaches
  * entities, enforces limits and makes durations add up.
  */
-import type { AgentEventPayload, Anchors, LifePhaseLabel, PersonInput, SessionMode, SessionPlan, SessionStep } from "@/lib/domain/types";
+import type { AgentEventPayload, Anchors, LifePhaseLabel, PersonInput, SessionMode, SessionPlan, SessionStep, StepKind, TasteDomain } from "@/lib/domain/types";
 import { LifePhaseLabel as LifePhaseLabelSchema, SessionPlan as SessionPlanSchema, SessionStep as SessionStepSchema } from "@/lib/domain/types";
 import { PortError } from "@/lib/ports";
 import { composeSessionPrompt, critiqueItemsPrompt, culturalCheckPrompt } from "@/lib/prompts";
@@ -16,8 +16,8 @@ import type { CulturalCheckItem } from "@/lib/prompts/cultural-check";
 import { phaseForYear } from "@/lib/agent/phases/parse-propose";
 import type { Material, Run } from "@/lib/agent/run";
 import { callLlm } from "@/lib/agent/run";
-import type { CoverageStep } from "@/lib/agent/stage-policy";
-import { computeCoverageGaps, stageMinimums } from "@/lib/agent/stage-policy";
+import type { CoverageStep, StageMinimum } from "@/lib/agent/stage-policy";
+import { computeCoverageGaps, countDomainSteps, stageMinimums } from "@/lib/agent/stage-policy";
 import { clip, isNonWesternOrigin, normalizeDurations } from "@/lib/agent/util";
 
 /** Domain schema limit on steps per plan. */
@@ -282,13 +282,158 @@ export function toStep(run: Run, anchors: Anchors, model: ModelStep & { fallback
     mediaHint: clip(model.mediaHint, 200),
     lifePhase,
     provenance: entity ? "qloo-grounded" : "llm-only",
-    // Only body steps can be fallbacks; "none" (the strict-schema sentinel) maps to absent.
-    fallbackReason: isBody && model.fallbackReason && model.fallbackReason !== "none" ? model.fallbackReason : undefined,
+    // Only body steps can be fallbacks; "none" (the strict-schema sentinel) maps
+    // to absent. "min_enforcement" is a code-only marker set by the deterministic
+    // enforcement pass, never trusted from the model.
+    fallbackReason:
+      isBody && model.fallbackReason && model.fallbackReason !== "none" && model.fallbackReason !== "min_enforcement"
+        ? model.fallbackReason
+        : undefined,
   });
   return parsed.success ? parsed.data : undefined;
 }
 
 export const sameLanguage = (a: string, b: string) => a.toLowerCase().split("-")[0] === b.toLowerCase().split("-")[0];
+
+/**
+ * Build a deterministic step on a verified material to meet a stage-required
+ * domain minimum. No LLM call: the prompt and tip are short, present-tense,
+ * and name the entity directly. The step inherits the replaced step's slot
+ * (order, duration, lifePhase) so the plan budget stays untouched. Marked
+ * fallbackReason "min_enforcement" so the trace can account for the swap.
+ */
+function buildEnforcedStep(
+  run: Run,
+  anchors: Anchors,
+  kind: StepKind,
+  material: Material,
+  replaced: SessionStep,
+  grounded: boolean,
+): SessionStep | undefined {
+  if (!material.entity) return undefined;
+  const label = clip(material.label, 120) ?? material.entity.name;
+  const prompt = kind === "move" ? `Let us move gently to ${label}.` : `Let us listen together to ${label}.`;
+  const tip = `${label} is a verified ${material.domain} anchor added to meet this stage's ${material.domain} minimum.`;
+  const mediaHint = kind === "listen" || kind === "move" ? `Search '${label}' on YouTube` : "";
+  const phases = anchors.lifePhases;
+  const fw = anchors.formativeWindow;
+  const midYear = Math.round((fw.startYear + fw.endYear) / 2);
+  const lifePhase: LifePhaseLabel | undefined =
+    material.lifePhase ??
+    replaced.lifePhase ??
+    (phases && phases.length > 0
+      ? phaseForYear(phases, material.year ?? midYear)
+      : undefined);
+  const entity = grounded ? material.entity : undefined;
+  const parsed = SessionStepSchema.safeParse({
+    id: run.deps.newId("s"),
+    order: replaced.order,
+    kind,
+    title: clip(label, 120)!,
+    entity,
+    prompt,
+    followUps: [],
+    caregiverTip: clip(tip, 300),
+    durationMin: replaced.durationMin,
+    mediaUrl: entity?.imageUrl,
+    mediaHint: clip(mediaHint, 200),
+    lifePhase,
+    provenance: entity ? "qloo-grounded" : "llm-only",
+    fallbackReason: "min_enforcement",
+  });
+  return parsed.success ? parsed.data : undefined;
+}
+
+/**
+ * A body step is swappable when: it is not an opening or closing; it does not
+ * already contribute to the minimum we want to raise (replacing it would net
+ * zero); and removing it does not drop any other stage minimum below its
+ * floor.
+ */
+function isSwappable(
+  cov: CoverageStep,
+  allCov: readonly CoverageStep[],
+  mins: readonly StageMinimum[],
+  target: StageMinimum,
+): boolean {
+  if (cov.kind === "opening" || cov.kind === "closing") return false;
+  const contributesToTarget =
+    target.stepKinds.includes(cov.kind) &&
+    (cov.materialDomain === undefined || cov.materialDomain === target.domain);
+  if (contributesToTarget) return false;
+  for (const other of mins) {
+    if (other.domain === target.domain) continue;
+    const contributesToOther =
+      other.stepKinds.includes(cov.kind) &&
+      (cov.materialDomain === undefined || cov.materialDomain === other.domain);
+    if (!contributesToOther) continue;
+    const otherCount = countDomainSteps(allCov, other);
+    if (otherCount - 1 < other.minSteps) return false;
+  }
+  return true;
+}
+
+export interface EnforcementResult {
+  steps: SessionStep[];
+  coverageSteps: CoverageStep[];
+  enforced: number;
+  bySwappedDomain: Partial<Record<TasteDomain, number>>;
+}
+
+/**
+ * Deterministic post-compose minimum enforcement. When the composer undershot
+ * a stage-required domain and unused verified entities of that domain remain,
+ * swap flex body steps for additional steps on those entities. Keep opening,
+ * closing, the step count and (per-slot) the duration budget untouched. When
+ * no viable swap exists, leave the plan alone: the honest coverageGaps row
+ * surfaces the shortfall.
+ */
+export function enforceStageMinimums(
+  run: Run,
+  anchors: Anchors,
+  person: PersonInput,
+  draft: readonly SessionStep[],
+  coverageSteps: readonly CoverageStep[],
+  usedRefs: ReadonlySet<string>,
+  materials: readonly Material[],
+  grounded: boolean,
+): EnforcementResult {
+  const mins = stageMinimums(person.stage);
+  const bySwappedDomain: Partial<Record<TasteDomain, number>> = {};
+  const steps = [...draft];
+  const cov = [...coverageSteps];
+  if (mins.length === 0) return { steps, coverageSteps: cov, enforced: 0, bySwappedDomain };
+
+  // Unused, verified materials grouped by domain, in deterministic input order.
+  const unusedByDomain = new Map<TasteDomain, Material[]>();
+  for (const m of materials) {
+    if (usedRefs.has(m.ref)) continue;
+    if (!m.entity) continue;
+    const bucket = unusedByDomain.get(m.domain);
+    if (bucket) bucket.push(m);
+    else unusedByDomain.set(m.domain, [m]);
+  }
+
+  let enforced = 0;
+  for (const min of mins) {
+    const pool = unusedByDomain.get(min.domain) ?? [];
+    while (pool.length > 0) {
+      const have = countDomainSteps(cov, min);
+      if (have >= min.minSteps) break;
+      const idx = cov.findIndex((c) => isSwappable(c, cov, mins, min));
+      if (idx < 0) break;
+      const material = pool.shift()!;
+      const kind: StepKind = min.stepKinds[0] ?? "listen";
+      const next = buildEnforcedStep(run, anchors, kind, material, steps[idx], grounded);
+      if (!next) break;
+      steps[idx] = next;
+      cov[idx] = { kind: next.kind, materialDomain: material.domain };
+      enforced++;
+      bySwappedDomain[min.domain] = (bySwappedDomain[min.domain] ?? 0) + 1;
+    }
+  }
+  return { steps, coverageSteps: cov, enforced, bySwappedDomain };
+}
 
 export async function* composePhase(
   run: Run,
@@ -324,24 +469,36 @@ export async function* composePhase(
   const same = sameLanguage(lang, person.caregiverLanguage);
   const draft: SessionStep[] = [];
   const coverageSteps: CoverageStep[] = [];
+  const usedRefs = new Set<string>();
   for (const model of out.steps) {
     if (draft.length >= maxSteps) break;
     // A step built on something critique rejected never reaches the plan.
     if (model.materialRef && rejectedRefs.has(model.materialRef)) continue;
-    const step = toStep(run, anchors, model, byRef.get(model.materialRef), draft.length, same, mode === "grounded");
+    const material = byRef.get(model.materialRef);
+    const step = toStep(run, anchors, model, material, draft.length, same, mode === "grounded");
     if (step) {
       draft.push(step);
-      coverageSteps.push({ kind: step.kind, materialDomain: byRef.get(model.materialRef)?.domain });
+      coverageSteps.push({ kind: step.kind, materialDomain: material?.domain });
+      if (material) usedRefs.add(material.ref);
     }
   }
   if (draft.length === 0) throw new PortError("llm", "invalid_response", "The composed session had no usable steps", false);
-  const minutes = normalizeDurations(draft.map((s) => s.durationMin), person.sessionMinutes);
+  // Deterministic post-compose minimum enforcement: swap flex body steps for
+  // unused verified entities of a stage-required domain the composer undershot.
+  const enforcement = enforceStageMinimums(run, anchors, person, draft, coverageSteps, usedRefs, kept, mode === "grounded");
+  if (enforcement.enforced > 0) {
+    run.ctx.logger.info(
+      { phase: "compose", enforced: enforcement.enforced, byDomain: enforcement.bySwappedDomain },
+      "coverageEnforced",
+    );
+  }
+  const minutes = normalizeDurations(enforcement.steps.map((s) => s.durationMin), person.sessionMinutes);
   // Late-stage pace guarantee: NICE NG97 wellbeing bracket at late-stage calls
   // for short, calm anchors. Local qwen3:8b and hosted models that drift into
   // 3-4 minute bodies get clipped here. Shape-reshape only (a numeric cap on a
   // numeric field); semantic prompt judgments stay in the LLM via the compose
   // system prompt's late-stage worked example.
-  const steps = draft.map((s, i) => {
+  const steps = enforcement.steps.map((s, i) => {
     const isBody = s.kind !== "opening" && s.kind !== "closing";
     const clipped = person.stage === "late" && isBody ? Math.min(minutes[i], 2) : minutes[i];
     return { ...s, durationMin: clipped };
@@ -349,10 +506,10 @@ export async function* composePhase(
   for (const step of steps) yield { type: "step", step };
   run.stats.steps += steps.length;
   // Truthful coverage: derived from the structured kind and material domain of what was
-  // actually composed, never from the model's own claim.
+  // actually composed, after enforcement, never from the model's own claim.
   const coverageGaps = computeCoverageGaps({
     stage: person.stage,
-    steps: coverageSteps,
+    steps: enforcement.coverageSteps,
     availableDomains: kept.map((m) => m.domain),
     unverifiedDomains: run.unverifiedDomains,
   });

@@ -46,7 +46,9 @@ describe("prompt modules", () => {
       expect(m.system).toContain("U+2014");
       expect(m.system.toLowerCase()).toContain("patient");
       // The forbidden character itself must not sneak into the prompt text.
-      expect(m.system).not.toContain("—");
+      // Built as String.fromCharCode so the literal U+2014 never appears in this file.
+      const emDash = String.fromCharCode(0x2014);
+      expect(m.system).not.toContain(emDash);
     }
   });
 

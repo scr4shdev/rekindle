@@ -25,7 +25,7 @@ export const it: PartialMessages = {
     },
     mockGateTitle: "In questa demo l'inserimento libero è disattivato",
     mockGateBody:
-      "L'inserimento libero live richiede una chiave LLM che in questa demo non abbiamo. Tocca Maria, Fatima o Seamus qui sotto per una sessione completa dell'agente.",
+      "Questa è una vista demo, quindi il pianificatore live è in pausa. Tocca Maria, Fatima o Seamus qui sotto per una sessione completa dell'agente.",
     personasTitle: "Provalo in un tocco",
     personasLead:
       "Tre persone immaginate, tre situazioni di caregiving. Fatima viene per prima: un'anziana marocchina e un'assistente che legge in inglese, il caso più difficile per un modello orientato verso l'Occidente, e quello in cui Qloo aiuta più chiaramente.",

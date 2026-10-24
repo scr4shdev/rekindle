@@ -25,7 +25,7 @@ export const fr: PartialMessages = {
     },
     mockGateTitle: "La saisie libre en direct est désactivée dans cette démo",
     mockGateBody:
-      "La saisie libre en direct a besoin d'une clé LLM que cette démo n'a pas. Touchez Maria, Fatima ou Seamus ci-dessous pour voir l'agent tourner en entier.",
+      "C'est une vue de démo, le planificateur en direct est donc en pause. Touchez Maria, Fatima ou Seamus ci-dessous pour voir l'agent tourner en entier.",
     personasTitle: "À essayer en un geste",
     personasLead:
       "Trois personnes inventées, trois situations de proche aidant. Fatima vient en premier : une aînée marocaine et une auxiliaire qui lit en anglais, le cas le plus difficile pour un modèle penché vers l'Ouest, et celui où Qloo aide le plus clairement.",

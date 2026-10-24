@@ -21,7 +21,7 @@ export const en = {
     },
     mockGateTitle: "Live custom input is off in this demo",
     mockGateBody:
-      "Live custom input needs an LLM key we don't have in this demo. Tap Maria, Fatima or Seamus below for a full agent run.",
+      "This is a demo view, so the live planner is paused. Tap Maria, Fatima or Seamus below for a full agent run.",
     personasTitle: "Try it in one tap",
     personasLead: "Three invented people, three caregiver situations. Fatima is first: a Moroccan elder and an English-reading aide, the hardest case for a Western-leaning model and the one Qloo most clearly helps.",
     openSession: (name: string) => `Plan ${name}'s session`,

@@ -1,5 +1,6 @@
 import { HeartHandshakeIcon, LockKeyholeIcon, SearchCheckIcon } from "lucide-react";
 import { CustomForm } from "@/components/landing/custom-form";
+import { DataFlowsPanel } from "@/components/landing/data-flows-panel";
 import { PersonaCards } from "@/components/landing/persona-cards";
 import { getMessages } from "@/i18n";
 
@@ -42,6 +43,8 @@ export default function Home() {
           {t.recordedTraceLink}
         </a>
       </section>
+
+      <DataFlowsPanel />
 
       <section className="flex flex-col gap-4 sm:gap-5" aria-labelledby="personas-title">
         <div className="flex flex-col gap-x-4 gap-y-1 sm:flex-row sm:items-baseline">

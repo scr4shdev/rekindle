@@ -50,6 +50,19 @@ export const it: PartialMessages = {
     customLead:
       "Bastano poche frasi. Le tue parole vanno al pianificatore una volta sola e non vengono mai salvate.",
   },
+  dataFlows: {
+    heading: "Come circolano le tue note",
+    openLabel: "Apri",
+    qlooSeesTitle: "Cosa vede Qloo",
+    qlooSeesBody:
+      "Solo riferimenti culturali: nomi pubblici di entità, identificatori di tag Qloo, un nome di luogo pubblico (livello città) e una fascia d'età aggregata. Mai le tue note libere, mai il nome di una persona.",
+    llmSeesTitle: "Cosa vede il modello di linguaggio",
+    llmSeesBody:
+      "Le tue note libere, lette una sola volta dal pianificatore sul nostro server. Le note non vengono salvate da nessuna parte, e non vengono scritte nei nostri log.",
+    deviceOnlyTitle: "Cosa resta su questo dispositivo",
+    deviceOnlyBody:
+      "Le reazioni della sessione e una breve nota, indicizzate con un nome in hash, e la scheda della sessione da stampare. Conservate solo in questo browser.",
+  },
   form: {
     thisIsMeTitle: "Una breve scheda 'This is Me'",
     thisIsMeIntro:

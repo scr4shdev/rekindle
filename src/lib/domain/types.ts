@@ -400,6 +400,26 @@ export const StepProvenance = z.enum(["qloo-grounded", "llm-only"]);
 export type StepProvenance = z.infer<typeof StepProvenance>;
 
 /**
+ * Why-this-anchor attribution for a step grounded in Qloo (E1). Powers the
+ * small sage "Qloo chip" rendered under each body step on the plan and the
+ * printable session card. Keep framing aggregate (HARD RULE 3): entity and
+ * tag names only, never a person's own name or free-text note. Optional and
+ * additive; absent means the chip is not rendered for that step.
+ *
+ * - `kind: "verified"` means Qloo's /search confirmed the LLM-proposed
+ *   anchor; `seeds` is empty and `tags` holds up to two Qloo tag labels.
+ * - `kind: "expanded"` means Qloo cross-domain affinity surfaced the anchor;
+ *   `seeds` lists the public entity names used as signals (at most two) and
+ *   `tags` holds up to two Qloo tag labels.
+ */
+export const QlooProvenance = z.object({
+  kind: z.enum(["verified", "expanded"]),
+  seeds: z.array(z.string().min(1).max(160)).max(5),
+  tags: z.array(z.string().min(1).max(80)).max(5),
+});
+export type QlooProvenance = z.infer<typeof QlooProvenance>;
+
+/**
  * Why a step is not on the primary verified anchor for its domain, or why a
  * stage minimum could not be met. Additive and optional: absent means the step
  * sits on its primary anchor.
@@ -482,6 +502,12 @@ export const SessionStep = z.object({
   provenance: StepProvenance,
   /** Set only when the step is not on its primary verified anchor. Optional and additive. */
   fallbackReason: FallbackReason.optional(),
+  /**
+   * Why-this-anchor attribution for the step's Qloo-grounded entity (E1).
+   * Optional and additive: absent means the chip is not rendered. Set in code
+   * from the material's verify/expand provenance; the LLM never writes this.
+   */
+  qlooProvenance: QlooProvenance.optional(),
 });
 export type SessionStep = z.infer<typeof SessionStep>;
 

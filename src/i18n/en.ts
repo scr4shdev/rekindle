@@ -471,6 +471,18 @@ export const en = {
     replanNote: "Recorded demo: the plan is kept as it is. Connect the live planner to adapt it for real.",
     replanCompleted: "Plan checked. Carry on when you are ready.",
   },
+  /**
+   * E1 (why-this-anchor): copy for the small sage chip rendered under each
+   * grounded step on the plan and printable card. "linked to X" explains a
+   * cross-domain expand; "confirmed Y era" explains a verified anchor. The
+   * `context` string is already composed from up to two aggregate tokens by
+   * the component; this is a plain prefix formatter, no interpolation logic.
+   */
+  qloo: {
+    chipLinked: (context: string) => `Qloo: linked to ${context}`,
+    chipConfirmed: (context: string) => `Qloo: confirmed ${context}`,
+    chipEra: (year: number) => `${year} era`,
+  },
   footer: {
     disclaimer:
       "Rekindle suggests reminiscence activities. It is not medical advice, therapy or a diagnosis tool. Follow the person's lead, stop if they seem uncomfortable, and check with their care team about anything health-related.",

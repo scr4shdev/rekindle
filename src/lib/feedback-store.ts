@@ -209,7 +209,8 @@ export function loadLatestFeedback(personKey: string | null): FeedbackSession | 
  * Build a short, lowercase, non-medical one-liner the caregiver and the
  * parse agent will both read. Mentions anchor labels and reactions only.
  * Capped at SUMMARY_MAX. Returns an empty string if nothing useful was
- * captured.
+ * captured. The caller is responsible for any framing prefix (e.g.
+ * "Last time: ") since this is a formatter.
  */
 export function summarizeFeedback(entries: FeedbackEntry[]): string {
   if (!Array.isArray(entries) || entries.length === 0) return "";
@@ -229,7 +230,7 @@ export function summarizeFeedback(entries: FeedbackEntry[]): string {
   if (walkedAway.length > 0) parts.push(`walked away during ${joinList(walkedAway)}`);
   if (didNotLand.length > 0) parts.push(`did not land on ${joinList(didNotLand)}`);
   if (parts.length === 0) return "";
-  const line = `last time ${parts.join(", and ")}`;
+  const line = parts.join(", and ");
   // Clip; add an ellipsis-free truncation to stay well-formed.
   if (line.length <= SUMMARY_MAX) return line;
   return line.slice(0, SUMMARY_MAX).replace(/[,\s]+\S*$/, "");

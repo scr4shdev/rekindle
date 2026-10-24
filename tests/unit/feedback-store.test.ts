@@ -97,7 +97,7 @@ describe("summarizeFeedback", () => {
       { stepId: "s2", stepLabel: "the taste step", reaction: "walked_away", note: null, savedAt: now },
     ];
     const line = summarizeFeedback(entries);
-    expect(line).toBe("last time sparked on the showband record, and walked away during the taste step");
+    expect(line).toBe("sparked on the showband record, and walked away during the taste step");
     expect(line).not.toMatch(/[A-Z]/);
     expect(line).not.toContain("—");
   });

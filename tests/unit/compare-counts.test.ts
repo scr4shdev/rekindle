@@ -36,9 +36,9 @@ function loadEvents(slug: string): AgentEvent[] {
 
 /** Live fixture counts the three Compare surfaces must agree on. */
 const EXPECTED = {
-  fatima: { brought: 7, caught: 1, verified: 10, name: "Fatima" },
-  maria: { brought: 11, caught: 5, verified: 10, name: "Maria" },
-  seamus: { brought: 10, caught: 3, verified: 12, name: "Seamus" },
+  fatima: { brought: 8, caught: 10, verified: 5, name: "Fatima" },
+  maria: { brought: 4, caught: 5, verified: 5, name: "Maria" },
+  seamus: { brought: 0, caught: 5, verified: 3, name: "Seamus" },
 } as const;
 
 describe("compare view count parity", () => {
@@ -97,9 +97,9 @@ describe("compare hero three-metric headline", () => {
   it("Fatima headline leads with the Qloo-DISCOVERY frame, then catch and confirm", () => {
     const { brought, caught, verified, name } = EXPECTED.fatima;
     const headline = en.compare.headline(brought, caught, verified, name);
-    expect(headline).toContain("Qloo surfaced 7 cultural anchors Fatima's notes didn't mention");
-    expect(headline).toContain("caught 1 era slip");
-    expect(headline).toContain("confirmed 10 real matches");
+    expect(headline).toContain("Qloo surfaced 8 cultural anchors Fatima's notes didn't mention");
+    expect(headline).toContain("caught 10 era slips");
+    expect(headline).toContain("confirmed 5 real matches");
     // Oxford comma on the three-clause form keeps the sentence legible.
     expect(headline).toMatch(/, and confirmed/);
   });
@@ -108,16 +108,17 @@ describe("compare hero three-metric headline", () => {
     const { brought, caught, verified, name } = EXPECTED.maria;
     const headline = en.compare.headline(brought, caught, verified, name);
     expect(headline).toContain("caught 5 era slips");
-    expect(headline).toContain("Qloo surfaced 11");
-    expect(headline).toContain("confirmed 10 real matches");
+    expect(headline).toContain("Qloo surfaced 4");
+    expect(headline).toContain("confirmed 5 real matches");
   });
 
-  it("Seamus headline carries both discovery and catch clauses", () => {
+  it("Seamus headline falls through to the catch frame when Qloo is quiet on this run", () => {
     const { brought, caught, verified, name } = EXPECTED.seamus;
     const headline = en.compare.headline(brought, caught, verified, name);
-    expect(headline).toContain("Qloo surfaced 10 cultural anchors Seamus's notes didn't mention");
-    expect(headline).toContain("caught 3 era slips");
-    expect(headline).toContain("confirmed 12 real matches");
+    // This run's Qloo pass returned no new discoveries, so the headline uses
+    // the catch/confirm fallback rather than the three-clause discovery form.
+    expect(brought).toBe(0);
+    expect(headline).toBe("The agent caught 5 slips and confirmed 3 real matches.");
   });
 
   it("falls back to the original 'caught/confirmed' form when brought is 0 and caught > 0", () => {

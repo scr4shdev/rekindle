@@ -395,6 +395,13 @@ export const en = {
     printSessionDate: (date: string) => `Printed ${date}.`,
     /** Shown when the plan cannot be hydrated (unknown id, cleared memory). */
     printNotFound: "Session not found. Open the planner and try again.",
+    /** Shown on the custom print page when sessionStorage is empty: the plan must be generated in the originating tab first. */
+    printNotFoundCustom:
+      "No session to print yet. Compose the session in the tab where you wrote the notes, then open Print again from there.",
+    /** Headline over the error block when the agent stream failed on the print page. */
+    printError: "The planner could not finish this sheet. Please try again.",
+    /** Button in the error block that restarts the stream. */
+    printRetry: "Try again",
     /** Header meta line: year and spoken language. */
     printPersonMeta: (year: number, language: string) => `Born ${year} · session in ${language}`,
     /** Synthesized gentle redirect, keyed by step kind. */

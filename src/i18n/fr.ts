@@ -415,6 +415,10 @@ export const fr: PartialMessages = {
     printFooter: "Plan de séance Rekindle. Ce n'est pas un avis médical.",
     printSessionDate: (date: string) => `Imprimé le ${date}.`,
     printNotFound: "Séance introuvable. Ouvrez le planificateur et réessayez.",
+    printNotFoundCustom:
+      "Aucune séance à imprimer pour l'instant. Composez la séance dans l'onglet où vous avez écrit les notes, puis rouvrez l'impression depuis cet onglet.",
+    printError: "Le planificateur n'a pas pu terminer cette fiche. Réessayez.",
+    printRetry: "Réessayer",
     printPersonMeta: (year: number, language: string) => `Née en ${year} · séance en ${language}`,
     printFallbacks: {
       opening: "Rester encore un moment, sans questions.",

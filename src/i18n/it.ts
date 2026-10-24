@@ -407,6 +407,10 @@ export const it: PartialMessages = {
     printFooter: "Piano della sessione Rekindle. Non è un parere medico.",
     printSessionDate: (date: string) => `Stampato il ${date}.`,
     printNotFound: "Sessione non trovata. Apri il pianificatore e riprova.",
+    printNotFoundCustom:
+      "Nessuna sessione da stampare per ora. Componi la sessione nella scheda dove hai scritto gli appunti, poi riapri la stampa da lì.",
+    printError: "Il pianificatore non ha potuto terminare questa scheda. Riprova.",
+    printRetry: "Riprova",
     printPersonMeta: (year: number, language: string) => `Nata nel ${year} · sessione in ${language}`,
     printFallbacks: {
       opening: "Restare ancora un momento, senza domande.",

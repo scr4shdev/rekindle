@@ -1,143 +1,95 @@
 # Rekindle
 
-A tool-using agent that helps a caregiver plan a 20-minute reminiscence activity for someone they love who is living with dementia, with every cultural reference checked against Qloo's taste graph so misses surface in the trace instead of hiding, and only era-and-place-fitting ideas reach the plan.
+A reminiscence activity planner for caregivers of people living with dementia, grounded in the songs, films and faces of one person's own era and place.
 
-Built for the Qloo Agentic Hackathon (submission deadline 2026-10-30). Non-medical: an activity planner, not therapy, not treatment, not diagnosis.
+Built for the Qloo Agentic Hackathon (submission deadline 2026-10-30).
 
-## Who this is for
+## What this is
 
-A professional care aide, in a UK or EU care home, running a reminiscence activity with an elder whose culture, era and language the aide does not share. Think of Fatima, 76, who grew up in 1960s Fès and now lives in a Brussels care home, assigned to an English-reading aide who has never heard Oum Kalthoum. Without Rekindle, the aide spends 10 to 20 minutes Googling before the session, defaults to generic Western classics, or skips the activity entirely. Family caregivers who already know their elder's tastes are a second audience; the cross-cultural care aide is the primary one, and Fatima is the lead demo persona for that reason.
-
-## The six-phase agent loop
-
-```
-caregiver notes
-      │
-      ▼
-┌───────────┐   ┌───────────┐   ┌───────────┐   ┌───────────┐   ┌───────────┐   ┌───────────┐
-│   PARSE   │ → │  PROPOSE  │ → │  VERIFY   │ → │  EXPAND   │ → │ CRITIQUE  │ → │  COMPOSE  │
-│   (LLM)   │   │   (LLM)   │   │  (Qloo)   │   │  (Qloo)   │   │   (LLM)   │   │   (LLM)   │
-└───────────┘   └───────────┘   └───────────┘   └───────────┘   └───────────┘   └───────────┘
-   anchors         candidates     verified +      cross-domain     anachronism,     timed session
-   (era,           per domain     rejected        affinities        wrong-locale,    with prompts
-   locale,         with Qloo      per candidate   from verified     emotional-risk   in the person's
-   loves,          type hint      (exact match    seeds, filtered   drops            own language
-   sensitivities)                  or match-      to the formative
-                                  entity LLM)     window
-
-                       all events stream as NDJSON to the UI
-                              │
-                              ▼
-                        caregiver taps: lit up / quiet / upset  →  REPLAN (LLM + Qloo)
-```
-
-Each phase emits stamped `AgentEvent`s (phase start/complete, note, candidate, verified, rejected, qloo_call, step, plan, error, done) on a single NDJSON stream. The caregiver watches the reasoning as it happens: what was proposed, what Qloo confirmed, what was rejected and why.
+A caregiver fills in a short "This is Me" sheet; a few sentences are enough. An agent turns it into a twenty-minute, six-to-eight-step session in the person's own language, with a meaning line and a tip in the caregiver's language. Every cultural reference is checked against Qloo's taste graph before it reaches the plan, and Qloo's cross-domain affinities add neighbours the notes alone would not name. Rekindle is non-medical: it plans an activity, nothing more. The printable session card and the `/tour` replay need no API keys and no network, so the demo survives any outage.
 
 ## Try it
 
-- **Live demo:** TODO: link (hosted deploy pending).
-- **Judge-stable fixture (no Qloo, no LLM, under 15 seconds):** `/session?persona=maria&source=replay` streams a committed trace file. Byte-stable across runs.
-- **Local run** (fully in mock mode, no keys needed):
+- **`/tour`**: a judge-friendly ninety-second cycle through three recorded sessions (Maria from Naples, Fatima from Fès and Brussels, Seamus from Cork). No typing. Each run replays a committed trace, so it needs neither Qloo nor a language model.
+- **`http://localhost:3000/`**: the full landing flow. Tap a persona card to replay a recorded live run in under fifteen seconds, or tap again to run the agent live. The form takes your own notes.
+- The hosted instance runs on a private Tailscale address for development only; the Devpost video is the demo of record.
 
-  ```bash
-  export PATH="$HOME/.nvm/versions/node/v24.22.0/bin:$PATH"
-  npm ci
-  npm run dev          # http://localhost:3000
-  ```
+## Architecture at a glance
 
-The three one-tap personas are **Maria** (Naples, Italian), **Fatima** (Fès and Brussels, French and Arabic) and **Seamus** (Cork, English and Irish). Deliberately chosen: Fatima stress-tests Qloo's Western-dataset drift.
+```
+caregiver notes
+      |
+  PARSE (LLM)      anchors: formative window, loves, sensitivities, callback lines
+      |
+  PROPOSE (LLM)    era-and-place candidates per domain, with Qloo type hints
+      |
+  VERIFY (Qloo)    GET /search per candidate: hit = verified entity with id, year, image
+      |            miss = set aside with a reason, visible in the trace
+  EXPAND (Qloo)    GET /v2/insights from verified seeds, era-filtered per entity type,
+      |            with feature.explainability so each pick names its seeds
+  CRITIQUE (LLM)   one batched pass: wrong era, wrong place, cultural mismatch, emotional risk
+      |
+  COMPOSE (LLM)    timed session; then a deterministic, locale-aware minimum top-up
+      |
+  NDJSON stream to the UI, "What we heard" callbacks above step one
+```
 
-## What Qloo does here
+- Ports and adapters: the agent in `src/lib/agent/` depends only on `TastePort`, `LlmPort` and `CachePort` in `src/lib/ports/`. ESLint enforces the boundary. `src/lib/composition.ts` wires the adapters.
+- Cultural judgment goes through LLM structured output, never regex or keyword lists (see `docs/no-regex-semantics.md`). Deterministic code only reshapes already-structured data.
+- Determinism: temperature 0, pinned model ids, versioned prompt modules in `src/lib/prompts/`, sha256 input-keyed cache. The three persona traces in `tests/fixtures/` replay byte-identical.
+- Qloo results are always framed as aggregate ("people who enjoy X also tend to enjoy Y"), with provenance chips on each plan step and on the print card.
+- After a session, three one-tap reactions per step (Sparked, Did not land, Walked away) are saved on the device; the next plan for the same name starts with a "Last time with ..." line.
+- UI in English, French and Italian, with gender-neutral French and Italian strings.
 
-Qloo is used as a **cultural taste graph that verifies against period, place, and culture**, not as a recommender shown to the caregiver. Specific moves:
+More in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/api.md`](docs/api.md), [`docs/qloo-api.md`](docs/qloo-api.md) and [`docs/judges.md`](docs/judges.md).
 
-- **Verify every LLM idea exists** via `GET /search`, then pull id, image and release year. Fails are tagged (`not_found`, `wrong_locale`, `wrong_era`) and surfaced in the live trace, not hidden.
-- **Expand from verified seeds** via `GET /v2/insights` with era filters dispatched per type (`filter.release_year.*` for film/TV, `filter.date_of_birth.*` for people, decade tags for music where no year filter exists). The dispatch table lives in `src/lib/ports/taste.ts` as `ERA_FILTER_SUPPORT`.
-- **Cuisine-tag side-lookup for food** (`GET /v2/tags`): food has no dish type, so a candidate like "Sunday ragù" is kept as a caregiver-led idea only when its cuisine tag resolves; otherwise the food step is dropped gracefully instead of surfacing airport restaurants.
-- **Location-drop fallback on empty insights**: if a request combined `signal.location.query` and `filter.tags` and returned zero items, retry once without the location, then once without the tag filter. Recovered Maria's music discovery from 0 results to 1 in the live probe.
-- **Cultural-mismatch LLM pass** for non-Western personas: Qloo's Western-leaning expand output goes through a `cultural-check` prompt that drops obvious extrapolations (Donald Trump no longer surfaces for Fatima). Rejections appear in the trace with the "Doesn't fit culture" badge.
-- **Provenance badges on every step**: `qloo-grounded` (built around a verified entity), `qloo-affinity` (from expand), or `llm-only` (no verified entity in the step). The caregiver can tell at a glance what Qloo touched and what it did not.
+## Running locally
 
-Qloo results are always framed in the UI as aggregate affinities: *"people who enjoy Frank Sinatra and Renato Carosone also tend to enjoy Peppino di Capri"*, never *"Maria will like Peppino di Capri"*.
-
-## Why hybrid, not LLM alone
-
-Ask any frontier LLM to plan a reminiscence session for a 1950s Neapolitan grandmother and it will cheerfully include "Napoli Mia Bella, 1957" (a hallucinated-but-plausible song title) and Maradona's 1987 scudetto. It feels right. It is wrong: the first song does not exist, and the second belongs to a decade when Maria was 45 and had emigrated. Those are exactly the slips a caregiver cannot afford.
-
-The hybrid loop catches them in two different places. **Verify** sends every proposed entity to Qloo's `/search`; "Napoli Mia Bella" fails to resolve and is marked `not_found` in the live trace. **Critique** then runs a separate LLM pass over everything that survived verify, scoring each item for anachronism, wrong-locale, cultural mismatch and emotional risk; Maradona 1987 fails the era check and is dropped. The **Compare** page (`src/components/compare/compare-view.tsx`, 316 lines) runs both plans side by side and marks every LLM-only step that a grounded rejection matched with a "would have slipped" badge, with the specific Qloo rejection quoted on the right.
-
-The point is not that Qloo "has the right answer". The point is that **the LLM proposes, Qloo verifies against a cultural ground truth it could not invent, and the LLM then critiques for the things Qloo cannot judge (framing, culture, risk)**. Each tool does what it is best at.
-
-## Architecture
-
-- **Ports and adapters.** The agent in `src/lib/agent/` depends only on three ports (`TastePort`, `LlmPort`, `CachePort` in `src/lib/ports/`), with ESLint boundaries enforcing the direction. Qloo, LLM providers (Gemini, Groq, Anthropic, Ollama) and cache (memory, Upstash, layered) are swappable adapters wired by `src/lib/composition.ts`.
-- **Six phases.** `src/lib/agent/session.ts` runs PARSE → PROPOSE → VERIFY → EXPAND → CRITIQUE → COMPOSE as an `AsyncGenerator<AgentEvent>`. Replan is a separate loop (`src/lib/agent/replan.ts`) that takes a reaction and rewrites upcoming steps.
-- **Determinism contract.** Temperature 0, pinned model IDs, seven versioned prompt modules in `src/lib/prompts/` (each exports `ID` and `VERSION`), an input-keyed sha256 cache (`buildCacheKey`), and injected `now` / `newId` on `AgentDeps` instead of ambient `Date.now()` / `nanoid`. The three persona traces replay byte-identical: see `tests/fixtures/trace-*.ndjson` with sha256 pinned in the `.meta.json` sibling.
-
-Deeper tour: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). HTTP contract: [`docs/api.md`](docs/api.md). Qloo field notes: [`docs/qloo-api.md`](docs/qloo-api.md). Judge tour: [`docs/judges.md`](docs/judges.md).
-
-## Privacy posture
-
-Privacy is a product value here, not an afterthought.
-
-- **No personal data ever reaches Qloo.** `withPersonalDataGuard(port, personalTermsFromDisplayName(person.displayName))` wraps every Qloo request and refuses the call if any personal term from the person's display name appears in the payload. Only public cultural anchors (entity names and ids, tag ids, place names, years, an aggregate age bucket) are allowed through. Enforced in code (`src/lib/ports/taste.ts`), not by policy.
-- **Caregiver notes are never logged and never cached in plaintext.** Cache keys are sha256 hashes. Results derived from notes (the PARSE phase output) carry `sensitive: true` and stay in process memory only; they never reach Upstash.
-- **No login, no database, no stored session.** Each request carries the whole state it needs. The custom-form draft optionally autosaves to `sessionStorage` on that one tab, cleared on submit.
-- **Local Ollama fallback as a trust story.** With `qwen3:8b` reachable at `127.0.0.1:11434`, Rekindle auto-wires to the local model when no hosted LLM key is set. The product keeps working offline, byte-deterministic (seed 42), on a 6 GB consumer GPU. That matters in a care context where you may not want to send a stranger's intimate notes to a third-party API at all.
-
-The Qloo API key is read only by `src/lib/config.ts` and used only in the Qloo adapter from server-side route handlers. It is never printed, never logged, never embedded in a `NEXT_PUBLIC_*` variable, and never shipped to the client.
-
-## Social good
-
-Rekindle is framed carefully.
-
-- **Non-medical.** It plans an activity, not therapy. Copy avoids "treatment", "diagnosis" and "therapy". The disclaimer in the footer says so explicitly.
-- **Person-first language.** "Someone living with dementia", never "a dementia patient". "Reactions", not "symptoms". The three bedside buttons are **Lit up**, **Quiet**, **Upset**: no clinical scoring.
-- **Caregiver-centered.** The caregiver (family member, aide, carer) is the user. The chrome, the trace narration and the plan content speak the caregiver's language; the prompts and media are in the person's own language. UI copy is deliberately warm, not clinical: Lamplight palette (oat ground, sage primary, warm amber accents), humanist type, no hospital-blue anywhere.
-- **Three personas, chosen on purpose.** Maria (Italian), Fatima (French and Arabic, Moroccan), Seamus (English and Irish). Fatima is the hard case: non-Western, bilingual, with a childhood in Fès and adult life in Brussels. If the loop works for her, it works.
-
-## Development
+Node 24 or later (`engines.node >= 24`, managed here via nvm).
 
 ```bash
 export PATH="$HOME/.nvm/versions/node/v24.22.0/bin:$PATH"
-npm run dev            # http://localhost:3000, mock mode without keys
-npm run check          # typecheck + lint + unit/contract tests + production build
-npm test               # vitest (209 unit tests across 26 files at this writing)
-npx playwright install chromium && npm run e2e   # browser tests, always mock mode, port 3100
-REKINDLE_FORCE_MOCK=true npm run dev   # force mocks even with keys set
+npm ci
+npm run dev      # http://localhost:3000
+npm run build
+npm run start
 ```
 
-### Live mode
+Mock mode works with no keys at all. To go live, copy `.env.example` to `.env.local` and set what you have; each provider switches independently:
 
-Copy `.env.example` to `.env.local` and fill the keys you have. Each provider switches to live mode independently when its key is set.
+| Variable | Purpose |
+|---|---|
+| `QLOO_API_KEY` | Qloo Insights API, server-side only. Host defaults to `https://hackathon.api.qloo.com`. |
+| `GEMINI_API_KEY` | Google Gemini via the Vercel AI SDK. Default model is pinned in `src/lib/config.ts`. |
+| `LLM_PROVIDER` | `gemini` (default when a key is present) or `ollama` for a local `qwen3:8b`. |
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Optional shared cache; otherwise in-memory. |
+| `REKINDLE_FORCE_MOCK` | Force mocks even when keys are set. |
 
-| Variable | Purpose | Default |
-|---|---|---|
-| `QLOO_API_KEY` | Qloo Insights API key (server-side only) | empty: mock Qloo |
-| `QLOO_BASE_URL` | Qloo host | `https://hackathon.api.qloo.com` |
-| `LLM_PROVIDER` | `gemini`, `groq`, `anthropic`, `ollama` or `mock` | first provider with a key, else local Ollama if reachable, else mock |
-| `LLM_MODEL` | Override the pinned model | per provider (see `src/lib/config.ts`) |
-| `GEMINI_API_KEY` / `GROQ_API_KEY` / `ANTHROPIC_API_KEY` | LLM provider keys | empty |
-| `OLLAMA_BASE_URL` / `OLLAMA_MODEL` | Local Ollama endpoint and model id | `http://127.0.0.1:11434`, `qwen3:8b` |
-| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Shared cache across serverless instances | empty: in-memory cache |
-| `REKINDLE_FORCE_MOCK` | Force mocks even when keys are set | `false` |
-| `LOG_LEVEL` | pino level | `info` |
+The Qloo key is read only by `src/lib/config.ts` and never reaches the client.
 
-All variables and limits: [`.env.example`](.env.example). API contract: [`docs/api.md`](docs/api.md). Qloo API notes: [`docs/qloo-api.md`](docs/qloo-api.md). Submission checklist: [`docs/submission-requirements.md`](docs/submission-requirements.md).
+## Testing
 
-## Known limitations
+`npm run check` runs typecheck, lint, 271 unit and contract tests (vitest) and a production build; `npm run e2e` runs Playwright in mock mode.
 
-What Rekindle does not establish, and what we have not yet tested.
+## Privacy posture
 
-- **Not a medical device, not therapy, not a diagnosis tool.** Rekindle plans an activity; a trained caregiver decides what to use and when to stop. Clinical outcomes are out of scope.
-- **Not a replacement for a caregiver who knows the person.** The plan is a well-researched starting point, not a lived relationship. The three big bedside reaction buttons exist because the plan will sometimes be wrong, and the caregiver, not the agent, is the ground truth.
-- **Qloo coverage is thinner outside the Anglophone West.** Fatima's run is the hard case: in the live probe, a Fès-filtered insights call for Oum Kalthoum returned zero rows until the location-drop fallback (F1) kicked in. The cultural-check LLM pass (F2) exists specifically because Qloo's expand step over Moroccan seeds still surfaces Western-drift candidates (Donald Trump, the Beatles) that would be absurd for a 1960s Fès childhood.
-- **Aggregate, not personal.** Qloo tells us what groups of people who enjoy X tend to also enjoy, not what this one person will enjoy. The provenance badges and UI copy say so; see "Social good" above.
-- **No outcome evidence yet.** We have not run a pilot. The next-step plan is a 50-session caregiver-rated engagement study with one UK dementia charity. Until that lands, every impact claim is a reasoned bet, not an evidence-backed result.
-- **Qloo has no dish type and no year filter for music artists.** Food steps are LLM-only, gated by a cuisine-tag side-lookup (F3) and dropped if that fails. Music era checks fall back to decade tags plus the LLM critique.
-- **The local Ollama path is slow on consumer hardware.** On a 6 GB consumer GPU with `qwen3:8b`, a full six-phase plan takes 90 to 100 seconds. Hosted LLM paths (Groq, Gemini, Anthropic) finish in 15 to 30 seconds.
-- **LLM mistakes are reduced, not eliminated.** Verification, critique and provenance badges catch most slips; the caregiver sees provenance and reacts. We expect residual slips, especially on non-Western catalogs.
+Mirrors the "How your notes flow" panel on the landing page.
+
+- **What Qloo sees**: only cultural anchors, meaning public entity names, Qloo tag ids, a city-level place name and an aggregate age bucket. Never free notes, never a person's name. `withPersonalDataGuard` wraps every Qloo call and refuses any payload containing a personal term.
+- **What the language model sees**: the free notes, read once by the planner on the server. They are not stored and not written to logs; cache keys are sha256 hashes and parse output is marked `sensitive` so it stays in process memory.
+- **What stays on the device**: session reactions and a short note, keyed by a hashed display name, plus the printable card. No login, no database.
+
+## Non-medical disclaimer
+
+Rekindle plans a shared activity. It is not therapy, it does not treat or diagnose anything, and it does not replace a caregiver who knows the person. The caregiver decides what to use and when to stop. Every plan and every printed card carries this note.
 
 ## License
 
-TBD.
+License: see LICENSE (to be chosen before public release). `[LICENSE PLACEHOLDER]`
+
+## Credits
+
+- [Qloo](https://qloo.com) taste graph for verification and cross-domain affinities
+- Google Gemini as the language model, called through the Vercel AI SDK v7
+- Next.js 16, React 19, Tailwind v4, shadcn on Base UI
+- zod 4, pino, vitest, Playwright

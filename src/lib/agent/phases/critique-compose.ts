@@ -287,6 +287,11 @@ export function toStep(run: Run, anchors: Anchors, model: ModelStep & { fallback
     mediaHost: model.mediaHost && model.mediaHost !== "none" ? model.mediaHost : undefined,
     lifePhase,
     provenance: entity ? "qloo-grounded" : "llm-only",
+    // E1: carry the material's why-this-anchor provenance onto the step so the
+    // UI chip under the step prompt can render the "linked to X" or "confirmed
+    // Y era" line. Only grounded steps carry it; llm-only steps have no entity
+    // so the field stays absent.
+    qlooProvenance: entity ? material?.qlooProvenance : undefined,
     // Only body steps can be fallbacks; "none" (the strict-schema sentinel) maps
     // to absent. The code-only "min_enforcement" marker is excluded from the
     // model-facing ModelFallbackReason enum so it can never arrive here.
@@ -362,6 +367,9 @@ function buildEnforcedStep(
     lifePhase,
     provenance: entity ? "qloo-grounded" : "llm-only",
     fallbackReason: "min_enforcement",
+    // E1: deterministic min-enforcement swaps keep the chip story so the plan
+    // reads consistently; the material's own provenance is the honest source.
+    qlooProvenance: entity ? material.qlooProvenance : undefined,
   });
   return parsed.success ? parsed.data : undefined;
 }

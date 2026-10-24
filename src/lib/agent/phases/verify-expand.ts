@@ -4,7 +4,7 @@
  * with bounded concurrency; events are emitted in input order so the trace
  * and ids are deterministic. A Qloo outage degrades to llm-only material.
  */
-import type { AgentEventPayload, Anchors, Candidate, LifePhaseLabel, QlooInsightsType, VerifiedEntity } from "@/lib/domain/types";
+import type { AgentEventPayload, Anchors, Candidate, LifePhaseLabel, QlooInsightsType, QlooProvenance, VerifiedEntity } from "@/lib/domain/types";
 import { QLOO_INSIGHTS_TYPES } from "@/lib/domain/types";
 import type { TasteEntity } from "@/lib/ports";
 import { PortError } from "@/lib/ports";
@@ -38,7 +38,12 @@ export function ideaMaterial(candidate: Candidate): Material {
   };
 }
 
-export function entityMaterial(entity: VerifiedEntity, raw: TasteEntity, candidate?: Candidate, phase?: LifePhaseLabel): Material {
+export function entityMaterial(entity: VerifiedEntity, raw: TasteEntity, candidate?: Candidate, phase?: LifePhaseLabel, seedNames?: readonly string[]): Material {
+  const tags = (entity.tagLabels ?? []).slice(0, 2);
+  const qlooProvenance: QlooProvenance =
+    entity.provenance === "qloo-affinity"
+      ? { kind: "expanded", seeds: (seedNames ?? []).slice(0, 2), tags }
+      : { kind: "verified", seeds: [], tags };
   return {
     ref: entity.id,
     label: entity.name,
@@ -50,6 +55,7 @@ export function entityMaterial(entity: VerifiedEntity, raw: TasteEntity, candida
     entity,
     candidate,
     lifePhase: phase ?? candidate?.lifePhase,
+    qlooProvenance,
   };
 }
 
@@ -416,7 +422,13 @@ export async function* expandPhase(run: Run, anchors: Anchors, materials: Materi
       added++;
       yield { type: "verified", entity };
       const phase = raw.releaseYear !== undefined ? phaseForYear(phases, raw.releaseYear) : undefined;
-      found.push(entityMaterial(entity, raw, undefined, phase));
+      // Resolve seed Qloo ids to public entity names from the verify-phase
+      // materials; the chip reads these for the "linked to X" story. Aggregate
+      // framing per HARD RULE 3: entity names only, never personal data.
+      const seedNames = seedIds
+        .map((id) => materials.find((m) => m.entity?.qlooId === id)?.label)
+        .filter((n): n is string => Boolean(n));
+      found.push(entityMaterial(entity, raw, undefined, phase, seedNames));
     }
   }
 

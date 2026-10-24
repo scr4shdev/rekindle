@@ -66,6 +66,11 @@ export function insightsParams(query: TasteInsightsQuery, defaultTake: number): 
   // Nostalgia, not what is trending now.
   params["bias.trends"] = query.trendBias ?? "off";
   if (query.requireImage) params["filter.exists"] = "properties.image";
+  // E1 (why-this-anchor): ask Qloo to attach per-result seed attribution so the
+  // judge-facing chip can tell the "linked to X" story honestly. docs/qloo-api.md
+  // section 3.4: unknown params are silently ignored, so a hackathon tier that
+  // does not support the flag degrades to no attribution rather than failing.
+  params["feature.explainability"] = true;
   params.take = clampTake(query.take, defaultTake);
   return params;
 }

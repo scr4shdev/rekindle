@@ -5,7 +5,7 @@
  */
 import { z } from "zod";
 
-import type { AgentEventPayload, AgentPhase, Candidate, ErrorCode, LifePhaseLabel, TasteDomain, VerifiedEntity } from "@/lib/domain/types";
+import type { AgentEventPayload, AgentPhase, Candidate, ErrorCode, LifePhaseLabel, QlooProvenance, TasteDomain, VerifiedEntity } from "@/lib/domain/types";
 import { VerifiedEntity as VerifiedEntitySchema, Year } from "@/lib/domain/types";
 import type { AgentDeps, CallContext, PromptDefinition, TasteEntity, TastePort, TasteResponse } from "@/lib/ports";
 import { buildLlmRequest, PortError, withPersonalDataGuard } from "@/lib/ports";
@@ -38,6 +38,12 @@ export interface Material {
   candidate?: Candidate;
   /** Life phase this material is anchored in (if the candidate carried one). */
   lifePhase?: LifePhaseLabel;
+  /**
+   * E1: why-this-anchor attribution carried from verify/expand to compose.
+   * Set only for grounded materials (qloo-verified or qloo-affinity). Flows
+   * onto the composed SessionStep.qlooProvenance for the plan's Qloo chip.
+   */
+  qlooProvenance?: QlooProvenance;
 }
 
 export interface Run {

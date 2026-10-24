@@ -10,7 +10,7 @@ import type { PromptDefinition } from "@/lib/ports/llm";
 import { dataBlock, DATA_NOTICE, lines, ROLE } from "@/lib/prompts/shared";
 
 export const ID = "propose-candidates";
-export const VERSION = "1.2.1";
+export const VERSION = "1.3.0";
 
 export interface ProposeCandidatesInput {
   anchors: Anchors;

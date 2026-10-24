@@ -17,7 +17,7 @@ import type { PromptDefinition } from "@/lib/ports/llm";
 import { dataBlock, DATA_NOTICE, lines, ROLE } from "@/lib/prompts/shared";
 
 export const ID = "cultural-check";
-export const VERSION = "1.0.1";
+export const VERSION = "1.1.0";
 
 export const CULTURAL_VERDICTS = ["cultural_match", "cultural_mismatch", "unclear"] as const;
 export type CulturalVerdict = (typeof CULTURAL_VERDICTS)[number];

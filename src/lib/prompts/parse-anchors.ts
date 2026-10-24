@@ -10,7 +10,7 @@ import type { PromptDefinition } from "@/lib/ports/llm";
 import { dataBlock, DATA_NOTICE, lines, ROLE } from "@/lib/prompts/shared";
 
 export const ID = "parse-anchors";
-export const VERSION = "1.4.0";
+export const VERSION = "1.5.0";
 
 export interface ParseAnchorsInput {
   /** Free-text notes blob. Falls back when structured fields are empty. */

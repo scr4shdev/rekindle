@@ -4,6 +4,7 @@ import { z } from "zod";
 import { SAMPLE_ANCHORS } from "@/lib/domain/sample-events";
 import * as compose from "@/lib/prompts/compose-session";
 import * as critique from "@/lib/prompts/critique-items";
+import * as cultural from "@/lib/prompts/cultural-check";
 import { PROMPTS } from "@/lib/prompts";
 import * as match from "@/lib/prompts/match-entity";
 import * as parse from "@/lib/prompts/parse-anchors";
@@ -36,6 +37,17 @@ describe("prompt modules", () => {
       expect(m.system).toContain("people who enjoy X also tend to enjoy Y");
     }
     expect(critique.system).toContain("alcohol");
+  });
+
+  it("shared ROLE guards every importing prompt against em dashes and the word 'patient'", () => {
+    // Prompts that embed the shared ROLE constant get the style guard for free.
+    const withRole = [parse, propose, critique, compose, replan, cultural];
+    for (const m of withRole) {
+      expect(m.system).toContain("U+2014");
+      expect(m.system.toLowerCase()).toContain("patient");
+      // The forbidden character itself must not sneak into the prompt text.
+      expect(m.system).not.toContain("—");
+    }
   });
 
   it("match-entity precedence prefers era+culture over popularity and renders anchors as data", () => {

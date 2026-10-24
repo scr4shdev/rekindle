@@ -9,7 +9,7 @@ import type { PromptDefinition } from "@/lib/ports/llm";
 import { AGGREGATE_GUIDANCE, dataBlock, DATA_NOTICE, lines, ROLE } from "@/lib/prompts/shared";
 
 export const ID = "critique-items";
-export const VERSION = "1.1.0";
+export const VERSION = "1.2.0";
 
 export interface CritiqueItem {
   ref: string;

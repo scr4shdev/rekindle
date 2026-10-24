@@ -12,9 +12,9 @@ export const it: PartialMessages = {
     theme: { toggle: "Scegli tema chiaro o scuro", light: "Chiaro", dark: "Scuro" },
   },
   landing: {
-    title: "Un agente che pianifica 20 minuti sereni con chi vive con la demenza.",
+    title: "Una sessione di reminiscenza di 20 minuti che un caregiver può condurre, in qualsiasi cultura.",
     leadShort:
-      "Ogni canzone, film e volto della loro epoca è controllato nel grafo dei gusti di Qloo, e le mancanze emergono nella traccia invece di sparire, perché nulla stoni per la persona a cui tieni.",
+      "Per operatori e famiglie. L'agente di Rekindle verifica ogni canzone, film e volto nel grafo dei gusti di Qloo, portando le mancanze in traccia invece di nasconderle, perché un'infanzia a Fès negli anni Sessanta non venga accolta con un classico hollywoodiano degli anni Sessanta.",
     agentFlowLabel: "La promessa dell'agente",
     agentFlow:
       "L'agente prepara venti minuti nella loro lingua, e ogni idea che propone viene controllata prima.",
@@ -28,7 +28,7 @@ export const it: PartialMessages = {
       "L'inserimento libero live richiede una chiave LLM che in questa demo non abbiamo. Tocca Maria, Fatima o Seamus qui sotto per una sessione completa dell'agente.",
     personasTitle: "Provalo in un tocco",
     personasLead:
-      "Tre persone immaginate, da tre luoghi e tre epoche. Scegline una per vedere com'è una sessione pensata per lei.",
+      "Tre persone immaginate, tre situazioni di caregiving. Fatima viene per prima: un'anziana marocchina e un'assistente che legge in inglese, il caso più difficile per un modello orientato verso l'Occidente, e quello in cui Qloo aiuta più chiaramente.",
     openSession: (name: string) => `Pianifica la sessione di ${name}`,
     sessionIn: (language: string) => `Sessione in ${language}`,
     minutes: (n: number) => `${n} min`,

@@ -12,9 +12,9 @@ export const fr: PartialMessages = {
     theme: { toggle: "Choisir le thème clair ou sombre", light: "Clair", dark: "Sombre" },
   },
   landing: {
-    title: "Un agent qui prépare 20 minutes paisibles avec une personne qui vit avec la démence.",
+    title: "Une séance de réminiscence de 20 minutes qu'un proche aidant peut mener, dans toutes les cultures.",
     leadShort:
-      "Chaque chanson, film et visage de leur époque est confronté au graphe des goûts de Qloo, et les absences apparaissent dans la trace plutôt que d'être masquées, pour que rien ne sonne faux pour la personne dont vous prenez soin.",
+      "Pour les auxiliaires de vie et les familles. L'agent de Rekindle confronte chaque chanson, film et visage au graphe des goûts de Qloo, en faisant remonter les absences dans la trace plutôt que de les masquer, pour qu'une enfance à Fès dans les années 1960 ne soit pas accueillie par un classique hollywoodien des années 1960.",
     agentFlowLabel: "La promesse de l'agent",
     agentFlow:
       "L'agent prépare vingt minutes dans leur langue, et chaque idée qu'il propose est vérifiée d'abord.",
@@ -28,7 +28,7 @@ export const fr: PartialMessages = {
       "La saisie libre en direct a besoin d'une clé LLM que cette démo n'a pas. Touchez Maria, Fatima ou Seamus ci-dessous pour voir l'agent tourner en entier.",
     personasTitle: "À essayer en un geste",
     personasLead:
-      "Trois personnes inventées, de trois lieux et trois époques. Choisissez-en une pour voir ce que donnerait une séance pensée pour elle.",
+      "Trois personnes inventées, trois situations de proche aidant. Fatima vient en premier : une aînée marocaine et une auxiliaire qui lit en anglais, le cas le plus difficile pour un modèle penché vers l'Ouest, et celui où Qloo aide le plus clairement.",
     openSession: (name: string) => `Préparer la séance de ${name}`,
     sessionIn: (language: string) => `Séance en ${language}`,
     minutes: (n: number) => `${n} min`,

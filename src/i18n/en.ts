@@ -38,6 +38,19 @@ export const en = {
     customLead: "A few sentences are enough. Your words go to the planner once and are never saved.",
     recordedTraceLink: "Watch a recorded trace of a Rekindle session.",
   },
+  dataFlows: {
+    heading: "How your notes flow",
+    openLabel: "Open",
+    qlooSeesTitle: "What Qloo sees",
+    qlooSeesBody:
+      "Only cultural anchors: public entity names, Qloo tag ids, a public place name (city level), and an aggregate age bucket. Never your free notes, never a person's name.",
+    llmSeesTitle: "What the language model sees",
+    llmSeesBody:
+      "Your free notes, read once by the planner on our server. The notes are not stored anywhere, and are not written to our logs.",
+    deviceOnlyTitle: "What stays on this device",
+    deviceOnlyBody:
+      "Session reactions and a short note, keyed by a hashed name, and the printable session card. Kept in this browser only.",
+  },
   form: {
     thisIsMeTitle: "A short 'This is Me' sheet",
     thisIsMeIntro:

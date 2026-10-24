@@ -49,3 +49,7 @@ next-env.d.ts
 # allow the documented env template
 !.env.example
 /.qloo-recordings/
+
+# local-only working directories (never push)
+/scratchpad/
+/.claude/

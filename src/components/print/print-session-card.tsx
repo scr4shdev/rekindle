@@ -4,66 +4,112 @@
  * Printable one-page session card.
  *
  * A night-shift aide should be able to run the plan from a single sheet of A4
- * without opening the app. We re-run the same stream the session view uses
- * (persona slug, or "custom" pulled from pending-request memory), wait for the
- * plan + anchors events, and lay the result out as a paper sheet.
+ * without opening the app. The sunny path is a sessionStorage hand-off: when
+ * the caregiver clicks "Print session card" from /session, that tab has
+ * already written the composed plan into sessionStorage and the print tab
+ * (opened via a same-origin target="_blank" link) reads it back. No second
+ * agent run, no risk of a different plan on the sheet than on the screen.
  *
- * No new storage: nothing about the person leaves this tab. If the request
- * cannot be resolved, or no plan arrives, we show a short "not found" line
- * rather than a stale fallback.
+ * Fallbacks:
+ * - a persona slug with no sessionStorage entry (e.g. a direct link to
+ *   /plan/maria/print) falls through to the ordinary agent stream, honoring
+ *   the ?source= param from the URL (replay / sample / auto);
+ * - a "custom" slug with no sessionStorage entry renders a friendly, locale-
+ *   correct not-found that explains the plan must be generated in the
+ *   originating tab first.
+ *
+ * The agent stream (fallback only) is also error-aware: a 429, a deadline,
+ * or a network failure renders a sage error block with a Try again button,
+ * never a stuck "This usually takes 15-30 seconds".
  */
 
-import { PrinterIcon } from "lucide-react";
+import { PrinterIcon, RotateCcwIcon, TriangleAlertIcon } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { readStoredPlan, type StoredPrintPlan } from "@/components/print/print-handoff";
 import { resolveRequest } from "@/components/session/session-request";
-import { resolveSource } from "@/components/session/source";
+import { parseSourceParam, resolveSource } from "@/components/session/source";
+import { Button } from "@/components/ui/button";
 import { useAgentStream } from "@/hooks/use-agent-stream";
 import { MessagesProvider, useMessages } from "@/i18n/provider";
-import type { Anchors, SessionPlan, SessionStep, StepKind } from "@/lib/domain/types";
+import type { SessionPlan, SessionStep, StepKind } from "@/lib/domain/types";
 
 interface PrintSessionCardProps {
   /** Route id (persona slug: maria, seamus, fatima, or "custom"). */
   id: string;
 }
 
+/** Narrow anchors view the paper layout actually reads. */
+interface PaperAnchors {
+  birthYear: number;
+  callbacks?: string[];
+}
+
 export function PrintSessionCard({ id }: PrintSessionCardProps) {
   const params = useSearchParams();
   const modeParam = params.get("mode");
+  const sourceParam = parseSourceParam(params.get("source"));
+
+  // Read sessionStorage once per mount. A later resolve must not bounce out
+  // of a stream that already started.
+  const [hydrated] = useState<StoredPrintPlan | undefined>(() => readStoredPlan(id));
   const resolved = useMemo(() => resolveRequest(id, modeParam), [id, modeParam]);
 
-  const sessionLanguage = resolved.ok ? (resolved.request.person.sessionLanguage ?? "en") : "en";
-  const caregiverLanguage = resolved.ok ? (resolved.request.person.caregiverLanguage ?? "en") : "en";
+  const sessionLanguage =
+    hydrated?.sessionLanguage ?? (resolved.ok ? (resolved.request.person.sessionLanguage ?? "en") : "en");
+  const caregiverLanguage =
+    hydrated?.caregiverLanguage ?? (resolved.ok ? (resolved.request.person.caregiverLanguage ?? "en") : "en");
   const hasRecording = resolved.ok && resolved.hasRecording;
   const personaSlug = resolved.ok ? resolved.persona : undefined;
 
   const source = useMemo(
-    () => resolveSource("auto", { hasRecording, language: sessionLanguage, personaSlug }),
-    [hasRecording, sessionLanguage, personaSlug],
+    () => resolveSource(sourceParam, { hasRecording, language: sessionLanguage, personaSlug }),
+    [sourceParam, hasRecording, sessionLanguage, personaSlug],
   );
 
   const { view, start } = useAgentStream(source, caregiverLanguage);
+  // Bumping this triggers a fresh stream for a retry.
+  const [retryKey, setRetryKey] = useState(0);
+  const needsStream = !hydrated && resolved.ok;
 
   useEffect(() => {
-    if (resolved.ok) start(resolved.request);
-  }, [resolved, start]);
+    if (!needsStream) return;
+    if (!resolved.ok) return;
+    start(resolved.request);
+    // retryKey intentionally kept in the deps so the retry button restarts the stream.
+  }, [needsStream, resolved, start, retryKey]);
 
-  if (!resolved.ok) {
+  // Custom id with no hand-off: this tab cannot generate the plan, so the
+  // caregiver has to compose it in the originating tab first.
+  if (id === "custom" && !hydrated) {
     return (
-      <MessagesProvider language="en">
-        <NotFoundBody />
+      <MessagesProvider language={caregiverLanguage}>
+        <NotFoundBody variant="custom" />
+      </MessagesProvider>
+    );
+  }
+  // Unknown persona slug with no hand-off: nothing we can print.
+  if (!resolved.ok && !hydrated) {
+    return (
+      <MessagesProvider language={caregiverLanguage}>
+        <NotFoundBody variant="generic" />
       </MessagesProvider>
     );
   }
 
-  const plan = view.plan;
-  const anchors = view.anchors;
-  const name = resolved.name;
+  const plan = hydrated?.plan ?? view.plan;
+  const anchors: PaperAnchors | undefined = hydrated?.anchors ?? view.anchors;
+  const name = hydrated?.displayName ?? (resolved.ok ? resolved.name : undefined);
+  // Hydrated plans never trigger a stream, so a failure can only come from
+  // the fallback path.
+  const failure = !hydrated ? view.failure : undefined;
 
   return (
     <MessagesProvider language={caregiverLanguage}>
       <PrintShell>
-        {!plan || !anchors ? (
+        {failure ? (
+          <PaperError onRetry={() => setRetryKey((n) => n + 1)} />
+        ) : !plan || !anchors ? (
           <PaperWaiting />
         ) : (
           <PaperBody
@@ -118,12 +164,31 @@ function PaperWaiting() {
   );
 }
 
-function NotFoundBody() {
+function PaperError({ onRetry }: { onRetry: () => void }) {
   const t = useMessages().print;
   return (
+    <div
+      role="alert"
+      data-testid="print-error"
+      className="flex flex-col gap-3 rounded-2xl bg-sage-soft px-5 py-4 text-sage-ink sm:flex-row sm:items-center"
+    >
+      <TriangleAlertIcon className="size-6 shrink-0" aria-hidden />
+      <p className="flex-1 font-semibold">{t.printError}</p>
+      <Button variant="outline" onClick={onRetry} data-icon="inline-start" data-testid="print-retry">
+        <RotateCcwIcon aria-hidden />
+        {t.printRetry}
+      </Button>
+    </div>
+  );
+}
+
+function NotFoundBody({ variant }: { variant: "custom" | "generic" }) {
+  const t = useMessages().print;
+  const message = variant === "custom" ? t.printNotFoundCustom : t.printNotFound;
+  return (
     <div className="min-h-screen bg-sage-soft/60 print:bg-white">
-      <div className="mx-auto max-w-xl px-6 py-16 text-center">
-        <p className="font-heading text-2xl font-semibold text-sage-ink">{t.printNotFound}</p>
+      <div className="mx-auto max-w-xl px-6 py-16 text-center" data-testid="print-not-found">
+        <p className="font-heading text-2xl font-semibold text-sage-ink">{message}</p>
       </div>
     </div>
   );
@@ -137,7 +202,7 @@ function PaperBody({
   caregiverLanguage,
 }: {
   plan: SessionPlan;
-  anchors: Anchors;
+  anchors: PaperAnchors;
   name?: string;
   sessionLanguage: string;
   caregiverLanguage: string;

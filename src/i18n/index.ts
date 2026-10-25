@@ -1,9 +1,13 @@
 /**
- * UI strings in the caregiver language. English is the source of truth and the
- * fallback. To add a language, create `src/i18n/<tag>.ts` exporting a
- * `PartialMessages` object (any subset of the English keys) and register it in
- * DICTIONARIES; missing keys fall back to English. Prompts spoken to the person
- * come from the agent, never from here.
+ * UI strings in the caregiver language. English is the source of truth: its
+ * shape defines the `Messages` type. Every registered dictionary must satisfy
+ * `Messages` in full, so a missing key is a typecheck error rather than a
+ * silent English fallback at runtime. A locale that intentionally keeps a key
+ * in English (brand terms, licence strings) still declares it explicitly with
+ * the English value and a one-line comment. To add a locale, create
+ * `src/i18n/<tag>.ts` exporting a `Messages` object with every key present,
+ * and register it in `DICTIONARIES`. Prompts spoken to the person come from
+ * the agent, never from here.
  *
  * This module is server-safe: it only exports pure data and the `getMessages`
  * lookup. React tree plumbing (<MessagesProvider>, useMessages) lives in
@@ -26,34 +30,15 @@ type Widen<T> = T extends string
 
 export type Messages = Widen<typeof en>;
 
-type DeepPartial<T> = T extends (...args: never[]) => unknown
-  ? T
-  : T extends readonly unknown[]
-    ? T
-    : T extends object
-      ? { [K in keyof T]?: DeepPartial<T[K]> }
-      : T;
-
-export type PartialMessages = DeepPartial<Messages>;
-
-/** Registered caregiver-language dictionaries (merged over English). */
-const DICTIONARIES: Record<string, PartialMessages> = { it, fr };
+/**
+ * Registered caregiver-language dictionaries. Each value is typed as
+ * `Messages` (not `Partial<Messages>`), so a translator who misses a key
+ * fails typecheck instead of silently shipping an English fallback.
+ */
+const DICTIONARIES: Record<string, Messages> = { it, fr };
 
 /** Languages with a UI dictionary. */
 export const UI_LANGUAGES = ["en", ...Object.keys(DICTIONARIES)];
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function merge<T>(base: T, override: unknown): T {
-  if (!isPlainObject(base) || !isPlainObject(override)) return (override ?? base) as T;
-  const out: Record<string, unknown> = { ...base };
-  for (const [key, value] of Object.entries(override)) {
-    if (value !== undefined) out[key] = merge((base as Record<string, unknown>)[key], value);
-  }
-  return out as T;
-}
 
 const cache = new Map<string, Messages>();
 
@@ -63,8 +48,7 @@ export function getMessages(lang?: string): Messages {
   const hit = cache.get(tag);
   if (hit) return hit;
   const base = tag.split("-")[0];
-  const override = DICTIONARIES[tag] ?? DICTIONARIES[base];
-  const messages: Messages = override ? merge<Messages>(en, override) : en;
+  const messages: Messages = DICTIONARIES[tag] ?? DICTIONARIES[base] ?? (en as Messages);
   cache.set(tag, messages);
   return messages;
 }

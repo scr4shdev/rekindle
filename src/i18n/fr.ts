@@ -1,8 +1,8 @@
 /** French UI strings (caregiver register). Non-medical wording: "personne aimée", never "patient". */
 // TODO(i18n): /for-operators page is English-only on purpose; translate for FR care operator audiences when a localized partner conversation starts.
-import type { PartialMessages } from "@/i18n";
+import type { Messages } from "@/i18n";
 
-export const fr: PartialMessages = {
+export const fr: Messages = {
   app: {
     name: "Rekindle",
     tagline: "Des activités de réminiscence, rebâties à partir de leur époque",

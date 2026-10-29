@@ -1,0 +1,8 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Known-fake fixture values used only in tests."
+regexes = [
+  '''qloo-secret-key-123''',
+]

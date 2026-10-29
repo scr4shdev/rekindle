@@ -19,5 +19,5 @@
   "totalDurationMs": 34180,
   "eventCount": 79,
   "sha256": "462741685ffcf560a291d3d3ec716bfe6986bb7f3d0edd753b2fb1ad2b948f46",
-  "sourceUrl": "http://100.97.114.27:3300/api/session"
+  "sourceUrl": "http://localhost:3000/api/session"
 }

@@ -12,7 +12,7 @@
  * will drift. The committed fixture IS the demo artifact.
  *
  * Invocation (vitest is the TS loader; the recorder is one `it()` test):
- *   REKINDLE_RECORD_BASE=http://100.97.114.27:3300 PERSONA=maria \
+ *   REKINDLE_RECORD_BASE=http://localhost:3000 PERSONA=maria \
  *     npx vitest run --config scripts/vitest.record-trace.config.mts
  *   REKINDLE_RECORD_BASE=http://localhost:3000 PERSONA=all \
  *     npx vitest run --config scripts/vitest.record-trace.config.mts
@@ -35,7 +35,7 @@ import * as proposeCandidatesPrompt from "@/lib/prompts/propose-candidates";
 import * as replanSessionPrompt from "@/lib/prompts/replan-session";
 
 const FIXTURES_DIR = path.join(process.cwd(), "tests", "fixtures");
-const BASE_URL = process.env.REKINDLE_RECORD_BASE ?? "http://100.97.114.27:3300";
+const BASE_URL = process.env.REKINDLE_RECORD_BASE ?? "http://localhost:3000";
 
 /** Pace between personas to respect Gemini daily quotas. */
 const PACE_MS = 10_000;

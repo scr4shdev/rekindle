@@ -2,6 +2,24 @@
   "name": "rekindle",
   "version": "0.1.0",
   "private": true,
+  "description": "A reminiscence activity planner for caregivers of people living with dementia, grounded in the songs, films and faces of one person's own era and place.",
+  "homepage": "https://rekindle-gamma.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/scr4shdev/rekindle.git"
+  },
+  "bugs": {
+    "url": "https://github.com/scr4shdev/rekindle/issues"
+  },
+  "license": "MIT",
+  "author": "Zakaria Kandouchi",
+  "keywords": [
+    "qloo",
+    "agentic",
+    "dementia",
+    "reminiscence",
+    "nextjs"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",

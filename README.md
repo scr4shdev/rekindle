@@ -1,8 +1,20 @@
+<div align="center">
+
 # Rekindle
 
-A reminiscence activity planner for caregivers of people living with dementia, grounded in the songs, films and faces of one person's own era and place.
+**Rekindle plans a culturally grounded reminiscence session for one specific elder in under a minute, every cultural anchor verified against the Qloo taste graph.**
 
-Built for the Qloo Agentic Hackathon (submission deadline 2026-10-30).
+[![CI](https://github.com/scr4shdev/rekindle/actions/workflows/ci.yml/badge.svg)](https://github.com/scr4shdev/rekindle/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Node.js](https://img.shields.io/badge/Node.js-24+-5FA04E?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=next.js&logoColor=white)](https://nextjs.org/)
+[![Qloo Agentic Hackathon](https://img.shields.io/badge/Qloo-Agentic%20Hackathon%202026-7C3AED)](https://qloo.com)
+
+[**Live demo**](https://rekindle-gamma.vercel.app) &nbsp;·&nbsp; [**90-second judge tour**](https://rekindle-gamma.vercel.app/tour) &nbsp;·&nbsp; **Devpost** _(coming soon)_
+
+![Rekindle landing page](./public/hero.png)
+
+</div>
 
 ## What this is
 
@@ -10,9 +22,9 @@ A caregiver fills in a short "This is Me" sheet; a few sentences are enough. An 
 
 ## Try it
 
-- **`/tour`**: a judge-friendly ninety-second cycle through three recorded sessions (Maria from Naples, Fatima from Fès and Brussels, Seamus from Cork). No typing. Each run replays a committed trace, so it needs neither Qloo nor a language model.
-- **`http://localhost:3000/`**: the full landing flow. Tap a persona card to replay a recorded live run in under fifteen seconds, or tap again to run the agent live. The form takes your own notes.
-- The hosted instance runs on a private Tailscale address for development only; the Devpost video is the demo of record.
+- [**Live demo**](https://rekindle-gamma.vercel.app). Tap a persona card to replay a recorded live run in under fifteen seconds, or tap again to run the agent live. The form takes your own notes.
+- [**`/tour`**](https://rekindle-gamma.vercel.app/tour). A judge-friendly ninety-second cycle through three recorded sessions (Maria from Naples, Fatima from Fès and Brussels, Seamus from Cork). No typing. Each run replays a committed trace, so it needs neither Qloo nor a language model.
+- **Local**: `npm ci && npm run dev` and open `http://localhost:3000`. Mock mode works with no keys.
 
 ## Architecture at a glance
 
@@ -34,14 +46,26 @@ caregiver notes
   NDJSON stream to the UI, "What we heard" callbacks above step one
 ```
 
-- Ports and adapters: the agent in `src/lib/agent/` depends only on `TastePort`, `LlmPort` and `CachePort` in `src/lib/ports/`. ESLint enforces the boundary. `src/lib/composition.ts` wires the adapters.
-- Cultural judgment goes through LLM structured output, never regex or keyword lists (see `docs/no-regex-semantics.md`). Deterministic code only reshapes already-structured data.
-- Determinism: temperature 0, pinned model ids, versioned prompt modules in `src/lib/prompts/`, sha256 input-keyed cache. The three persona traces in `tests/fixtures/` replay byte-identical.
-- Qloo results are always framed as aggregate ("people who enjoy X also tend to enjoy Y"), with provenance chips on each plan step and on the print card.
-- After a session, three one-tap reactions per step (Sparked, Did not land, Walked away) are saved on the device; the next plan for the same name starts with a "Last time with ..." line.
-- UI in English, French and Italian, with gender-neutral French and Italian strings.
+- **Ports and adapters**: the agent in `src/lib/agent/` depends only on `TastePort`, `LlmPort` and `CachePort` in `src/lib/ports/`. ESLint enforces the boundary. `src/lib/composition.ts` wires the adapters.
+- **No regex or keyword lists for semantics**: cultural judgment goes through LLM structured output (see [`docs/no-regex-semantics.md`](docs/no-regex-semantics.md)). Deterministic code only reshapes already-structured data.
+- **Determinism**: temperature 0, pinned model ids, versioned prompt modules in `src/lib/prompts/`, sha256 input-keyed cache. The three persona traces in `tests/fixtures/` replay byte-identical.
+- **Aggregate framing**: Qloo results are always framed as aggregate ("people who enjoy X also tend to enjoy Y"), with provenance chips on each plan step and on the print card.
+- **Local-first state**: after a session, three one-tap reactions per step (Sparked, Did not land, Walked away) are saved on the device; the next plan for the same name starts with a "Last time with ..." line.
+- **Localised**: UI in English, French and Italian, with gender-neutral French and Italian strings.
 
-More in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/api.md`](docs/api.md), [`docs/qloo-api.md`](docs/qloo-api.md) and [`docs/judges.md`](docs/judges.md).
+Deeper dive: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+## Documentation
+
+| Document | What it covers |
+|---|---|
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Full technical tour: the six-phase agent loop, ports and adapters, determinism contract, failure modes. |
+| [`docs/api.md`](docs/api.md) | HTTP contract: route handlers, NDJSON event schema, replay fixtures. |
+| [`docs/qloo-api.md`](docs/qloo-api.md) | Qloo field notes: `/search`, `/v2/insights`, `/v2/tags`, era filters, parity with the `qloo` CLI. |
+| [`docs/judges.md`](docs/judges.md) | 90-second judge tour, health probes, what to look for in the trace. |
+| [`docs/llm-config.md`](docs/llm-config.md) | LLM provider selection, pinned model ids, mock mode. |
+| [`docs/no-regex-semantics.md`](docs/no-regex-semantics.md) | Why every semantic judgment goes through schema-validated structured output. |
+| [`AGENTS.md`](AGENTS.md) | Rules for every agent (human or AI) working on this repo: ownership, hard rules, architecture rules. |
 
 ## Running locally
 
@@ -69,7 +93,12 @@ The Qloo key is read only by `src/lib/config.ts` and never reaches the client.
 
 ## Testing
 
-`npm run check` runs typecheck, lint, 271 unit and contract tests (vitest) and a production build; `npm run e2e` runs Playwright in mock mode.
+```bash
+npm run check    # typecheck + lint + 271 unit and contract tests (vitest) + production build
+npm run e2e      # Playwright, always in mock mode
+```
+
+CI runs the same `npm run check`, plus a gitleaks pass over the full history.
 
 ## Privacy posture
 
@@ -85,7 +114,7 @@ Rekindle plans a shared activity. It is not therapy, it does not treat or diagno
 
 ## License
 
-License: see LICENSE (to be chosen before public release). `MIT. See [LICENSE](LICENSE).`
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
 ## Credits
 

@@ -2,7 +2,17 @@
 useDefault = true
 
 [allowlist]
-description = "Known-fake fixture values used only in tests."
+description = "Known-fake fixture values and non-secret test data"
 regexes = [
+  # Placeholder passed into the Qloo HTTP adapter in unit tests.
   '''qloo-secret-key-123''',
+]
+paths = [
+  # Trace fixture metadata carries sha256 integrity hashes of the committed
+  # NDJSON traces. High-entropy hex, but not a secret.
+  '''tests/fixtures/trace-.*\.meta\.json''',
+  # The feedback store unit test asserts expected sha256 outputs. Same shape.
+  '''tests/unit/feedback-store\.test\.ts''',
+  # The Qloo HTTP adapter unit test uses placeholder credentials.
+  '''tests/unit/qloo-http\.test\.ts''',
 ]

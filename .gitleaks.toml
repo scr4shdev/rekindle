@@ -1,0 +1,29 @@
+[extend]
+useDefault = true
+
+# Allowlist covers paths and patterns that commonly trip gitleaks' generic
+# high-entropy rules without carrying real secrets. The scanner remains
+# active on src/, config, scripts, and anywhere a real leak would matter.
+[allowlist]
+description = "Non-secret fixtures, lockfiles, docs, and public entity ids"
+regexes = [
+  # Placeholder passed into the Qloo HTTP adapter in unit tests.
+  '''qloo-secret-key-123''',
+  # Standard UUIDs. Qloo documents public entity ids in this format in
+  # the API reference and in response fixtures; they are not secrets.
+  '''[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}''',
+]
+paths = [
+  # npm lockfile is full of base64 Subresource Integrity hashes
+  # (sha512-...==) which look like high-entropy secrets but are not.
+  '''package-lock\.json''',
+  # Documentation (API reference, architecture notes). High-entropy
+  # tokens here are public API ids and example payloads.
+  '''docs/.*\.md''',
+  # Everything under tests/: fixtures (JSON of Qloo responses), unit
+  # tests with placeholder credentials, trace NDJSON with public ids.
+  '''tests/.*''',
+  # Developer-only probe scripts. Never imported by the app. They
+  # reference public Qloo entity ids for value-comparison probes.
+  '''scripts/.*\.probe\.ts''',
+]

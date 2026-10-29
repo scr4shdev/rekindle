@@ -4,7 +4,7 @@
 
 **Rekindle plans a culturally grounded reminiscence session for one specific elder in under a minute, every cultural anchor verified against the Qloo taste graph.**
 
-[![CI](https://github.com/scr4shdev/rekindle/actions/workflows/ci.yml/badge.svg)](https://github.com/scr4shdev/rekindle/actions/workflows/ci.yml)
+[![CI](https://github.com/scr4shdev/rekindle/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/scr4shdev/rekindle/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-24+-5FA04E?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=next.js&logoColor=white)](https://nextjs.org/)

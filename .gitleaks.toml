@@ -2,16 +2,19 @@
 useDefault = true
 
 [allowlist]
-description = "Known-fake fixture values and non-secret test data"
+description = "Known-fake fixture values and non-secret test and lock data"
 regexes = [
   # Placeholder passed into the Qloo HTTP adapter in unit tests.
   '''qloo-secret-key-123''',
 ]
 paths = [
-  # Trace fixture metadata carries sha256 integrity hashes of the committed
-  # NDJSON traces. High-entropy hex, but not a secret.
+  # npm lockfile is full of base64 Subresource Integrity hashes
+  # (sha512-...==) which look like high-entropy secrets but are not.
+  '''package-lock\.json''',
+  # Trace fixture metadata carries sha256 integrity hashes of the
+  # committed NDJSON traces. High-entropy hex, but not a secret.
   '''tests/fixtures/trace-.*\.meta\.json''',
-  # The feedback store unit test asserts expected sha256 outputs. Same shape.
+  # The feedback store unit test asserts expected sha256 outputs.
   '''tests/unit/feedback-store\.test\.ts''',
   # The Qloo HTTP adapter unit test uses placeholder credentials.
   '''tests/unit/qloo-http\.test\.ts''',

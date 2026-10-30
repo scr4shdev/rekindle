@@ -479,6 +479,7 @@ export function CustomForm() {
           data-icon="inline-start"
           disabled={pending || mockMode}
           aria-describedby={mockMode ? `${id}-mock-gate` : undefined}
+          className="h-auto min-h-14 shrink px-4 py-2 text-center whitespace-normal sm:px-8"
         >
           <ScaleIcon aria-hidden />
           {t.compare}

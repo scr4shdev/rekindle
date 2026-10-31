@@ -10,7 +10,7 @@
 [![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=next.js&logoColor=white)](https://nextjs.org/)
 [![Qloo Agentic Hackathon](https://img.shields.io/badge/Qloo-Agentic%20Hackathon%202026-7C3AED)](https://qloo.com)
 
-[**Live demo**](https://rekindle-gamma.vercel.app) &nbsp;·&nbsp; [**90-second judge tour**](https://rekindle-gamma.vercel.app/tour) &nbsp;·&nbsp; **Devpost** _(coming soon)_
+[**Live demo**](https://rekindle-gamma.vercel.app) &nbsp;·&nbsp; [**90-second judge tour**](https://rekindle-gamma.vercel.app/tour) &nbsp;·&nbsp; [**Devpost**](https://devpost.com/software/rekindle-z7bc0v)
 
 ![Rekindle landing page](./public/hero.png)
 
